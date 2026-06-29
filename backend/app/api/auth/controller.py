@@ -2,7 +2,6 @@
 Authentication controller — login, register, refresh, logout.
 """
 
-from flask import request
 from flask_restx import Namespace, Resource, fields
 
 ns = Namespace("auth", description="Authentication operations", path="/auth")

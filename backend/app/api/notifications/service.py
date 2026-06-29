@@ -26,6 +26,9 @@ class NotificationService:
         """Return the count of unread notifications. TODO: implement."""
         raise NotImplementedError
 
-    def send_notification(self, user_id: int, title: str, message: str, notification_type: str, related_complaint_id: int = None) -> dict:
+    def send_notification(
+        self, user_id: int, title: str, message: str,
+        notification_type: str, related_complaint_id: int = None,
+    ) -> dict:
         """Create and send a notification to a user. TODO: implement."""
         raise NotImplementedError

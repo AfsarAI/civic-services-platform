@@ -2,7 +2,7 @@
 Standardised API response helpers.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 
 def success_response(

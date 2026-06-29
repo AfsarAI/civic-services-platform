@@ -30,8 +30,14 @@ class User(db.Model):
 
     # Relationships
     role = db.relationship("Role", back_populates="users")
-    complaints = db.relationship("Complaint", foreign_keys="Complaint.citizen_id", back_populates="citizen", lazy="dynamic")
-    assignments = db.relationship("ComplaintAssignment", foreign_keys="ComplaintAssignment.worker_id", back_populates="worker", lazy="dynamic")
+    complaints = db.relationship(
+        "Complaint", foreign_keys="Complaint.citizen_id",
+        back_populates="citizen", lazy="dynamic"
+    )
+    assignments = db.relationship(
+        "ComplaintAssignment", foreign_keys="ComplaintAssignment.worker_id",
+        back_populates="worker", lazy="dynamic"
+    )
     notifications = db.relationship("Notification", back_populates="user", lazy="dynamic")
     feedback = db.relationship("Feedback", back_populates="citizen", lazy="dynamic")
 
