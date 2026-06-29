@@ -1,0 +1,178 @@
+We have ony 4 sprint 
+print 1: 29 June – 12 July (2 Weeks)
+Sprint 2: 13 July – 26 July (2 Weeks)
+Sprint 3: 27 July – 9 August (2 Weeks)
+Sprint 4: 10 August – 23 August (2 Weeks)
+
+
+---------------------
+Branches
+main
+
+Production-ready code only.
+Never develop directly on main.
+Only merge after:
+
+Code Review
+Successful Testing
+Sprint Completion
+
+
+dev
+
+Integration branch.
+Every feature is merged into dev.
+The team tests the complete application here.
+
+
+Feature Branches
+Create one feature branch per Jira Story or feature.
+Examples:
+feature/<rollno>-<jiraid>-authentication
+
+feature/<rollno>-<jiraid>-report-pothole
+
+feature/<rollno>-<jiraid>-citizen-dashboard
+
+
+Don't create one branch per developer.
+Create one branch per feature.
+
+
+Development Flow
+Step 1
+Developer creates
+feature/<rollno>-<jiraid>-report-potholefrom
+dev
+
+Step 2
+
+Develop
+Commit
+Push
+
+
+Step 3
+
+Create Pull Request
+feature/<rollno>-<jiraid>-report-pothole
+
+↓
+
+dev
+
+Step 4
+
+Scrum Master or Program Manager
+Reviews
+Approve
+Merge
+
+
+Step 5
+
+After Sprint
+Create Pull Request
+dev
+
+↓
+
+main
+
+Branch Protection
+Protect
+main
+:heavy_check_mark: Require Pull Request
+:heavy_check_mark: No Direct Push
+:heavy_check_mark: Minimum 1 Approval
+
+Protect
+dev
+:heavy_check_mark: Require Pull Request
+:heavy_check_mark: No Direct Push
+:heavy_check_mark: Minimum 1 Approval
+
+Branch Naming
+feature/<rollno>-<jiraid>-story-titleCitizen
+feature/<rollno>-<jiraid>-report-pothole
+
+feature/<rollno>-<jiraid>-complaint-tracking
+
+feature/<rollno>-<jiraid>-feedbackAdministrator
+feature/<rollno>-<jiraid>-admin-dashboard
+
+feature/<rollno>-<jiraid>-assign-complaintField Worker
+feature/<rollno>-<jiraid>-repair-workReports
+feature/<rollno>-<jiraid>-dashboard
+
+feature/<rollno>-<jiraid>-reportsTesting
+bug/<rollno>-<jiraid>-login-error
+
+bug/<rollno>-<jiraid>-report-upload
+
+bug/<rollno>-<jiraid>-dashboard
+
+hotfix/<rollno>-<jiraid>-login
+
+Commit Strategy
+Don't write
+update
+
+changes
+
+latest
+
+newUse
+feat: add citizen registration
+
+feat: implement report pothole page
+
+feat: add complaint tracking
+
+fix: resolve login validation issue
+
+fix: repair image upload
+
+docs: update README
+
+test: add unit tests
+
+refactor: simplify complaint service
+
+Merge Strategy
+Never
+feature
+
+↓
+
+mainAlways
+feature
+
+↓
+
+dev
+
+↓
+
+main
+
+Complete workflow:
+Jira Story
+      │
+Create Feature Branch
+      │
+Development & Commits
+      │
+Pull Request → dev
+      │
+Code Review & Testing
+      │
+Merge into dev
+      │
+Sprint Testing
+      │
+Pull Request → main
+      │
+Sprint Release(edited)
+
+
