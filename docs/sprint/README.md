@@ -11,6 +11,7 @@ This folder contains sprint planning artefacts, velocity charts, and sprint summ
 | 3 | Sprint 1 — API Development | 2 August 2026 |
 | 4 | Sprint 2 — Testing & Integration | 12 August 2026 |
 | 5 | Final Submission | 23 August 2026 |
+|---------------------------------------------------------------------------------------------------------------
 
 ## Sprint Overview
 
@@ -20,6 +21,7 @@ This folder contains sprint planning artefacts, velocity charts, and sprint summ
 | Sprint 2 | 13 Jul – 26 Jul 2026 | Citizen complaint submission & tracking | Planned |
 | Sprint 3 | 27 Jul – 9 Aug 2026 | Admin management, field worker progress | Planned |
 | Sprint 4 | 10 Aug – 23 Aug 2026 | Reports, notifications, testing & polish | Planned |
+|---------------------------------------------------------------------------------------------------------------
 
 ## Sprint Folder Structure
 
