@@ -1,16 +1,24 @@
-"""
-Administrator namespace — Marshmallow schemas.
-"""
+"""Administrator namespace — Marshmallow schemas."""
 
-from app.schemas.complaint_schema import ComplaintSchema, ComplaintUpdateSchema
-from app.schemas.assignment_schema import AssignmentSchema, AssignmentCreateSchema
+from app.schemas.complaint_schema import (
+    ComplaintSchema,
+    ComplaintUpdateSchema,
+    AdminComplaintUpdateSchema,
+)
+from app.schemas.assignment_schema import (
+    AssignmentSchema,
+    AssignmentCreateSchema,
+    AssignComplaintBodySchema,
+)
 from app.schemas.user_schema import UserSchema, UserUpdateSchema
 
 __all__ = [
     "ComplaintSchema",
     "ComplaintUpdateSchema",
+    "AdminComplaintUpdateSchema",
     "AssignmentSchema",
     "AssignmentCreateSchema",
+    "AssignComplaintBodySchema",
     "UserSchema",
     "UserUpdateSchema",
 ]

@@ -14,7 +14,7 @@
 
 ## Related Jira Ticket
 
-Closes [CSP-XXX](https://jira.example.com/browse/CSP-XXX)
+Closes [TPS-XXX](https://iitmscrum.atlassian.net/browse/TPS-XXX)
 
 ## Changes Made
 

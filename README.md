@@ -117,7 +117,7 @@ The **Civic Services Platform** enables:
 
 ### Prerequisites
 
-- **Node.js** >= 18.x
+- **Node.js** >= 22.x
 - **Python** >= 3.13
 - **pip** >= 23.x
 - **Git**
@@ -142,18 +142,36 @@ The frontend will be available at `http://localhost:5173`.
 ```bash
 cd backend
 
-# Each developer creates their own local venv — never committed to git
+# 1. Create your own local virtual environment (never committed to git)
 python -m venv .venv
 
+# 2. Activate the virtual environment
 source .venv/bin/activate        # WSL / Mac / Linux
 # .venv\Scripts\activate         # Windows PowerShell
 
+# 3. Install dependencies
 pip install -r requirements.txt
+
+# 4. Create your local .env from the example
 cp .env.example .env
-flask run
+# Edit .env and set SECRET_KEY and JWT_SECRET_KEY to random strings
+
+# 5. Apply database migrations (creates all tables)
+FLASK_APP=app.py flask db upgrade
+
+# 6. Seed roles and default admin user (safe to re-run)
+FLASK_APP=app.py flask seed
+
+# 7. Start the development server
+FLASK_APP=app.py FLASK_ENV=development flask run
 ```
 
 The API will be available at `http://localhost:5000`.
+
+> **Swagger UI** (interactive API docs): `http://localhost:5000/api/v1/docs`
+
+> **Default admin credentials** (set in `.env` before running `flask seed`):
+> Email: `admin@civicservices.local` | Password: `Admin@123456`
 
 ---
 
@@ -179,10 +197,38 @@ flask db upgrade
 Once the backend is running, open:
 
 ```
-http://localhost:5000/api/docs
+http://localhost:5000/api/v1/docs
 ```
 
 All namespaces and endpoints are documented via **Flask-RESTX** Swagger UI.
+
+### Using Swagger with JWT
+
+Most endpoints require authentication. Follow these steps to authorise in Swagger UI:
+
+**Step 1 — Get a token**
+
+Call `POST /auth/login` with your credentials:
+```json
+{
+  "email": "admin@civicservices.local",
+  "password": "Admin@123456"
+}
+```
+Copy the `access_token` value from the response.
+
+**Step 2 — Authorise in Swagger**
+
+1. Click the **Authorize 🔒** button at the top right of the Swagger UI page
+2. In the **Bearer** field enter: `Bearer <paste_your_token_here>`
+3. Click **Authorize** → **Close**
+
+**Step 3 — Use protected endpoints**
+
+All endpoints marked with a 🔒 padlock icon are now accessible. The token is sent automatically in the `Authorization` header with every request.
+
+> Tokens expire after **1 hour**. Repeat Step 1–2 when you see a `401 Unauthorised` response.
+> Use `POST /auth/refresh` with your `refresh_token` to get a new access token without logging in again.
 
 ---
 

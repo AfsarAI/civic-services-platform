@@ -5,6 +5,7 @@ Civic Services Platform — Application Configuration
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
+from sqlalchemy.pool import StaticPool
 
 load_dotenv()
 
@@ -60,6 +61,12 @@ class TestingConfig(Config):
     TESTING = True
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    # StaticPool ensures all connections (fixtures + HTTP requests) share
+    # the same in-memory SQLite DB so seeded data is visible to test requests.
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "connect_args": {"check_same_thread": False},
+        "poolclass": StaticPool,
+    }
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=5)
     WTF_CSRF_ENABLED = False
 

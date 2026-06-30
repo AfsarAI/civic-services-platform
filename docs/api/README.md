@@ -13,7 +13,7 @@ http://localhost:5000/api/v1
 Swagger UI is available at:
 
 ```
-http://localhost:5000/api/docs
+http://localhost:5000/api/v1/docs
 ```
 
 ## Authentication
@@ -56,11 +56,12 @@ All responses follow this envelope structure:
 |---|---|
 | `200` | OK |
 | `201` | Created |
-| `400` | Bad Request |
-| `401` | Unauthorised |
-| `403` | Forbidden |
+| `400` | Bad Request — invalid JSON or business rule violation |
+| `401` | Unauthorised — missing or invalid JWT token |
+| `403` | Forbidden — valid token, insufficient role |
 | `404` | Not Found |
-| `422` | Unprocessable Entity |
+| `409` | Conflict — duplicate resource (e.g. email already registered) |
+| `422` | Unprocessable Entity — Marshmallow validation failed (field-level errors in `errors` key) |
 | `500` | Internal Server Error |
 
 ## TODO
