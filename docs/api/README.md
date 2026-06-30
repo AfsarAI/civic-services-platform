@@ -13,7 +13,7 @@ http://localhost:5000/api/v1
 Swagger UI is available at:
 
 ```
-http://localhost:5000/api/docs
+http://localhost:5000/api/v1/docs
 ```
 
 ## Authentication

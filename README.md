@@ -142,23 +142,36 @@ The frontend will be available at `http://localhost:5173`.
 ```bash
 cd backend
 
-# Each developer creates their own local venv — never committed to git
+# 1. Create your own local virtual environment (never committed to git)
 python -m venv .venv
 
+# 2. Activate the virtual environment
 source .venv/bin/activate        # WSL / Mac / Linux
 # .venv\Scripts\activate         # Windows PowerShell
 
+# 3. Install dependencies
 pip install -r requirements.txt
+
+# 4. Create your local .env from the example
 cp .env.example .env
-flask db upgrade          # apply migrations (creates all tables)
-flask seed                # create roles + default admin user
-flask run
+# Edit .env and set SECRET_KEY and JWT_SECRET_KEY to random strings
+
+# 5. Apply database migrations (creates all tables)
+FLASK_APP=app.py flask db upgrade
+
+# 6. Seed roles and default admin user (safe to re-run)
+FLASK_APP=app.py flask seed
+
+# 7. Start the development server
+FLASK_APP=app.py FLASK_ENV=development flask run
 ```
 
 The API will be available at `http://localhost:5000`.
 
-> **Default admin credentials** (set in your `.env` before running `flask seed`):
-> `ADMIN_EMAIL=admin@civicservices.local` / `ADMIN_PASSWORD=Admin@123456`
+> **Swagger UI** (interactive API docs): `http://localhost:5000/api/v1/docs`
+
+> **Default admin credentials** (set in `.env` before running `flask seed`):
+> Email: `admin@civicservices.local` | Password: `Admin@123456`
 
 ---
 
@@ -184,7 +197,7 @@ flask db upgrade
 Once the backend is running, open:
 
 ```
-http://localhost:5000/api/docs
+http://localhost:5000/api/v1/docs
 ```
 
 All namespaces and endpoints are documented via **Flask-RESTX** Swagger UI.
