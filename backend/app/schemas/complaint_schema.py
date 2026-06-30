@@ -63,3 +63,14 @@ class ComplaintUpdateSchema(Schema):
     image_url = fields.Str(validate=validate.Length(max=500), allow_none=True)
     latitude = fields.Float(allow_none=True)
     longitude = fields.Float(allow_none=True)
+
+
+class AdminComplaintUpdateSchema(Schema):
+    """Schema for admin updating a complaint's status and/or priority."""
+
+    status = fields.Str(
+        validate=validate.OneOf(
+            ["pending", "assigned", "in_progress", "resolved", "closed", "rejected"]
+        )
+    )
+    priority = fields.Str(validate=validate.OneOf(["low", "medium", "high", "urgent"]))

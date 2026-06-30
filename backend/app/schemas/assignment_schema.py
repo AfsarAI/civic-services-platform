@@ -38,3 +38,10 @@ class AssignmentUpdateSchema(Schema):
         ),
     )
     notes = fields.Str(validate=validate.Length(max=1000), allow_none=True)
+
+
+class AssignComplaintBodySchema(Schema):
+    """Schema for body of POST /admin/complaints/<id>/assign."""
+
+    worker_id = fields.Int(required=True)
+    notes = fields.Str(validate=validate.Length(max=1000), allow_none=True)
