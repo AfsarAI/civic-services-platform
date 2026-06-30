@@ -62,9 +62,9 @@ class TestFeedbackCreateSchema:
     def test_rating_out_of_range_raises(self):
         schema = FeedbackCreateSchema()
         with pytest.raises(ValidationError):
-            schema.load({"complaint_id": 1, "rating": 6})
+            schema.load({"rating": 6})
 
     def test_valid_feedback_passes(self):
         schema = FeedbackCreateSchema()
-        result = schema.load({"complaint_id": 1, "rating": 5, "comment": "Great service!"})
+        result = schema.load({"rating": 5, "comment": "Great service!"})
         assert result["rating"] == 5

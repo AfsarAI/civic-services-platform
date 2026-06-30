@@ -46,12 +46,20 @@ class ComplaintCreateSchema(Schema):
 
 
 class ComplaintUpdateSchema(Schema):
-    """Schema for updating a Complaint's status or details."""
+    """Schema for citizen updating their own pending complaint.
 
-    status = fields.Str(
+    Citizens can only change descriptive fields — status and priority
+    are controlled exclusively by the administrator.
+    """
+
+    title = fields.Str(validate=validate.Length(min=5, max=200))
+    description = fields.Str(validate=validate.Length(min=10))
+    category = fields.Str(
         validate=validate.OneOf(
-            ["pending", "assigned", "in_progress", "resolved", "closed", "rejected"]
+            ["pothole", "streetlight", "drainage", "garbage", "road_damage", "other"]
         )
     )
-    priority = fields.Str(validate=validate.OneOf(["low", "medium", "high", "urgent"]))
-    description = fields.Str(validate=validate.Length(min=10))
+    address = fields.Str(validate=validate.Length(max=500), allow_none=True)
+    image_url = fields.Str(validate=validate.Length(max=500), allow_none=True)
+    latitude = fields.Float(allow_none=True)
+    longitude = fields.Float(allow_none=True)
