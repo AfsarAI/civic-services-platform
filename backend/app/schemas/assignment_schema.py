@@ -45,3 +45,17 @@ class AssignComplaintBodySchema(Schema):
 
     worker_id = fields.Int(required=True)
     notes = fields.Str(validate=validate.Length(max=1000), allow_none=True)
+
+
+class FieldWorkerProgressSchema(Schema):
+    """Body schema for PUT /fieldworker/assignments/<id>.
+
+    The field worker can move to in_progress or rejected, and add notes.
+    Accept/complete use dedicated endpoints with no request body.
+    """
+
+    status = fields.Str(
+        required=True,
+        validate=validate.OneOf(["in_progress", "rejected"]),
+    )
+    notes = fields.Str(validate=validate.Length(max=1000), allow_none=True)
