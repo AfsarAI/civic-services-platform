@@ -21,12 +21,13 @@ This folder contains technical documentation for developers working on the Civic
 2. Create and activate a virtual environment
 3. Install dependencies from `requirements.txt`
 4. Copy `.env.example` to `.env` and configure
-5. Run `flask db upgrade` to apply migrations
-6. Run `flask run` to start the development server
+5. Run `flask db upgrade` to apply migrations and create all tables
+6. Run `flask seed` to create roles and the default admin user
+7. Run `flask run` to start the development server
 
 ### Frontend
 
-1. Node.js 18+ required
+1. Node.js 22+ required
 2. Run `npm install` in the `frontend/` directory
 3. Copy `.env.example` to `.env` and configure
 4. Run `npm run dev` to start the Vite dev server
@@ -40,8 +41,10 @@ This folder contains technical documentation for developers working on the Civic
 | `FLASK_ENV` | Environment name | `development` |
 | `SECRET_KEY` | Flask secret key | `change-me-in-production` |
 | `JWT_SECRET_KEY` | JWT signing key | `change-me-in-production` |
-| `DATABASE_URL` | SQLAlchemy connection string | `sqlite:///civic.db` |
+| `DATABASE_URL` | SQLAlchemy connection string (leave blank for SQLite) | `postgresql://user:pass@host/db` |
 | `CORS_ORIGINS` | Allowed CORS origins | `http://localhost:5173` |
+| `ADMIN_EMAIL` | Default admin email for `flask seed` | `admin@civicservices.local` |
+| `ADMIN_PASSWORD` | Default admin password for `flask seed` | `Admin@123456` |
 
 ## Project Timeline
 

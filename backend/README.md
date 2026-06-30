@@ -14,9 +14,13 @@ source .venv/bin/activate        # WSL / Mac / Linux
 
 pip install -r requirements.txt
 cp .env.example .env
-flask db upgrade
+flask db upgrade      # apply migrations (creates all tables)
+flask seed            # create 3 roles + default admin user (idempotent)
 flask run
 ```
+
+> **`flask seed`** creates roles (`citizen`, `field_worker`, `administrator`) and a default
+> admin account from your `.env` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`). Safe to re-run.
 
 ## Structure
 
@@ -24,26 +28,27 @@ flask run
 backend/
 ├── app/
 │   ├── api/                # Flask-RESTX namespaces
-│   │   ├── auth/           # Authentication endpoints
-│   │   ├── citizen/        # Citizen endpoints
-│   │   ├── administrator/  # Admin endpoints
-│   │   ├── fieldworker/    # Field worker endpoints
-│   │   ├── reports/        # Reports endpoints
-│   │   └── notifications/  # Notifications endpoints
-│   ├── models/             # SQLAlchemy models
-│   ├── schemas/            # Marshmallow schemas
-│   ├── services/           # Business logic (placeholder)
-│   ├── repositories/       # Data access layer (placeholder)
-│   ├── extensions/         # Flask extensions
+│   │   ├── auth/           # Authentication (register, login, refresh, logout, me)
+│   │   ├── citizen/        # Citizen complaint endpoints
+│   │   ├── administrator/  # Admin complaint management, reports, user management
+│   │   ├── fieldworker/    # Field worker task management
+│   │   ├── reports/        # Analytics and exports
+│   │   └── notifications/  # User notifications
+│   ├── models/             # SQLAlchemy models (User, Role, Complaint, ...)
+│   ├── schemas/            # Marshmallow validation schemas
+│   ├── services/           # Business logic
+│   ├── repositories/       # Data access layer
+│   ├── extensions/         # Flask extensions (db, migrate, jwt, ma)
+│   ├── commands.py         # Flask CLI commands (flask seed)
 │   ├── config/             # App config helpers
-│   └── utils/              # Utilities & decorators
+│   └── utils/              # Shared decorators (validate_body, require_role)
 ├── migrations/             # Alembic migrations
 ├── tests/
 │   ├── unit/
 │   └── integration/
 ├── instance/               # SQLite DB (git-ignored)
 ├── app.py                  # Entry point
-├── config.py               # Configuration
+├── config.py               # Configuration classes
 └── requirements.txt
 ```
 

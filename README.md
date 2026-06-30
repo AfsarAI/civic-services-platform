@@ -117,7 +117,7 @@ The **Civic Services Platform** enables:
 
 ### Prerequisites
 
-- **Node.js** >= 18.x
+- **Node.js** >= 22.x
 - **Python** >= 3.13
 - **pip** >= 23.x
 - **Git**
@@ -150,10 +150,15 @@ source .venv/bin/activate        # WSL / Mac / Linux
 
 pip install -r requirements.txt
 cp .env.example .env
+flask db upgrade          # apply migrations (creates all tables)
+flask seed                # create roles + default admin user
 flask run
 ```
 
 The API will be available at `http://localhost:5000`.
+
+> **Default admin credentials** (set in your `.env` before running `flask seed`):
+> `ADMIN_EMAIL=admin@civicservices.local` / `ADMIN_PASSWORD=Admin@123456`
 
 ---
 
