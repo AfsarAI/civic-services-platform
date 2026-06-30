@@ -16,13 +16,17 @@ from app.models.user import User
 
 
 # ── Role definitions ──────────────────────────────────────────────────────
+# Exactly 3 roles per Milestone1_Report.pdf Section 2.4.
+# Administrator is a consolidated role covering complaint management,
+# reporting, user management, and system administration.
 
 ROLES = [
     {"name": Role.CITIZEN, "description": "Registered citizen who can report and track complaints"},
-    {"name": Role.ADMINISTRATOR, "description": "Municipal administrator who manages complaints"},
     {"name": Role.FIELD_WORKER, "description": "Field worker / engineer who carries out repairs"},
-    {"name": "senior_management", "description": "Senior officer who monitors performance"},
-    {"name": "sysadmin", "description": "System administrator who manages users and platform"},
+    {"name": Role.ADMINISTRATOR, "description": (
+        "Consolidated administrator: complaint management, assignment, "
+        "monitoring, reports, user management, and system administration"
+    )},
 ]
 
 
