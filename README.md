@@ -202,6 +202,34 @@ http://localhost:5000/api/v1/docs
 
 All namespaces and endpoints are documented via **Flask-RESTX** Swagger UI.
 
+### Using Swagger with JWT
+
+Most endpoints require authentication. Follow these steps to authorise in Swagger UI:
+
+**Step 1 — Get a token**
+
+Call `POST /auth/login` with your credentials:
+```json
+{
+  "email": "admin@civicservices.local",
+  "password": "Admin@123456"
+}
+```
+Copy the `access_token` value from the response.
+
+**Step 2 — Authorise in Swagger**
+
+1. Click the **Authorize 🔒** button at the top right of the Swagger UI page
+2. In the **Bearer** field enter: `Bearer <paste_your_token_here>`
+3. Click **Authorize** → **Close**
+
+**Step 3 — Use protected endpoints**
+
+All endpoints marked with a 🔒 padlock icon are now accessible. The token is sent automatically in the `Authorization` header with every request.
+
+> Tokens expire after **1 hour**. Repeat Step 1–2 when you see a `401 Unauthorised` response.
+> Use `POST /auth/refresh` with your `refresh_token` to get a new access token without logging in again.
+
 ---
 
 ## Git Workflow
