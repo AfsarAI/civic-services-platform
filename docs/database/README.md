@@ -5,32 +5,55 @@ This folder contains the database schema, ERD, and migration history for the Civ
 ## Entity Relationship Diagram
 
 ```
-┌──────────┐       ┌──────────────────┐       ┌────────────────────┐
-│   Role   │       │      User        │       │     Complaint      │
-│──────────│       │──────────────────│       │────────────────────│
-│ id (PK)  │◄──────│ id (PK)          │──────►│ id (PK)            │
-│ name     │       │ username         │       │ title              │
-│ description│     │ email            │       │ description        │
-└──────────┘       │ password_hash    │       │ category           │
-                   │ role_id (FK)     │       │ status             │
-                   │ is_active        │       │ latitude           │
-                   │ created_at       │       │ longitude          │
-                   │ updated_at       │       │ citizen_id (FK)    │
-                   └──────────────────┘       │ created_at         │
-                                              │ updated_at         │
-                                              └────────────────────┘
-                                                        │
-                                              ┌─────────▼──────────┐
-                                              │ ComplaintAssignment │
-                                              │────────────────────│
-                                              │ id (PK)             │
-                                              │ complaint_id (FK)   │
-                                              │ worker_id (FK)      │
-                                              │ assigned_by (FK)    │
-                                              │ assigned_at         │
-                                              │ status              │
-                                              └────────────────────┘
+┌──────────┐    ┌──────────────────┐    ┌───────────────────────────┐
+│   Role   │    │      User        │    │        Complaint          │
+│──────────│    │──────────────────│    │───────────────────────────│
+│ id (PK)  │◄───│ id (PK)          │───►│ id (PK)                   │
+│ name     │    │ username         │    │ title                     │
+│ description│  │ email            │    │ description               │
+└──────────┘    │ password_hash    │    │ category                  │
+                │ first_name       │    │ status (pending→closed)   │
+                │ last_name        │    │ priority (low/med/high)   │
+                │ phone            │    │ latitude / longitude      │
+                │ role_id (FK)     │    │ address                   │
+                │ is_active        │    │ image_url                 │
+                │ created_at       │    │ citizen_id (FK → users)   │
+                │ updated_at       │    │ resolved_at               │
+                └──────────────────┘    │ created_at / updated_at   │
+                                        └──────────────┬────────────┘
+                                                       │
+              ┌────────────────────────────────────────┤
+              │                                        │
+┌─────────────▼──────────┐        ┌───────────────────▼──┐
+│   ComplaintAssignment  │        │       Feedback        │
+│────────────────────────│        │───────────────────────│
+│ id (PK)                │        │ id (PK)               │
+│ complaint_id (FK)      │        │ complaint_id (FK)     │
+│ worker_id (FK → users) │        │ citizen_id (FK)       │
+│ assigned_by (FK → user)│        │ rating (1–5)          │
+│ assigned_at            │        │ comment               │
+│ accepted_at            │        │ submitted_at          │
+└────────────────────────┘        └───────────────────────┘
+
+┌───────────────────────────┐     ┌─────────────────────────┐
+│       Notification        │     │        AuditLog         │
+│───────────────────────────│     │─────────────────────────│
+│ id (PK)                   │     │ id (PK)                 │
+│ user_id (FK → users)      │     │ user_id (FK)            │
+│ message                   │     │ action                  │
+│ type                      │     │ entity_type             │
+│ is_read                   │     │ entity_id               │
+│ created_at                │     │ timestamp               │
+└───────────────────────────┘     └─────────────────────────┘
 ```
+
+## Complaint Status Flow
+
+```
+pending → assigned → in_progress → resolved → closed
+                                 ↘ rejected  (admin can reject at any point)
+```
+
 
 ## Models
 

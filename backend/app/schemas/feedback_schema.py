@@ -17,8 +17,7 @@ class FeedbackSchema(Schema):
 
 
 class FeedbackCreateSchema(Schema):
-    """Schema for submitting feedback."""
+    """Schema for submitting feedback (complaint_id comes from URL, not body)."""
 
-    complaint_id = fields.Int(required=True)
     rating = fields.Int(required=True, validate=validate.Range(min=1, max=5))
     comment = fields.Str(validate=validate.Length(max=1000), allow_none=True)

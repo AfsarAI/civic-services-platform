@@ -1,31 +1,260 @@
 """
-Field Worker service — business logic placeholder.
+Field Worker service — business logic for field-worker-facing operations.
 """
+
+from datetime import datetime, timezone
+
+from app.extensions import db
+from app.models.complaint import Complaint
+from app.models.complaint_assignment import ComplaintAssignment
 
 
 class FieldWorkerService:
-    """Handles field-worker-facing business operations."""
+    """Handles assignment tracking and progress updates for field workers."""
 
-    def get_assignments(self, worker_id: int, page: int, per_page: int) -> dict:
-        """Retrieve assigned tasks for a worker. TODO: implement."""
-        raise NotImplementedError
+    # ── List assignments ──────────────────────────────────────────────────
+
+    def get_assignments(
+        self,
+        worker_id: int,
+        page: int = 1,
+        per_page: int = 20,
+        status: str = None,
+    ) -> dict:
+        """Return paginated assignments for this field worker.
+
+        Args:
+            worker_id: ID of the authenticated field worker.
+            page: 1-based page number.
+            per_page: Page size (capped at 100).
+            status: Optional status filter.
+        """
+        per_page = min(per_page, 100)
+        valid_statuses = [
+            ComplaintAssignment.STATUS_ASSIGNED,
+            ComplaintAssignment.STATUS_ACCEPTED,
+            ComplaintAssignment.STATUS_IN_PROGRESS,
+            ComplaintAssignment.STATUS_COMPLETED,
+            ComplaintAssignment.STATUS_REJECTED,
+        ]
+        query = ComplaintAssignment.query.filter_by(worker_id=worker_id)
+
+        if status:
+            if status not in valid_statuses:
+                raise ValueError(f"Invalid status '{status}'.")
+            query = query.filter_by(status=status)
+
+        query = query.order_by(ComplaintAssignment.assigned_at.desc())
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+        return {
+            "items": [self._serialize(a) for a in pagination.items],
+            "total": pagination.total,
+            "page": pagination.page,
+            "per_page": pagination.per_page,
+        }
+
+    # ── Get single assignment ─────────────────────────────────────────────
 
     def get_assignment(self, assignment_id: int, worker_id: int) -> dict:
-        """Retrieve a specific assignment. TODO: implement."""
-        raise NotImplementedError
+        """Return a single assignment owned by this field worker.
 
-    def update_progress(self, assignment_id: int, worker_id: int, data: dict) -> dict:
-        """Update repair progress. TODO: implement."""
-        raise NotImplementedError
+        Raises:
+            ValueError: If not found or not owned by this worker.
+        """
+        assignment = self._get_owned(assignment_id, worker_id)
+        return {"assignment": self._serialize(assignment, full=True)}
+
+    # ── Accept assignment ─────────────────────────────────────────────────
 
     def accept_assignment(self, assignment_id: int, worker_id: int) -> dict:
-        """Accept an assigned task. TODO: implement."""
-        raise NotImplementedError
+        """Accept an assigned task.
+
+        Transitions: assignment ``assigned`` → ``accepted``.
+        Also moves the complaint to ``in_progress``.
+
+        Raises:
+            ValueError: Business rule violations.
+        """
+        assignment = self._get_owned(assignment_id, worker_id)
+
+        if assignment.status != ComplaintAssignment.STATUS_ASSIGNED:
+            raise ValueError(
+                "Only assignments with status 'assigned' can be accepted. "
+                f"Current status: '{assignment.status}'."
+            )
+
+        assignment.status = ComplaintAssignment.STATUS_ACCEPTED
+        assignment.accepted_at = datetime.now(timezone.utc)
+
+        # Reflect on the complaint
+        complaint = assignment.complaint
+        if complaint and complaint.status == Complaint.STATUS_ASSIGNED:
+            complaint.status = Complaint.STATUS_IN_PROGRESS
+
+        db.session.commit()
+        return {"assignment": self._serialize(assignment, full=True)}
+
+    # ── Update progress ───────────────────────────────────────────────────
+
+    def update_progress(
+        self, assignment_id: int, worker_id: int, data: dict
+    ) -> dict:
+        """Update assignment status and/or notes.
+
+        Allowed status transitions via this endpoint:
+        - ``accepted`` → ``in_progress``
+        - ``accepted`` or ``in_progress`` → ``rejected``
+
+        When rejecting, the complaint is returned to ``pending`` for
+        re-assignment by an administrator.
+
+        Raises:
+            ValueError: Business rule violations.
+        """
+        assignment = self._get_owned(assignment_id, worker_id)
+        new_status = data["status"]
+
+        valid_from = {
+            "in_progress": [ComplaintAssignment.STATUS_ACCEPTED],
+            "rejected": [
+                ComplaintAssignment.STATUS_ASSIGNED,
+                ComplaintAssignment.STATUS_ACCEPTED,
+                ComplaintAssignment.STATUS_IN_PROGRESS,
+            ],
+        }
+
+        if assignment.status not in valid_from[new_status]:
+            raise ValueError(
+                f"Cannot transition from '{assignment.status}' to '{new_status}'."
+            )
+
+        assignment.status = new_status
+        if "notes" in data and data["notes"] is not None:
+            assignment.notes = data["notes"]
+
+        complaint = assignment.complaint
+        if new_status == "rejected" and complaint:
+            complaint.status = Complaint.STATUS_PENDING
+
+        db.session.commit()
+        return {"assignment": self._serialize(assignment, full=True)}
+
+    # ── Complete assignment ───────────────────────────────────────────────
 
     def complete_assignment(self, assignment_id: int, worker_id: int) -> dict:
-        """Mark task as completed. TODO: implement."""
-        raise NotImplementedError
+        """Mark an assignment as completed.
+
+        Transitions: ``accepted`` or ``in_progress`` → ``completed``.
+        Sets ``completed_at``.  The complaint status remains ``in_progress``
+        until an administrator marks it as resolved.
+
+        Raises:
+            ValueError: Business rule violations.
+        """
+        assignment = self._get_owned(assignment_id, worker_id)
+
+        if assignment.status not in (
+            ComplaintAssignment.STATUS_ACCEPTED,
+            ComplaintAssignment.STATUS_IN_PROGRESS,
+        ):
+            raise ValueError(
+                "Only accepted or in-progress assignments can be completed. "
+                f"Current status: '{assignment.status}'."
+            )
+
+        assignment.status = ComplaintAssignment.STATUS_COMPLETED
+        assignment.completed_at = datetime.now(timezone.utc)
+
+        db.session.commit()
+        return {"assignment": self._serialize(assignment, full=True)}
+
+    # ── Dashboard ─────────────────────────────────────────────────────────
 
     def get_dashboard_summary(self, worker_id: int) -> dict:
-        """Return dashboard statistics. TODO: implement."""
-        raise NotImplementedError
+        """Return assignment counts by status for this field worker."""
+        base = ComplaintAssignment.query.filter_by(worker_id=worker_id)
+
+        statuses = [
+            ComplaintAssignment.STATUS_ASSIGNED,
+            ComplaintAssignment.STATUS_ACCEPTED,
+            ComplaintAssignment.STATUS_IN_PROGRESS,
+            ComplaintAssignment.STATUS_COMPLETED,
+            ComplaintAssignment.STATUS_REJECTED,
+        ]
+        counts = {s: base.filter_by(status=s).count() for s in statuses}
+        total = base.count()
+        active = base.filter(
+            ComplaintAssignment.status.in_([
+                ComplaintAssignment.STATUS_ASSIGNED,
+                ComplaintAssignment.STATUS_ACCEPTED,
+                ComplaintAssignment.STATUS_IN_PROGRESS,
+            ])
+        ).count()
+
+        recent = (
+            base.order_by(ComplaintAssignment.assigned_at.desc()).limit(5).all()
+        )
+
+        return {
+            "total_assignments": total,
+            "active_assignments": active,
+            "by_status": counts,
+            "recent_assignments": [self._serialize(a) for a in recent],
+        }
+
+    # ── Helpers ───────────────────────────────────────────────────────────
+
+    def _get_owned(
+        self, assignment_id: int, worker_id: int
+    ) -> ComplaintAssignment:
+        """Fetch an assignment and verify ownership.
+
+        Raises:
+            ValueError: If not found or not owned by this worker.
+        """
+        assignment = ComplaintAssignment.query.get(assignment_id)
+        if not assignment:
+            raise ValueError("Assignment not found.")
+        if assignment.worker_id != worker_id:
+            raise ValueError(
+                "You do not have permission to access this assignment."
+            )
+        return assignment
+
+    @staticmethod
+    def _serialize(assignment: ComplaintAssignment, full: bool = False) -> dict:
+        """Serialise a ComplaintAssignment."""
+        data = {
+            "id": assignment.id,
+            "complaint_id": assignment.complaint_id,
+            "worker_id": assignment.worker_id,
+            "assigned_by_id": assignment.assigned_by_id,
+            "status": assignment.status,
+            "notes": assignment.notes,
+            "assigned_at": assignment.assigned_at.isoformat(),
+            "accepted_at": (
+                assignment.accepted_at.isoformat()
+                if assignment.accepted_at else None
+            ),
+            "completed_at": (
+                assignment.completed_at.isoformat()
+                if assignment.completed_at else None
+            ),
+        }
+        if full and assignment.complaint:
+            c = assignment.complaint
+            data["complaint"] = {
+                "id": c.id,
+                "title": c.title,
+                "description": c.description,
+                "category": c.category,
+                "status": c.status,
+                "priority": c.priority,
+                "address": c.address,
+                "latitude": c.latitude,
+                "longitude": c.longitude,
+                "image_url": c.image_url,
+                "created_at": c.created_at.isoformat(),
+            }
+        return data
