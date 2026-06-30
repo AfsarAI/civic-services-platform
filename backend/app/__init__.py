@@ -23,6 +23,9 @@ def create_app(config_name: str = "development") -> Flask:
     # Register API blueprints
     _register_blueprints(app)
 
+    # Register CLI commands
+    _register_commands(app)
+
     # Register error handlers
     _register_error_handlers(app)
 
@@ -38,12 +41,22 @@ def _init_extensions(app: Flask) -> None:
 
     CORS(app, origins=app.config.get("CORS_ORIGINS", ["*"]))
 
+    # Import models here so SQLAlchemy (and Alembic) can discover them
+    import app.models  # noqa: F401
+
 
 def _register_blueprints(app: Flask) -> None:
     """Register all API blueprints."""
     from app.api import api_bp
 
     app.register_blueprint(api_bp, url_prefix="/api/v1")
+
+
+def _register_commands(app: Flask) -> None:
+    """Register Flask CLI commands."""
+    from app.commands import seed_command
+
+    app.cli.add_command(seed_command)
 
 
 def _register_error_handlers(app: Flask) -> None:
