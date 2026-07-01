@@ -14,15 +14,31 @@ export const useAuthStore = defineStore('auth', () => {
   const fullName = computed(() => user.value?.full_name ?? '')
 
   // ── Actions ────────────────────────────────────────────────────────────
-  async function login(email, password) {
-    // TODO: call authService.login(email, password)
-    throw new Error('Login not yet implemented')
-  }
+async function login(email, password) {
+  try {
+    const response = await authService.login(email, password)
 
-  async function register(userData) {
-    // TODO: call authService.register(userData)
-    throw new Error('Register not yet implemented')
+    _setSession(response.tokens, response.user)
+
+    return response
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message || 'Invalid email or password.'
+    )
   }
+}
+
+async function register(userData) {
+  try {
+    const response = await authService.register(userData)
+
+    return response
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message || 'Registration failed.'
+    )
+  }
+}
 
   async function logout() {
     // TODO: call authService.logout()

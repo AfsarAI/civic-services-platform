@@ -11,7 +11,12 @@ const router = createRouter({
       component: () => import('@/pages/Login.vue'),
       meta: { requiresGuest: true },
     },
-
+    {
+  path: '/register',
+  name: 'register',
+  component: () => import('@/pages/Register.vue'),
+  meta: { requiresGuest: true },
+    },
     // ── Shared (authenticated) ──────────────────────────────────────────
     {
       path: '/',
