@@ -26,6 +26,18 @@ Authorization: Bearer <access_token>
 
 Obtain a token via `POST /api/v1/auth/login`.
 
+### Admin Login Flow (Implemented)
+
+1. `POST /api/v1/auth/login` validates credentials and returns `access_token`, `refresh_token`, and `user`.
+2. Frontend creates an authenticated session by storing:
+   - `access_token`
+   - `refresh_token`
+   - `user`
+3. Administrator users are redirected to `/admin/dashboard` after successful login.
+4. Admin APIs (`/api/v1/admin/*`) enforce role checks with `require_admin`.
+5. Expired access tokens are renewed through `POST /api/v1/auth/refresh`.
+6. `POST /api/v1/auth/logout` ends the session client-side by clearing stored tokens and profile.
+
 ## Namespaces
 
 | Namespace | Base Path | Description |

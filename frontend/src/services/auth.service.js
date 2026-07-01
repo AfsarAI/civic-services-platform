@@ -4,7 +4,7 @@
 
 import api from './api'
 
-const authService = {
+class AuthService {
   /**
    * Authenticate a user and return tokens.
    * @param {string} email
@@ -13,7 +13,7 @@ const authService = {
   async login(email, password) {
     const response = await api.post('/auth/login', { email, password })
     return response.data
-  },
+  }
 
   /**
    * Register a new user account.
@@ -22,7 +22,7 @@ const authService = {
   async register(userData) {
     const response = await api.post('/auth/register', userData)
     return response.data
-  },
+  }
 
   /**
    * Refresh the access token.
@@ -30,7 +30,7 @@ const authService = {
   async refresh() {
     const response = await api.post('/auth/refresh')
     return response.data
-  },
+  }
 
   /**
    * Logout — invalidate the current token.
@@ -38,7 +38,7 @@ const authService = {
   async logout() {
     const response = await api.post('/auth/logout')
     return response.data
-  },
+  }
 
   /**
    * Get the current authenticated user's profile.
@@ -46,7 +46,9 @@ const authService = {
   async me() {
     const response = await api.get('/auth/me')
     return response.data
-  },
+  }
 }
+
+const authService = new AuthService()
 
 export default authService

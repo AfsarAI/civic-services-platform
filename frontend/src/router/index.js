@@ -111,14 +111,18 @@ const router = createRouter({
 
 // ── Navigation Guards ────────────────────────────────────────────────────────
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+  await authStore.hydrateSession()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return next({ name: 'login', query: { redirect: to.fullPath } })
   }
 
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    if (authStore.userRole === 'administrator') return next({ name: 'admin-dashboard' })
+    if (authStore.userRole === 'citizen') return next({ name: 'citizen-dashboard' })
+    if (authStore.userRole === 'field_worker') return next({ name: 'fieldworker-dashboard' })
     return next({ name: 'dashboard' })
   }
 

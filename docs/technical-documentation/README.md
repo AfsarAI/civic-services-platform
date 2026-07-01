@@ -69,3 +69,33 @@ This folder contains technical documentation for developers working on the Civic
 - [ ] Add frontend component development guide
 - [ ] Document error handling strategy
 - [ ] Document logging strategy
+
+## Authentication Architecture (Current)
+
+### Backend (OOP service layer)
+
+- `AuthService` class (`backend/app/api/auth/service.py`) handles:
+  - credential verification
+  - JWT access/refresh token issuance
+  - current-user retrieval
+- `auth/controller.py` remains HTTP-focused and delegates business logic to `AuthService`.
+- RBAC is centralized in decorators (`require_admin`, `require_citizen`, `require_field_worker`).
+
+### Frontend (store + service layering)
+
+- `AuthService` class (`frontend/src/services/auth.service.js`) encapsulates auth API calls.
+- `useAuthStore` (`frontend/src/stores/auth.js`) manages session state:
+  - token persistence
+  - user profile persistence
+  - session hydration (`hydrateSession`) on first navigation
+- Router guards (`frontend/src/router/index.js`) perform:
+  - auth checks
+  - guest checks
+  - role checks
+  - role-aware post-login routing
+
+### Session Data Model
+
+- `access_token` (JWT)
+- `refresh_token` (JWT)
+- `user` (`id`, `email`, `role`, `full_name`, etc.)
