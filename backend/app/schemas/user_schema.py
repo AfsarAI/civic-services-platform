@@ -17,6 +17,10 @@ class UserSchema(Schema):
     phone = fields.Str(dump_only=True, allow_none=True)
     is_active = fields.Bool(dump_only=True)
     role_id = fields.Int(dump_only=True)
+    role = fields.Str(dump_only=True)
+    admin_level = fields.Str(dump_only=True, allow_none=True)
+    city_id = fields.Int(dump_only=True, allow_none=True)
+    city_name = fields.Str(dump_only=True, allow_none=True)
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
 
@@ -40,3 +44,27 @@ class UserUpdateSchema(Schema):
     last_name = fields.Str(validate=validate.Length(min=1, max=80))
     phone = fields.Str(validate=validate.Length(max=20), allow_none=True)
     is_active = fields.Bool()
+
+
+class MunicipalAdminCreateSchema(Schema):
+    """Schema for creating a municipal administrator."""
+
+    username = fields.Str(required=True, validate=validate.Length(min=3, max=80))
+    email = fields.Email(required=True)
+    password = fields.Str(required=True, validate=validate.Length(min=8), load_only=True)
+    first_name = fields.Str(required=True, validate=validate.Length(min=1, max=80))
+    last_name = fields.Str(required=True, validate=validate.Length(min=1, max=80))
+    phone = fields.Str(validate=validate.Length(max=20), allow_none=True)
+    city_name = fields.Str(required=True, validate=validate.Length(min=2, max=120))
+    city_state = fields.Str(validate=validate.Length(max=120), allow_none=True)
+
+
+class MunicipalAdminUpdateSchema(Schema):
+    """Schema for updating a municipal administrator."""
+
+    first_name = fields.Str(validate=validate.Length(min=1, max=80))
+    last_name = fields.Str(validate=validate.Length(min=1, max=80))
+    phone = fields.Str(validate=validate.Length(max=20), allow_none=True)
+    is_active = fields.Bool()
+    city_name = fields.Str(validate=validate.Length(min=2, max=120))
+    city_state = fields.Str(validate=validate.Length(max=120), allow_none=True)

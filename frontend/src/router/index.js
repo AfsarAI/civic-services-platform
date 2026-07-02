@@ -80,7 +80,7 @@ const router = createRouter({
               path: 'reports',
               name: 'admin-reports',
               component: () => import('@/pages/administrator/Reports.vue'),
-              meta: { requiresAuth: true, role: 'administrator' },
+              meta: { requiresAuth: true, role: 'administrator', adminLevel: 'system' },
             },
           ],
         },
@@ -111,19 +111,27 @@ const router = createRouter({
 
 // ── Navigation Guards ────────────────────────────────────────────────────────
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+  await authStore.hydrateSession()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return next({ name: 'login', query: { redirect: to.fullPath } })
   }
 
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    if (authStore.userRole === 'administrator') return next({ name: 'admin-dashboard' })
+    if (authStore.userRole === 'citizen') return next({ name: 'citizen-dashboard' })
+    if (authStore.userRole === 'field_worker') return next({ name: 'fieldworker-dashboard' })
     return next({ name: 'dashboard' })
   }
 
   if (to.meta.role && authStore.userRole !== to.meta.role) {
     return next({ name: 'dashboard' })
+  }
+
+  if (to.meta.adminLevel && authStore.adminLevel !== to.meta.adminLevel) {
+    return next({ name: 'admin-dashboard' })
   }
 
   next()

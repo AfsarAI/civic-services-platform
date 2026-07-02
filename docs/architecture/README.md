@@ -41,6 +41,29 @@ This folder contains architectural decision records (ADRs) and system design dia
 | Database | SQLite | Simple dev setup, upgradeable |
 | State Management | Pinia | Official Vue recommendation |
 
+## Administrator Hierarchy Design
+
+The project keeps exactly three coarse application roles:
+- `citizen`
+- `administrator`
+- `field_worker`
+
+Administrator subtype separation is implemented with composition, not a new role:
+- `users` holds identity and coarse role
+- `administrator_profiles` holds subtype and scope
+- `cities` holds the municipal boundary
+
+Why this design was chosen:
+- keeps the existing login flow unchanged
+- avoids introducing a new `SystemAdmin` role
+- keeps admin-only state out of the base `roles` table
+- scales better than a single boolean such as `is_system_admin`
+
+Subtype rules:
+- `system` administrators have no city and can manage municipal admins globally
+- `municipal` administrators must reference exactly one city
+- system-only permissions are enforced in backend decorators and controllers
+
 ## TODO
 
 - [ ] Add C4 Context diagram

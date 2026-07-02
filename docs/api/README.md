@@ -26,6 +26,39 @@ Authorization: Bearer <access_token>
 
 Obtain a token via `POST /api/v1/auth/login`.
 
+### Admin Login Flow (Implemented)
+
+1. `POST /api/v1/auth/login` validates credentials and returns `access_token`, `refresh_token`, and `user`.
+2. Frontend creates an authenticated session by storing:
+   - `access_token`
+   - `refresh_token`
+   - `user`
+3. Administrator users are redirected to `/admin/dashboard` after successful login.
+4. Admin APIs enforce:
+   - coarse role checks with `require_admin`
+   - subtype checks with `require_system_admin` where required
+5. Expired access tokens are renewed through `POST /api/v1/auth/refresh`.
+6. `POST /api/v1/auth/logout` ends the session client-side by clearing stored tokens and profile.
+
+### Administrator Hierarchy Payload
+
+The login contract is unchanged: both admin subtypes still return `role: "administrator"`.
+
+Additional fields now returned in `user` and JWT claims:
+- `admin_level`: `system` or `municipal`
+- `city_id`: nullable, present for municipal administrators
+- `city_name`: nullable, present for municipal administrators
+
+### New System Administrator Endpoints
+
+- `GET /api/v1/admin/cities`
+- `GET /api/v1/admin/municipal-administrators`
+- `POST /api/v1/admin/municipal-administrators`
+- `GET /api/v1/admin/municipal-administrators/<user_id>`
+- `PUT /api/v1/admin/municipal-administrators/<user_id>`
+
+These endpoints are restricted to the System Administrator subtype.
+
 ## Namespaces
 
 | Namespace | Base Path | Description |

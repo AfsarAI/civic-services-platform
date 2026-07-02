@@ -11,6 +11,7 @@ from flask import current_app
 from flask.cli import with_appcontext
 
 from app.extensions import db
+from app.models.administrator_profile import AdministratorProfile
 from app.models.role import Role
 from app.models.user import User
 
@@ -33,12 +34,12 @@ ROLES = [
 @click.command("seed")
 @with_appcontext
 def seed_command():
-    """Seed the database with roles and a default admin user (idempotent)."""
+    """Seed the database with roles and a default system admin user (idempotent)."""
 
     click.echo("Seeding roles...")
     _seed_roles()
 
-    click.echo("Seeding admin user...")
+    click.echo("Seeding system administrator...")
     _seed_admin()
 
     click.echo("Done. Database seeded successfully.")
@@ -58,7 +59,7 @@ def _seed_roles():
 
 
 def _seed_admin():
-    """Create the default admin user from environment variables."""
+    """Create the default system administrator from environment variables."""
     email = os.environ.get("ADMIN_EMAIL", "admin@civicservices.local")
     password = os.environ.get("ADMIN_PASSWORD", "Admin@123456")
     first_name = os.environ.get("ADMIN_FIRST_NAME", "System")
@@ -74,7 +75,20 @@ def _seed_admin():
 
     existing = User.query.filter_by(email=email).first()
     if existing:
-        click.echo(f"  Admin user '{email}' already exists — skipped.")
+        if existing.admin_profile:
+            click.echo(f"  System administrator '{email}' already exists — skipped.")
+            return
+
+        db.session.add(
+            AdministratorProfile(
+                user_id=existing.id,
+                admin_level=AdministratorProfile.SYSTEM,
+                city_id=None,
+                created_by_id=None,
+            )
+        )
+        db.session.commit()
+        click.echo(f"  Added missing system administrator profile for: {email}")
         return
 
     admin_role = Role.query.filter_by(name=Role.ADMINISTRATOR).first()
@@ -92,8 +106,18 @@ def _seed_admin():
     )
     admin.set_password(password)
     db.session.add(admin)
+    db.session.flush()
+
+    db.session.add(
+        AdministratorProfile(
+            user_id=admin.id,
+            admin_level=AdministratorProfile.SYSTEM,
+            city_id=None,
+            created_by_id=None,
+        )
+    )
     db.session.commit()
 
-    click.echo(f"  Created admin user: {email}")
+    click.echo(f"  Created system administrator: {email}")
     if current_app.debug:
         click.echo(f"  Password: {password}  (shown only in DEBUG mode)")

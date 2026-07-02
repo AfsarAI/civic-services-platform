@@ -1,0 +1,115 @@
+"""
+Integration tests for administrator hierarchy endpoints.
+"""
+
+from app.extensions import db
+from app.models.administrator_profile import AdministratorProfile
+from app.models.city import City
+from app.models.role import Role
+from app.models.user import User
+
+
+class TestAdminHierarchyEndpoints:
+    """Integration tests for system and municipal administrator permissions."""
+
+    @staticmethod
+    def _ensure_admin(email: str, admin_level: str, city_name: str = None) -> User:
+        role = Role.query.filter_by(name=Role.ADMINISTRATOR).first()
+        user = User.query.filter_by(email=email).first()
+        if user:
+            return user
+
+        city = None
+        if city_name:
+            city = City.query.filter_by(name=city_name).first()
+            if not city:
+                city = City(name=city_name, is_active=True)
+                db.session.add(city)
+                db.session.flush()
+
+        user = User(
+            username=email.split("@")[0],
+            email=email,
+            first_name="Admin",
+            last_name=admin_level.title(),
+            role_id=role.id,
+            is_active=True,
+        )
+        user.set_password("Admin@123456")
+        db.session.add(user)
+        db.session.flush()
+        db.session.add(
+            AdministratorProfile(
+                user_id=user.id,
+                admin_level=admin_level,
+                city_id=city.id if city else None,
+                created_by_id=None,
+            )
+        )
+        db.session.commit()
+        return user
+
+    @staticmethod
+    def _login(client, email: str, password: str = "Admin@123456") -> str:
+        response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+        return response.get_json()["data"]["access_token"]
+
+    def test_system_admin_can_create_municipal_administrator(self, app, client):
+        with app.app_context():
+            self._ensure_admin("sysadmin@civicservices.local", AdministratorProfile.SYSTEM)
+
+        token = self._login(client, "sysadmin@civicservices.local")
+        response = client.post(
+            "/api/v1/admin/municipal-administrators",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "username": "lucknow_admin",
+                "email": "lucknow@civicservices.local",
+                "password": "Municipal@123",
+                "first_name": "Lucknow",
+                "last_name": "Admin",
+                "city_name": "Lucknow",
+                "city_state": "Uttar Pradesh",
+            },
+        )
+        payload = response.get_json()
+
+        assert response.status_code == 201
+        assert payload["success"] is True
+        assert payload["data"]["user"]["admin_level"] == AdministratorProfile.MUNICIPAL
+        assert payload["data"]["user"]["city_name"] == "Lucknow"
+
+    def test_municipal_admin_cannot_access_system_admin_user_list(self, app, client):
+        with app.app_context():
+            self._ensure_admin(
+                "municipal2@civicservices.local",
+                AdministratorProfile.MUNICIPAL,
+                city_name="Delhi",
+            )
+
+        token = self._login(client, "municipal2@civicservices.local")
+        response = client.get(
+            "/api/v1/admin/users",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert response.status_code == 403
+        assert "access denied" in response.get_json()["message"].lower()
+
+    def test_system_admin_can_list_cities(self, app, client):
+        with app.app_context():
+            self._ensure_admin("sysadmin2@civicservices.local", AdministratorProfile.SYSTEM)
+            if not City.query.filter_by(name="Mumbai").first():
+                db.session.add(City(name="Mumbai", is_active=True))
+                db.session.commit()
+
+        token = self._login(client, "sysadmin2@civicservices.local")
+        response = client.get(
+            "/api/v1/admin/cities",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        payload = response.get_json()
+
+        assert response.status_code == 200
+        assert payload["success"] is True
+        assert any(city["name"] == "Mumbai" for city in payload["data"]["cities"])
