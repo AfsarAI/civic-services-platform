@@ -45,11 +45,12 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 const form = reactive({ email: '', password: '' })
 const isLoading = ref(false)
@@ -59,8 +60,27 @@ async function handleLogin() {
   isLoading.value = true
   error.value = null
   try {
-    await authStore.login(form.email, form.password)
-    router.push({ name: 'dashboard' })
+    const loggedInUser = await authStore.login(form.email, form.password)
+    const redirectTarget = route.query.redirect
+
+    if (typeof redirectTarget === 'string' && redirectTarget.startsWith('/')) {
+      await router.push(redirectTarget)
+      return
+    }
+
+    if (loggedInUser?.role === 'administrator') {
+      await router.push({ name: 'admin-dashboard' })
+      return
+    }
+    if (loggedInUser?.role === 'citizen') {
+      await router.push({ name: 'citizen-dashboard' })
+      return
+    }
+    if (loggedInUser?.role === 'field_worker') {
+      await router.push({ name: 'fieldworker-dashboard' })
+      return
+    }
+    await router.push({ name: 'dashboard' })
   } catch (err) {
     error.value = err.message || 'Login failed. Please check your credentials.'
   } finally {
