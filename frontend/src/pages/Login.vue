@@ -1,63 +1,108 @@
 <template>
-  <div class="card w-full">
-    <div class="text-center mb-6">
-      <h2 class="text-2xl font-bold text-gray-900">Sign In</h2>
-      <p class="text-gray-500 text-sm mt-1">Enter your credentials to continue</p>
+  <AppCard padding="lg">
+    <div class="text-center">
+      <h1 class="text-3xl font-bold text-slate-900">
+        Welcome Back
+      </h1>
+
+      <p class="mt-2 text-sm text-slate-500">
+        Sign in to continue to Civic Services Platform
+      </p>
     </div>
 
-    <form @submit.prevent="handleLogin" class="space-y-4">
-      <div>
-        <label for="email" class="form-label">Email</label>
-        <input
-          id="email"
-          v-model="form.email"
-          type="email"
-          class="form-input"
-          placeholder="you@example.com"
-          required
-          autocomplete="email"
-        />
+    <form class="mt-8 space-y-5" @submit.prevent="handleLogin">
+      <AppInput
+        id="email"
+        v-model="form.email"
+        label="Email Address"
+        type="email"
+        placeholder="you@example.com"
+        autocomplete="email"
+        required
+      />
+
+      <AppInput
+        id="password"
+        v-model="form.password"
+        label="Password"
+        type="password"
+        placeholder="••••••••"
+        autocomplete="current-password"
+        required
+      />
+
+      <div class="flex items-center justify-between text-sm">
+        <label class="flex items-center gap-2 text-slate-600">
+          <input type="checkbox" class="rounded border-slate-300">
+          Remember me
+        </label>
+
+        <a href="#" class="font-medium text-primary-600 hover:text-primary-700">
+          Forgot Password?
+        </a>
       </div>
 
-      <div>
-        <label for="password" class="form-label">Password</label>
-        <input
-          id="password"
-          v-model="form.password"
-          type="password"
-          class="form-input"
-          placeholder="••••••••"
-          required
-          autocomplete="current-password"
-        />
-      </div>
-
-      <div v-if="error" class="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+      <div
+        v-if="error"
+        class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600"
+      >
         {{ error }}
       </div>
 
-      <button type="submit" class="btn-primary w-full" :disabled="isLoading">
-        {{ isLoading ? 'Signing in…' : 'Sign In' }}
-      </button>
+      <AppButton type="submit" full-width :loading="isLoading">
+        Sign In
+      </AppButton>
     </form>
-  </div>
+
+    <div class="my-8 flex items-center">
+      <div class="h-px flex-1 bg-slate-200"></div>
+      <span class="px-4 text-sm text-slate-400">OR</span>
+      <div class="h-px flex-1 bg-slate-200"></div>
+    </div>
+
+    <div class="space-y-3">
+      <AppButton variant="secondary" full-width>
+        Continue with Google
+      </AppButton>
+
+      <AppButton variant="secondary" full-width>
+        Continue with Microsoft
+      </AppButton>
+    </div>
+
+    <p class="mt-8 text-center text-sm text-slate-500">
+      Don't have an account?
+      <a href="#" class="font-semibold text-primary-600 hover:text-primary-700">
+        Register
+      </a>
+    </p>
+  </AppCard>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
-const authStore = useAuthStore()
-const router = useRouter()
+import AppButton from '@/components/ui/AppButton.vue'
+import AppCard from '@/components/ui/AppCard.vue'
+import AppInput from '@/components/ui/AppInput.vue'
 
-const form = reactive({ email: '', password: '' })
+const router = useRouter()
+const authStore = useAuthStore()
+
+const form = reactive({
+  email: '',
+  password: '',
+})
+
 const isLoading = ref(false)
 const error = ref(null)
 
 async function handleLogin() {
   isLoading.value = true
   error.value = null
+
   try {
     await authStore.login(form.email, form.password)
     router.push({ name: 'dashboard' })
