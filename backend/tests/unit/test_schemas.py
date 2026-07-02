@@ -4,7 +4,7 @@ Unit tests for Marshmallow schemas.
 
 import pytest
 from marshmallow import ValidationError
-from app.schemas.user_schema import UserCreateSchema
+from app.schemas.user_schema import UserCreateSchema, MunicipalAdminCreateSchema
 from app.schemas.complaint_schema import ComplaintCreateSchema
 from app.schemas.feedback_schema import FeedbackCreateSchema
 
@@ -68,3 +68,30 @@ class TestFeedbackCreateSchema:
         schema = FeedbackCreateSchema()
         result = schema.load({"rating": 5, "comment": "Great service!"})
         assert result["rating"] == 5
+
+
+class TestMunicipalAdminCreateSchema:
+    """Unit tests for MunicipalAdminCreateSchema."""
+
+    def test_valid_data_passes(self):
+        schema = MunicipalAdminCreateSchema()
+        result = schema.load({
+            "username": "municipal1",
+            "email": "municipal@example.com",
+            "password": "Password123",
+            "first_name": "Municipal",
+            "last_name": "Admin",
+            "city_name": "Lucknow",
+        })
+        assert result["city_name"] == "Lucknow"
+
+    def test_city_name_required(self):
+        schema = MunicipalAdminCreateSchema()
+        with pytest.raises(ValidationError):
+            schema.load({
+                "username": "municipal1",
+                "email": "municipal@example.com",
+                "password": "Password123",
+                "first_name": "Municipal",
+                "last_name": "Admin",
+            })

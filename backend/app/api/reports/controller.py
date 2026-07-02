@@ -9,7 +9,7 @@ from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required
 
 from app.api.reports.service import ReportsService
-from app.utils.decorators import require_admin
+from app.utils.decorators import require_system_admin
 from app.utils.responses import success_response, error_response
 
 ns = Namespace("reports", description="Reports and analytics", path="/reports")
@@ -33,7 +33,7 @@ class ComplaintSummaryReport(Resource):
     @ns.response(200, "Complaint summary", _envelope)
     @ns.response(403, "Forbidden", _envelope)
     @jwt_required()
-    @require_admin
+    @require_system_admin
     def get(self):
         """Overall complaint statistics: totals, status breakdown, avg resolution time (TPS-85)."""
         data = _svc.get_complaint_summary()
@@ -45,7 +45,7 @@ class ComplaintsByStatusReport(Resource):
 
     @ns.response(200, "Complaints by status", _envelope)
     @jwt_required()
-    @require_admin
+    @require_system_admin
     def get(self):
         """Complaint counts and percentages grouped by status (TPS-96)."""
         data = _svc.get_complaints_by_status()
@@ -57,7 +57,7 @@ class ComplaintsByCategoryReport(Resource):
 
     @ns.response(200, "Complaints by category", _envelope)
     @jwt_required()
-    @require_admin
+    @require_system_admin
     def get(self):
         """Complaint counts and percentages grouped by category (TPS-97)."""
         data = _svc.get_complaints_by_category()
@@ -70,7 +70,7 @@ class ComplaintTrendsReport(Resource):
     @ns.response(200, "Complaint trends", _envelope)
     @ns.response(400, "Invalid period", _envelope)
     @jwt_required()
-    @require_admin
+    @require_system_admin
     def get(self):
         """Complaint submission trends over time (TPS-98).
 
@@ -89,7 +89,7 @@ class WorkerPerformanceReport(Resource):
 
     @ns.response(200, "Worker performance metrics", _envelope)
     @jwt_required()
-    @require_admin
+    @require_system_admin
     def get(self):
         """Field worker performance: assignment counts, completion rate, avg time."""
         data = _svc.get_worker_performance()

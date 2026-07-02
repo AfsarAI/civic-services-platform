@@ -14,17 +14,24 @@ The platform has exactly **3 user roles** (per Milestone 1 Report):
 - Provide feedback and a rating after a complaint is resolved
 - View full complaint history
 
-### Administrator *(consolidated role)*
-Covers municipal administration, senior management, and system administration.
-- Log in with admin credentials
-- View all submitted complaints (filterable by status, priority)
-- Prioritize complaints (low / medium / high / critical)
-- Assign complaints to field workers
-- Monitor complaint progress across all assignments
-- Verify completed repairs and close complaints
-- Generate reports and view analytics / performance metrics
-- Manage user accounts (create, activate, deactivate)
-- Assign roles and control platform access
+### Administrator
+
+The platform still uses one administrator login flow, but there are now two administrator levels.
+
+#### System Administrator
+- Exists by default after backend seeding
+- Logs in through the normal admin login form
+- Creates Municipal Administrators
+- Manages and disables Municipal Administrators
+- Views all cities
+- Accesses global reports and user-management features
+
+#### Municipal Administrator
+- Cannot self-register
+- Receives credentials from the System Administrator
+- Belongs to exactly one city
+- Logs in through the same admin login form
+- Sees the shared administrator dashboard with city-scoped identity information
 
 ### Field Worker
 - Log in with field worker credentials

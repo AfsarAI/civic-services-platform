@@ -1,7 +1,9 @@
 <template>
   <div>
     <h1 class="text-2xl font-bold text-gray-900 mb-2">Reports & Analytics</h1>
-    <p class="text-gray-500 text-sm mb-6">Statistical overview of civic complaints and resolutions.</p>
+    <p class="text-gray-500 text-sm mb-6">
+      Platform-wide analytics available only to the System Administrator.
+    </p>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div class="card">

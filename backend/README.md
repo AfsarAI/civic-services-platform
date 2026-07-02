@@ -22,7 +22,7 @@ cp .env.example .env
 # 5. Apply DB migrations (creates all tables in instance/civic.db)
 FLASK_APP=app.py flask db upgrade
 
-# 6. Seed roles + default admin user (idempotent — safe to re-run)
+# 6. Seed roles + default system administrator (idempotent — safe to re-run)
 FLASK_APP=app.py flask seed
 
 # 7. Run the development server
@@ -32,7 +32,27 @@ FLASK_APP=app.py FLASK_ENV=development flask run
 **Swagger UI** → `http://localhost:5000/api/v1/docs`
 
 > `flask seed` creates roles (`citizen`, `field_worker`, `administrator`) and a default
-> admin account from your `.env` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`). Safe to re-run.
+> **System Administrator** account from your `.env` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`).
+> Safe to re-run.
+
+## Administrator Hierarchy
+
+The backend does **not** introduce a fourth role such as `system_admin`.
+
+Instead:
+- `users` still stores the coarse application role
+- `administrator_profiles` stores the administrator subtype
+- `cities` stores the city for municipal administrators
+
+Current administrator subtypes:
+- `system`: global platform administration
+- `municipal`: administrator assigned to exactly one city
+
+Auth contract remains unchanged:
+- one login endpoint: `POST /api/v1/auth/login`
+- email/password authentication
+- both admin subtypes are returned with `role: "administrator"`
+- extra user metadata now includes `admin_level`, `city_id`, and `city_name`
 
 ## Structure
 

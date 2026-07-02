@@ -81,6 +81,8 @@ class AuthService:
         additional_claims = {
             "role": user.role.name,
             "email": user.email,
+            "admin_level": user.admin_level,
+            "city_id": user.admin_city_id,
         }
 
         access_token = create_access_token(
@@ -120,6 +122,8 @@ class AuthService:
         additional_claims = {
             "role": user.role.name,
             "email": user.email,
+            "admin_level": user.admin_level,
+            "city_id": user.admin_city_id,
         }
 
         access_token = create_access_token(
@@ -163,6 +167,9 @@ class AuthService:
             "full_name": user.full_name,
             "phone": user.phone,
             "role": user.role.name,
+            "admin_level": user.admin_level,
+            "city_id": user.admin_city_id,
+            "city_name": user.admin_city_name,
             "is_active": user.is_active,
             "created_at": user.created_at.isoformat() if user.created_at else None,
         }

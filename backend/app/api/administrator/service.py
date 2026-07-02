@@ -4,7 +4,11 @@ Administrator service — business logic for admin-facing operations.
 
 from datetime import datetime, timezone
 
+from sqlalchemy import func
+
 from app.extensions import db
+from app.models.administrator_profile import AdministratorProfile
+from app.models.city import City
 from app.models.complaint import Complaint
 from app.models.complaint_assignment import ComplaintAssignment
 from app.models.role import Role
@@ -12,7 +16,7 @@ from app.models.user import User
 
 
 class AdminService:
-    """Handles complaint management, user management, and platform statistics."""
+    """Handles complaint management, admin hierarchy, and platform statistics."""
 
     # ── Complaints ────────────────────────────────────────────────────────
 
@@ -51,24 +55,14 @@ class AdminService:
         }
 
     def get_complaint(self, complaint_id: int) -> dict:
-        """Return full complaint details including assignment and feedback.
-
-        Raises:
-            ValueError: If complaint not found.
-        """
+        """Return full complaint details including assignment and feedback."""
         complaint = Complaint.query.get(complaint_id)
         if not complaint:
             raise ValueError("Complaint not found.")
         return {"complaint": self._serialize_complaint(complaint, full=True)}
 
     def update_complaint(self, complaint_id: int, data: dict) -> dict:
-        """Update a complaint's status and/or priority.
-
-        When status transitions to ``resolved``, sets ``resolved_at``.
-
-        Raises:
-            ValueError: If complaint not found or status value invalid.
-        """
+        """Update a complaint's status and/or priority."""
         complaint = Complaint.query.get(complaint_id)
         if not complaint:
             raise ValueError("Complaint not found.")
@@ -87,15 +81,7 @@ class AdminService:
     def assign_complaint(
         self, complaint_id: int, admin_id: int, data: dict
     ) -> dict:
-        """Assign a complaint to a field worker.
-
-        Creates a ComplaintAssignment record and sets complaint status to
-        ``assigned``.  Allows re-assignment if already in ``assigned`` state
-        (creates a new assignment row; the old one stays for audit).
-
-        Raises:
-            ValueError: Business rule violations.
-        """
+        """Assign a complaint to a field worker."""
         complaint = Complaint.query.get(complaint_id)
         if not complaint:
             raise ValueError("Complaint not found.")
@@ -144,7 +130,7 @@ class AdminService:
         role: str = None,
         is_active: bool = None,
     ) -> dict:
-        """Return paginated users, optionally filtered by role or is_active."""
+        """Return paginated users, optionally filtered by role or active flag."""
         per_page = min(per_page, 100)
         query = User.query
 
@@ -168,24 +154,14 @@ class AdminService:
         }
 
     def get_user(self, user_id: int) -> dict:
-        """Return user details.
-
-        Raises:
-            ValueError: If user not found.
-        """
+        """Return user details."""
         user = User.query.get(user_id)
         if not user:
             raise ValueError("User not found.")
         return {"user": self._serialize_user(user)}
 
     def update_user(self, user_id: int, admin_id: int, data: dict) -> dict:
-        """Update a user's profile fields or active status.
-
-        Admins cannot deactivate their own account.
-
-        Raises:
-            ValueError: Business rule violations.
-        """
+        """Update a user's profile fields or active status."""
         user = User.query.get(user_id)
         if not user:
             raise ValueError("User not found.")
@@ -201,7 +177,7 @@ class AdminService:
         return {"user": self._serialize_user(user)}
 
     def get_field_workers(self) -> dict:
-        """Return all active field workers (for assignment dropdown)."""
+        """Return all active field workers."""
         fw_role = Role.query.filter_by(name=Role.FIELD_WORKER).first()
         if not fw_role:
             return {"field_workers": []}
@@ -214,43 +190,207 @@ class AdminService:
         )
         return {"field_workers": [self._serialize_user(w) for w in workers]}
 
-    # ── Dashboard ─────────────────────────────────────────────────────────
+    # ── Admin hierarchy ───────────────────────────────────────────────────
 
-    def get_dashboard_summary(self) -> dict:
-        """Return platform-wide complaint counts and recent activity."""
-        counts = {s: 0 for s in Complaint.VALID_STATUSES}
-        for status in Complaint.VALID_STATUSES:
-            counts[status] = Complaint.query.filter_by(status=status).count()
+    def get_cities(self) -> dict:
+        """Return all cities available for municipal administrator assignment."""
+        cities = City.query.order_by(City.name.asc()).all()
+        return {"cities": [self._serialize_city(city) for city in cities]}
 
-        total = Complaint.query.count()
-        open_count = Complaint.query.filter(
-            Complaint.status.in_([
-                Complaint.STATUS_PENDING,
-                Complaint.STATUS_ASSIGNED,
-                Complaint.STATUS_IN_PROGRESS,
-            ])
-        ).count()
-
-        recent = (
-            Complaint.query
-            .order_by(Complaint.created_at.desc())
-            .limit(10)
-            .all()
+    def get_municipal_administrators(
+        self,
+        page: int = 1,
+        per_page: int = 20,
+        is_active: bool = None,
+        city_name: str = None,
+    ) -> dict:
+        """Return paginated municipal administrators."""
+        per_page = min(per_page, 100)
+        query = (
+            User.query
+            .join(AdministratorProfile, AdministratorProfile.user_id == User.id)
+            .filter(AdministratorProfile.admin_level == AdministratorProfile.MUNICIPAL)
         )
 
-        total_users = User.query.count()
-        active_users = User.query.filter_by(is_active=True).count()
+        if is_active is not None:
+            query = query.filter(User.is_active == is_active)
+
+        if city_name:
+            query = query.join(City, City.id == AdministratorProfile.city_id)
+            query = query.filter(City.name.ilike(f"%{city_name}%"))
+
+        query = query.order_by(User.created_at.desc())
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
         return {
-            "total_complaints": total,
-            "open_complaints": open_count,
-            "by_status": counts,
-            "total_users": total_users,
-            "active_users": active_users,
-            "recent_complaints": [self._serialize_complaint(c) for c in recent],
+            "items": [self._serialize_user(user) for user in pagination.items],
+            "total": pagination.total,
+            "page": pagination.page,
+            "per_page": pagination.per_page,
         }
 
+    def create_municipal_administrator(self, creator_id: int, data: dict) -> dict:
+        """Create a municipal administrator under the administrator role."""
+        if User.query.filter_by(email=data["email"]).first():
+            raise ValueError("An account with this email already exists.")
+
+        if User.query.filter_by(username=data["username"]).first():
+            raise ValueError("This username is already taken.")
+
+        admin_role = Role.query.filter_by(name=Role.ADMINISTRATOR).first()
+        if not admin_role:
+            raise RuntimeError("Administrator role not found. Run 'flask seed' first.")
+
+        city = self._get_or_create_city(data["city_name"], data.get("city_state"))
+
+        user = User(
+            username=data["username"],
+            email=data["email"],
+            first_name=data["first_name"],
+            last_name=data["last_name"],
+            phone=data.get("phone"),
+            role_id=admin_role.id,
+            is_active=True,
+        )
+        user.set_password(data["password"])
+        db.session.add(user)
+        db.session.flush()
+
+        db.session.add(
+            AdministratorProfile(
+                user_id=user.id,
+                admin_level=AdministratorProfile.MUNICIPAL,
+                city_id=city.id,
+                created_by_id=creator_id,
+            )
+        )
+        db.session.commit()
+
+        return {"user": self._serialize_user(user)}
+
+    def get_municipal_administrator(self, user_id: int) -> dict:
+        """Return details for one municipal administrator."""
+        user = self._get_municipal_admin_user(user_id)
+        return {"user": self._serialize_user(user)}
+
+    def update_municipal_administrator(
+        self,
+        user_id: int,
+        acting_admin_id: int,
+        data: dict,
+    ) -> dict:
+        """Update or disable a municipal administrator."""
+        user = self._get_municipal_admin_user(user_id)
+
+        if "is_active" in data and not data["is_active"] and user_id == acting_admin_id:
+            raise ValueError("You cannot deactivate your own account.")
+
+        for field in ("first_name", "last_name", "phone", "is_active"):
+            if field in data:
+                setattr(user, field, data[field])
+
+        if "city_name" in data:
+            city = self._get_or_create_city(data["city_name"], data.get("city_state"))
+            user.admin_profile.city_id = city.id
+        elif "city_state" in data and user.admin_profile.city:
+            user.admin_profile.city.state = data["city_state"]
+
+        db.session.commit()
+        return {"user": self._serialize_user(user)}
+
+    # ── Dashboard ─────────────────────────────────────────────────────────
+
+    def get_dashboard_summary(self, admin_user: User) -> dict:
+        """Return dashboard data depending on administrator subtype."""
+        if admin_user.is_system_admin:
+            counts = {s: 0 for s in Complaint.VALID_STATUSES}
+            for status in Complaint.VALID_STATUSES:
+                counts[status] = Complaint.query.filter_by(status=status).count()
+
+            total = Complaint.query.count()
+            open_count = Complaint.query.filter(
+                Complaint.status.in_([
+                    Complaint.STATUS_PENDING,
+                    Complaint.STATUS_ASSIGNED,
+                    Complaint.STATUS_IN_PROGRESS,
+                ])
+            ).count()
+
+            recent = (
+                Complaint.query
+                .order_by(Complaint.created_at.desc())
+                .limit(10)
+                .all()
+            )
+
+            total_users = User.query.count()
+            active_users = User.query.filter_by(is_active=True).count()
+            municipal_admins = (
+                AdministratorProfile.query
+                .filter_by(admin_level=AdministratorProfile.MUNICIPAL)
+                .count()
+            )
+
+            return {
+                "scope": "system",
+                "total_complaints": total,
+                "open_complaints": open_count,
+                "by_status": counts,
+                "total_users": total_users,
+                "active_users": active_users,
+                "total_cities": City.query.count(),
+                "municipal_admins": municipal_admins,
+                "recent_complaints": [self._serialize_complaint(c) for c in recent],
+            }
+
+        return {
+            "scope": "municipal",
+            "administrator": self._serialize_user(admin_user),
+            "managed_city": self._serialize_city(admin_user.admin_profile.city),
+            "message": (
+                "Municipal administrators are scoped to their assigned city. "
+                "City-level complaint and worker analytics will use city-linked domain data."
+            ),
+        }
+
+    # ── Internal helpers ──────────────────────────────────────────────────
+
+    def _get_or_create_city(self, city_name: str, city_state: str = None) -> City:
+        normalized_name = city_name.strip()
+        city = City.query.filter(func.lower(City.name) == normalized_name.lower()).first()
+        if city:
+            if city_state and not city.state:
+                city.state = city_state
+                db.session.flush()
+            return city
+
+        city = City(name=normalized_name, state=city_state, is_active=True)
+        db.session.add(city)
+        db.session.flush()
+        return city
+
+    @staticmethod
+    def _get_municipal_admin_user(user_id: int) -> User:
+        user = User.query.get(user_id)
+        if not user:
+            raise ValueError("User not found.")
+        if not user.admin_profile or not user.is_municipal_admin:
+            raise ValueError("Municipal administrator not found.")
+        return user
+
     # ── Serializers ───────────────────────────────────────────────────────
+
+    @staticmethod
+    def _serialize_city(city: City | None) -> dict | None:
+        if not city:
+            return None
+        return {
+            "id": city.id,
+            "name": city.name,
+            "state": city.state,
+            "is_active": city.is_active,
+            "created_at": city.created_at.isoformat() if city.created_at else None,
+        }
 
     @staticmethod
     def _serialize_complaint(complaint: Complaint, full: bool = False) -> dict:
@@ -302,6 +442,9 @@ class AdminService:
             "is_active": user.is_active,
             "role_id": user.role_id,
             "role": user.role.name if user.role else None,
+            "admin_level": user.admin_level,
+            "city_id": user.admin_city_id,
+            "city_name": user.admin_city_name,
             "created_at": user.created_at.isoformat(),
         }
 

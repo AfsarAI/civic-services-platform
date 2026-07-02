@@ -22,7 +22,7 @@ This folder contains technical documentation for developers working on the Civic
 3. Install dependencies from `requirements.txt`
 4. Copy `.env.example` to `.env` and configure
 5. Run `flask db upgrade` to apply migrations and create all tables
-6. Run `flask seed` to create roles and the default admin user
+6. Run `flask seed` to create roles and the default system administrator
 7. Run `flask run` to start the development server
 
 ### Frontend
@@ -79,7 +79,7 @@ This folder contains technical documentation for developers working on the Civic
   - JWT access/refresh token issuance
   - current-user retrieval
 - `auth/controller.py` remains HTTP-focused and delegates business logic to `AuthService`.
-- RBAC is centralized in decorators (`require_admin`, `require_citizen`, `require_field_worker`).
+- RBAC is centralized in decorators (`require_admin`, `require_system_admin`, `require_citizen`, `require_field_worker`).
 
 ### Frontend (store + service layering)
 
@@ -92,10 +92,23 @@ This folder contains technical documentation for developers working on the Civic
   - auth checks
   - guest checks
   - role checks
+  - admin subtype checks
   - role-aware post-login routing
 
 ### Session Data Model
 
 - `access_token` (JWT)
 - `refresh_token` (JWT)
-- `user` (`id`, `email`, `role`, `full_name`, etc.)
+- `user` (`id`, `email`, `role`, `admin_level`, `city_name`, `full_name`, etc.)
+
+## Administrator Hierarchy (Current)
+
+The platform preserves the original 3-role model while splitting the administrator role internally:
+- `Role.ADMINISTRATOR` remains the only administrator role value
+- `AdministratorProfile.SYSTEM` identifies the default system administrator
+- `AdministratorProfile.MUNICIPAL` identifies city-bound municipal administrators
+
+Persistence model:
+- `users`: authentication identity
+- `administrator_profiles`: subtype and scope
+- `cities`: municipality reference data
