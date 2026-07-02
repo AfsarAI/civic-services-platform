@@ -26,7 +26,12 @@
         </div>
         <div class="hidden sm:block">
           <p class="text-sm font-medium text-gray-900">{{ authStore.fullName || 'User' }}</p>
-          <p class="text-xs text-gray-500 capitalize">{{ authStore.userRole?.replace('_', ' ') || '' }}</p>
+          <p class="text-xs text-gray-500 capitalize">
+            {{ authStore.userRole?.replace('_', ' ') || '' }}
+            <span v-if="authStore.adminLevel">
+              · {{ authStore.adminLevel.replace('_', ' ') }}
+            </span>
+          </p>
         </div>
       </div>
 

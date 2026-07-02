@@ -40,6 +40,12 @@ class User(db.Model):
     )
     notifications = db.relationship("Notification", back_populates="user", lazy="dynamic")
     feedback = db.relationship("Feedback", back_populates="citizen", lazy="dynamic")
+    admin_profile = db.relationship(
+        "AdministratorProfile",
+        foreign_keys="AdministratorProfile.user_id",
+        back_populates="user",
+        uselist=False,
+    )
 
     def set_password(self, password: str) -> None:
         """Hash and store the user's password."""
@@ -52,6 +58,36 @@ class User(db.Model):
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}"
+
+    @property
+    def is_administrator(self) -> bool:
+        return bool(self.role and self.role.name == "administrator")
+
+    @property
+    def admin_level(self) -> str | None:
+        if not self.is_administrator or not self.admin_profile:
+            return None
+        return self.admin_profile.admin_level
+
+    @property
+    def is_system_admin(self) -> bool:
+        return self.admin_level == "system"
+
+    @property
+    def is_municipal_admin(self) -> bool:
+        return self.admin_level == "municipal"
+
+    @property
+    def admin_city_id(self) -> int | None:
+        if not self.admin_profile:
+            return None
+        return self.admin_profile.city_id
+
+    @property
+    def admin_city_name(self) -> str | None:
+        if not self.admin_profile or not self.admin_profile.city:
+            return None
+        return self.admin_profile.city.name
 
     def __repr__(self) -> str:
         return f"<User {self.username}>"

@@ -80,7 +80,7 @@ const router = createRouter({
               path: 'reports',
               name: 'admin-reports',
               component: () => import('@/pages/administrator/Reports.vue'),
-              meta: { requiresAuth: true, role: 'administrator' },
+              meta: { requiresAuth: true, role: 'administrator', adminLevel: 'system' },
             },
           ],
         },
@@ -128,6 +128,10 @@ router.beforeEach(async (to, from, next) => {
 
   if (to.meta.role && authStore.userRole !== to.meta.role) {
     return next({ name: 'dashboard' })
+  }
+
+  if (to.meta.adminLevel && authStore.adminLevel !== to.meta.adminLevel) {
+    return next({ name: 'admin-dashboard' })
   }
 
   next()

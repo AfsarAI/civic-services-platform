@@ -3,6 +3,8 @@ Integration tests for the authentication API endpoints.
 """
 
 from app.extensions import db
+from app.models.administrator_profile import AdministratorProfile
+from app.models.city import City
 from app.models.role import Role
 from app.models.user import User
 
@@ -29,6 +31,52 @@ class TestAuthEndpoints:
         )
         user.set_password(password)
         db.session.add(user)
+        db.session.flush()
+
+        if role_name == Role.ADMINISTRATOR:
+            db.session.add(
+                AdministratorProfile(
+                    user_id=user.id,
+                    admin_level=AdministratorProfile.SYSTEM,
+                    city_id=None,
+                    created_by_id=None,
+                )
+            )
+        db.session.commit()
+        return user
+
+    @staticmethod
+    def _ensure_municipal_admin(email: str, city_name: str = "Lucknow") -> User:
+        city = City.query.filter_by(name=city_name).first()
+        if not city:
+            city = City(name=city_name, is_active=True)
+            db.session.add(city)
+            db.session.flush()
+
+        role = Role.query.filter_by(name=Role.ADMINISTRATOR).first()
+        user = User.query.filter_by(email=email).first()
+        if user:
+            return user
+
+        user = User(
+            username=email.split("@")[0],
+            email=email,
+            first_name="Municipal",
+            last_name="Admin",
+            role_id=role.id,
+            is_active=True,
+        )
+        user.set_password("Admin@123456")
+        db.session.add(user)
+        db.session.flush()
+        db.session.add(
+            AdministratorProfile(
+                user_id=user.id,
+                admin_level=AdministratorProfile.MUNICIPAL,
+                city_id=city.id,
+                created_by_id=None,
+            )
+        )
         db.session.commit()
         return user
 
@@ -53,6 +101,7 @@ class TestAuthEndpoints:
         assert payload["data"]["access_token"]
         assert payload["data"]["refresh_token"]
         assert payload["data"]["user"]["role"] == Role.ADMINISTRATOR
+        assert payload["data"]["user"]["admin_level"] == AdministratorProfile.SYSTEM
 
     def test_invalid_credentials_return_unauthorised(self, app, client):
         with app.app_context():
@@ -119,3 +168,15 @@ class TestAuthEndpoints:
         assert login_response.status_code == 200
         assert login_payload["success"] is True
         assert login_payload["data"]["user"]["email"] == "newcitizen@example.com"
+
+    def test_municipal_admin_login_includes_city_and_admin_level(self, app, client):
+        with app.app_context():
+            self._ensure_municipal_admin("municipal@civicservices.local", city_name="Lucknow")
+
+        response = self._login(client, "municipal@civicservices.local", "Admin@123456")
+        payload = response.get_json()
+
+        assert response.status_code == 200
+        assert payload["data"]["user"]["role"] == Role.ADMINISTRATOR
+        assert payload["data"]["user"]["admin_level"] == AdministratorProfile.MUNICIPAL
+        assert payload["data"]["user"]["city_name"] == "Lucknow"

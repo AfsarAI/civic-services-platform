@@ -13,6 +13,14 @@
           <p class="form-label">Role</p>
           <p class="text-gray-900 capitalize">{{ authStore.userRole?.replace('_', ' ') || '—' }}</p>
         </div>
+        <div v-if="authStore.adminLevel">
+          <p class="form-label">Administrator Level</p>
+          <p class="text-gray-900 capitalize">{{ authStore.adminLevel || '—' }}</p>
+        </div>
+        <div v-if="authStore.cityName">
+          <p class="form-label">Assigned City</p>
+          <p class="text-gray-900">{{ authStore.cityName }}</p>
+        </div>
       </div>
 
       <div class="mt-6 pt-6 border-t border-gray-100">

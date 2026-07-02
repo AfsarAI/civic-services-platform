@@ -11,6 +11,10 @@ export const useAuthStore = defineStore('auth', () => {
   // ── Getters ────────────────────────────────────────────────────────────
   const isAuthenticated = computed(() => !!accessToken.value)
   const userRole = computed(() => user.value?.role ?? null)
+  const adminLevel = computed(() => user.value?.admin_level ?? null)
+  const cityName = computed(() => user.value?.city_name ?? null)
+  const isSystemAdmin = computed(() => userRole.value === 'administrator' && adminLevel.value === 'system')
+  const isMunicipalAdmin = computed(() => userRole.value === 'administrator' && adminLevel.value === 'municipal')
   const fullName = computed(() => user.value?.full_name ?? '')
   const isHydrated = ref(false)
   let hydrationPromise = null
@@ -130,6 +134,10 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken,
     isAuthenticated,
     userRole,
+    adminLevel,
+    cityName,
+    isSystemAdmin,
+    isMunicipalAdmin,
     fullName,
     isHydrated,
     login,
