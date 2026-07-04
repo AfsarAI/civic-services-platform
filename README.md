@@ -27,7 +27,7 @@ The **Civic Services Platform** enables:
 | Role | Capabilities |
 |---|---|
 | **Citizen** | Register, submit complaints (potholes, etc.), track status, provide feedback |
-| **Administrator** | View all complaints, assign field workers, manage users, generate reports |
+| **Administrator** | System Administrator and Municipal Administrator accounts share the same `administrator` role, with subtype-based permissions |
 | **Field Worker** | View assigned tasks, update repair progress, upload evidence |
 
 **Development Methodology:** Scrum
@@ -170,8 +170,34 @@ The API will be available at `http://localhost:5000`.
 
 > **Swagger UI** (interactive API docs): `http://localhost:5000/api/v1/docs`
 
-> **Default admin credentials** (set in `.env` before running `flask seed`):
+> **Default system administrator credentials** (set in `.env` before running `flask seed`):
 > Email: `admin@civicservices.local` | Password: `Admin@123456`
+
+## Administrator Hierarchy
+
+The platform still uses exactly **3 application roles** in the `roles` table:
+- `citizen`
+- `administrator`
+- `field_worker`
+
+The administrator role is now split internally using an administrator profile:
+- **System Administrator**
+  - created by default through `flask seed`
+  - can create, manage, and disable Municipal Administrators
+  - can view all cities
+  - can access global reports and platform-wide user management
+- **Municipal Administrator**
+  - belongs to exactly one city
+  - cannot self-register
+  - is created only by the System Administrator
+  - logs in through the same `/auth/login` endpoint and is still returned as role `administrator`
+
+Implementation summary:
+- `users.role_id` remains unchanged
+- new `cities` table stores administrative cities
+- new `administrator_profiles` table stores `admin_level` and `city_id`
+- JWT and `/auth/me` now include `admin_level`, `city_id`, and `city_name`
+- frontend routing remains role-based, with subtype-aware restrictions for system-only pages
 
 ---
 

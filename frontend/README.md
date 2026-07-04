@@ -37,3 +37,15 @@ npm run build
 ```
 
 Output is in `dist/`.
+
+## Authentication Session Flow
+
+- Login API integration is handled by `src/services/auth.service.js` (`AuthService` class).
+- Session state is managed in `src/stores/auth.js`:
+  - `login`, `logout`, `fetchCurrentUser`, `hydrateSession`
+  - localStorage keys: `access_token`, `refresh_token`, `user`
+- Role-based redirection after login:
+  - Administrator → `/admin/dashboard`
+  - Citizen → `/citizen/dashboard`
+  - Field Worker → `/fieldworker/dashboard`
+- Router-level guards in `src/router/index.js` enforce auth + role authorization.

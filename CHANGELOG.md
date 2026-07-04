@@ -19,6 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI/CD GitHub Actions workflows
 - Swagger UI documentation
 - Postman collection skeleton
+- `cities` table for municipal assignment
+- `administrator_profiles` table for administrator subtype separation
+- System Administrator and Municipal Administrator hierarchy inside the existing `administrator` role
+- system-admin-only municipal administrator management endpoints
+- JWT and `/auth/me` metadata for `admin_level`, `city_id`, and `city_name`
+
+### Changed
+- `flask seed` now creates a default System Administrator profile
+- administrator reports and global user-management endpoints are restricted to the System Administrator subtype
+- frontend admin routing and navigation now respect administrator subtype
 
 ---
 

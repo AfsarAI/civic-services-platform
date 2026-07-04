@@ -147,12 +147,22 @@
 </template>
 
 <script setup>
+<<<<<<< HEAD
 import { ref, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 
 const authStore = useAuthStore();
 const router = useRouter();
+=======
+import { ref, reactive } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+const router = useRouter()
+const route = useRoute()
+>>>>>>> origin/dev
 
 const form = reactive({
   email: "",
@@ -168,8 +178,32 @@ async function handleLogin() {
   error.value = "";
 
   try {
+<<<<<<< HEAD
     await authStore.login(form.email, form.password);
     router.push({ name: "dashboard" });
+=======
+    const loggedInUser = await authStore.login(form.email, form.password)
+    const redirectTarget = route.query.redirect
+
+    if (typeof redirectTarget === 'string' && redirectTarget.startsWith('/')) {
+      await router.push(redirectTarget)
+      return
+    }
+
+    if (loggedInUser?.role === 'administrator') {
+      await router.push({ name: 'admin-dashboard' })
+      return
+    }
+    if (loggedInUser?.role === 'citizen') {
+      await router.push({ name: 'citizen-dashboard' })
+      return
+    }
+    if (loggedInUser?.role === 'field_worker') {
+      await router.push({ name: 'fieldworker-dashboard' })
+      return
+    }
+    await router.push({ name: 'dashboard' })
+>>>>>>> origin/dev
   } catch (err) {
     error.value =
       err.message || "Invalid email or password. Please try again.";

@@ -19,8 +19,28 @@ This folder contains the database schema, ERD, and migration history for the Civ
                 │ is_active        │    │ image_url                 │
                 │ created_at       │    │ citizen_id (FK → users)   │
                 │ updated_at       │    │ resolved_at               │
-                └──────────────────┘    │ created_at / updated_at   │
-                                        └──────────────┬────────────┘
+                └────────┬─────────┘    │ created_at / updated_at   │
+                         │              └──────────────┬────────────┘
+                         │                             │
+         ┌───────────────▼───────────────┐             │
+         │     AdministratorProfile      │             │
+         │───────────────────────────────│             │
+         │ id (PK)                       │             │
+         │ user_id (FK → users, unique)  │             │
+         │ admin_level (system/municipal)│             │
+         │ city_id (FK → cities, null for│             │
+         │   system admin only)          │             │
+         │ created_by_id (FK → users)    │             │
+         └───────────────┬───────────────┘             │
+                         │                             │
+                ┌────────▼────────┐                    │
+                │      City       │                    │
+                │─────────────────│                    │
+                │ id (PK)         │                    │
+                │ name            │                    │
+                │ state           │                    │
+                │ is_active       │                    │
+                └─────────────────┘                    │
                                                        │
               ┌────────────────────────────────────────┤
               │                                        │
@@ -61,6 +81,8 @@ pending → assigned → in_progress → resolved → closed
 |---|---|---|
 | `Role` | `roles` | User roles (Citizen, Administrator, Field Worker) |
 | `User` | `users` | Platform users with role association |
+| `City` | `cities` | Administrative city used for municipal administrator assignment |
+| `AdministratorProfile` | `administrator_profiles` | Administrator subtype (`system` or `municipal`) and city scope |
 | `Complaint` | `complaints` | Civic complaints submitted by citizens |
 | `ComplaintAssignment` | `complaint_assignments` | Assignment of complaints to field workers |
 | `Notification` | `notifications` | System notifications to users |
@@ -81,6 +103,13 @@ flask db downgrade
 # Show migration history
 flask db history
 ```
+
+## Administrator Hierarchy Notes
+
+- The `roles` table still contains only `citizen`, `administrator`, and `field_worker`.
+- `administrator_profiles` is the authoritative source for distinguishing System and Municipal Administrators.
+- Municipal administrators must reference exactly one row in `cities`.
+- System administrators must not reference a city.
 
 ## TODO
 
