@@ -56,8 +56,35 @@ Additional fields now returned in `user` and JWT claims:
 - `POST /api/v1/admin/municipal-administrators`
 - `GET /api/v1/admin/municipal-administrators/<user_id>`
 - `PUT /api/v1/admin/municipal-administrators/<user_id>`
+- `DELETE /api/v1/admin/municipal-administrators/<user_id>`
 
 These endpoints are restricted to the System Administrator subtype.
+
+### Municipal Administrator Registration Contract
+
+`POST /api/v1/admin/municipal-administrators`
+
+```json
+{
+  "username": "lucknow_admin",
+  "email": "lucknow.admin@example.com",
+  "password": "Municipal@123",
+  "confirm_password": "Municipal@123",
+  "first_name": "Lucknow",
+  "last_name": "Administrator",
+  "phone": "+91-9876543210",
+  "city_name": "Lucknow",
+  "city_state": "Uttar Pradesh"
+}
+```
+
+Rules:
+- only authenticated System Administrators may call this endpoint
+- `email` and `username` must be unique
+- `confirm_password` must match `password`
+- password strength matches the citizen registration rules
+- every Municipal Administrator is created under role `administrator` with `admin_level: municipal`
+- every Municipal Administrator belongs to exactly one city
 
 ## Namespaces
 

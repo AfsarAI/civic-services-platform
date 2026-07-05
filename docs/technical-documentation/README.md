@@ -112,3 +112,9 @@ Persistence model:
 - `users`: authentication identity
 - `administrator_profiles`: subtype and scope
 - `cities`: municipality reference data
+
+TPS-110 implementation details:
+- municipal-administrator registration remains in `AdminService` to preserve the existing controller/service architecture
+- administrator hierarchy data access now goes through `backend/app/repositories/administrator_repository.py`
+- municipal-administrator create/update actions now write audit records through `backend/app/services/audit_log_service.py`
+- the frontend uses the existing admin API rather than introducing a second registration or authentication flow

@@ -17,6 +17,12 @@
     <div v-if="authStore.isSystemAdmin" class="card mb-4">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-semibold text-gray-900">System Administrator Scope</h2>
+        <RouterLink
+          to="/admin/municipal-administrators"
+          class="btn-secondary px-4 py-2 text-sm"
+        >
+          Manage Municipal Admins
+        </RouterLink>
       </div>
       <p class="text-gray-600 text-sm">
         You can create, manage, and disable municipal administrators and access platform-wide reports.
@@ -58,6 +64,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()

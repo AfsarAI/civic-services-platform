@@ -78,12 +78,14 @@ class TestMunicipalAdminCreateSchema:
         result = schema.load({
             "username": "municipal1",
             "email": "municipal@example.com",
-            "password": "Password123",
+            "password": "Password123!",
+            "confirm_password": "Password123!",
             "first_name": "Municipal",
             "last_name": "Admin",
             "city_name": "Lucknow",
         })
         assert result["city_name"] == "Lucknow"
+        assert result["email"] == "municipal@example.com"
 
     def test_city_name_required(self):
         schema = MunicipalAdminCreateSchema()
@@ -91,7 +93,51 @@ class TestMunicipalAdminCreateSchema:
             schema.load({
                 "username": "municipal1",
                 "email": "municipal@example.com",
-                "password": "Password123",
+                "password": "Password123!",
+                "confirm_password": "Password123!",
                 "first_name": "Municipal",
                 "last_name": "Admin",
             })
+
+    def test_confirm_password_must_match(self):
+        schema = MunicipalAdminCreateSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load({
+                "username": "municipal1",
+                "email": "municipal@example.com",
+                "password": "Password123!",
+                "confirm_password": "Password999!",
+                "first_name": "Municipal",
+                "last_name": "Admin",
+                "city_name": "Lucknow",
+            })
+        assert "confirm_password" in exc.value.messages
+
+    def test_weak_password_is_rejected(self):
+        schema = MunicipalAdminCreateSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load({
+                "username": "municipal1",
+                "email": "municipal@example.com",
+                "password": "password123",
+                "confirm_password": "password123",
+                "first_name": "Municipal",
+                "last_name": "Admin",
+                "city_name": "Lucknow",
+            })
+        assert "password" in exc.value.messages
+
+    def test_invalid_phone_is_rejected(self):
+        schema = MunicipalAdminCreateSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load({
+                "username": "municipal1",
+                "email": "municipal@example.com",
+                "password": "Password123!",
+                "confirm_password": "Password123!",
+                "first_name": "Municipal",
+                "last_name": "Admin",
+                "phone": "not-a-phone",
+                "city_name": "Lucknow",
+            })
+        assert "phone" in exc.value.messages

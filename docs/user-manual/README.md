@@ -25,6 +25,7 @@ The platform still uses one administrator login flow, but there are now two admi
 - Manages and disables Municipal Administrators
 - Views all cities
 - Accesses global reports and user-management features
+- Uses the `Manage Municipal Administrators` page from the dashboard/sidebar to register city-wise administrators
 
 #### Municipal Administrator
 - Cannot self-register

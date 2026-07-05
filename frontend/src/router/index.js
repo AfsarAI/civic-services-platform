@@ -93,6 +93,12 @@ const router = createRouter({
               component: () => import('@/pages/administrator/Reports.vue'),
               meta: { requiresAuth: true, role: 'administrator', adminLevel: 'system' },
             },
+            {
+              path: 'municipal-administrators',
+              name: 'admin-municipal-administrators',
+              component: () => import('@/pages/administrator/MunicipalAdministrators.vue'),
+              meta: { requiresAuth: true, role: 'administrator', adminLevel: 'system' },
+            },
           ],
         },
 

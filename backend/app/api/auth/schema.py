@@ -2,33 +2,14 @@
 Auth namespace — Marshmallow schemas (request/response validation).
 """
 
-import re
-
 from marshmallow import Schema, ValidationError, fields, pre_load, validate, validates
 
-
-# ---------------------------------------------------------------------------
-# Shared validators
-# ---------------------------------------------------------------------------
-
-def _validate_password_strength(value: str) -> None:
-    """Enforce password complexity: min 8 chars, 1 uppercase, 1 digit, 1 special."""
-    if len(value) < 8:
-        raise ValidationError("Password must be at least 8 characters long.")
-    if not re.search(r"[A-Z]", value):
-        raise ValidationError("Password must contain at least one uppercase letter.")
-    if not re.search(r"\d", value):
-        raise ValidationError("Password must contain at least one digit.")
-    if not re.search(r"[!@#$%^&*(),.?\":{}|<>\-_]", value):
-        raise ValidationError(
-            "Password must contain at least one special character (e.g. @, #, !)."
-        )
-
-
-# Accepts international E.164 format (+91...) or 10-digit Indian numbers,
-# with optional spaces/hyphens between groups.
-_PHONE_PATTERN = re.compile(
-    r"^\+?(\d[\s\-]?){9,14}\d$"
+from app.schemas.validators import (
+    normalize_email,
+    normalize_optional_string,
+    normalize_string,
+    validate_password_strength,
+    validate_phone_number,
 )
 
 
@@ -47,8 +28,7 @@ class LoginRequestSchema(Schema):
 
     @pre_load
     def normalize_email(self, data: dict, **_) -> dict:
-        if isinstance(data.get("email"), str):
-            data["email"] = data["email"].strip().lower()
+        data["email"] = normalize_email(data.get("email"))
         return data
 
 
@@ -85,27 +65,19 @@ class RegisterRequestSchema(Schema):
     @pre_load
     def normalize_fields(self, data: dict, **_) -> dict:
         """Strip whitespace; lowercase email."""
-        if isinstance(data.get("email"), str):
-            data["email"] = data["email"].strip().lower()
+        data["email"] = normalize_email(data.get("email"))
         for field in ("username", "first_name", "last_name"):
-            if isinstance(data.get(field), str):
-                data[field] = data[field].strip()
-        if isinstance(data.get("phone"), str):
-            data["phone"] = data["phone"].strip() or None
+            data[field] = normalize_string(data.get(field))
+        data["phone"] = normalize_optional_string(data.get("phone"))
         return data
 
     @validates("password")
     def validate_password(self, value: str) -> None:
-        _validate_password_strength(value)
+        validate_password_strength(value)
 
     @validates("phone")
     def validate_phone(self, value) -> None:
-        if value is None:
-            return
-        if not _PHONE_PATTERN.match(value):
-            raise ValidationError(
-                "Enter a valid phone number (e.g. +91-9876543210 or 9876543210)."
-            )
+        validate_phone_number(value)
 
     @validates("first_name")
     def validate_first_name(self, value: str) -> None:

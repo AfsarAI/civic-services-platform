@@ -3,8 +3,7 @@ Administrator service — business logic for admin-facing operations.
 """
 
 from datetime import datetime, timezone
-
-from sqlalchemy import func
+from flask import current_app
 
 from app.extensions import db
 from app.models.administrator_profile import AdministratorProfile
@@ -13,10 +12,15 @@ from app.models.complaint import Complaint
 from app.models.complaint_assignment import ComplaintAssignment
 from app.models.role import Role
 from app.models.user import User
+from app.repositories import AdministratorRepository
+from app.services.audit_log_service import AuditLogService
 
 
 class AdminService:
     """Handles complaint management, admin hierarchy, and platform statistics."""
+
+    def __init__(self):
+        self.repository = AdministratorRepository()
 
     # ── Complaints ────────────────────────────────────────────────────────
 
@@ -194,7 +198,7 @@ class AdminService:
 
     def get_cities(self) -> dict:
         """Return all cities available for municipal administrator assignment."""
-        cities = City.query.order_by(City.name.asc()).all()
+        cities = self.repository.list_cities()
         return {"cities": [self._serialize_city(city) for city in cities]}
 
     def get_municipal_administrators(
@@ -206,21 +210,12 @@ class AdminService:
     ) -> dict:
         """Return paginated municipal administrators."""
         per_page = min(per_page, 100)
-        query = (
-            User.query
-            .join(AdministratorProfile, AdministratorProfile.user_id == User.id)
-            .filter(AdministratorProfile.admin_level == AdministratorProfile.MUNICIPAL)
+        pagination = self.repository.list_municipal_administrators(
+            page=page,
+            per_page=per_page,
+            is_active=is_active,
+            city_name=city_name,
         )
-
-        if is_active is not None:
-            query = query.filter(User.is_active == is_active)
-
-        if city_name:
-            query = query.join(City, City.id == AdministratorProfile.city_id)
-            query = query.filter(City.name.ilike(f"%{city_name}%"))
-
-        query = query.order_by(User.created_at.desc())
-        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
         return {
             "items": [self._serialize_user(user) for user in pagination.items],
@@ -231,21 +226,23 @@ class AdminService:
 
     def create_municipal_administrator(self, creator_id: int, data: dict) -> dict:
         """Create a municipal administrator under the administrator role."""
-        if User.query.filter_by(email=data["email"]).first():
+        email = data["email"].strip().lower()
+        if self.repository.get_user_by_email(email):
             raise ValueError("An account with this email already exists.")
 
-        if User.query.filter_by(username=data["username"]).first():
+        username = data["username"].strip()
+        if self.repository.get_user_by_username(username):
             raise ValueError("This username is already taken.")
 
-        admin_role = Role.query.filter_by(name=Role.ADMINISTRATOR).first()
+        admin_role = self.repository.get_role_by_name(Role.ADMINISTRATOR)
         if not admin_role:
             raise RuntimeError("Administrator role not found. Run 'flask seed' first.")
 
         city = self._get_or_create_city(data["city_name"], data.get("city_state"))
 
-        user = User(
-            username=data["username"],
-            email=data["email"],
+        user = self.repository.create_user(
+            username=username,
+            email=email,
             first_name=data["first_name"],
             last_name=data["last_name"],
             phone=data.get("phone"),
@@ -253,18 +250,36 @@ class AdminService:
             is_active=True,
         )
         user.set_password(data["password"])
-        db.session.add(user)
         db.session.flush()
 
-        db.session.add(
-            AdministratorProfile(
-                user_id=user.id,
-                admin_level=AdministratorProfile.MUNICIPAL,
-                city_id=city.id,
-                created_by_id=creator_id,
-            )
+        self.repository.create_admin_profile(
+            user_id=user.id,
+            admin_level=AdministratorProfile.MUNICIPAL,
+            city_id=city.id,
+            created_by_id=creator_id,
+        )
+
+        AuditLogService.record_action(
+            user_id=creator_id,
+            action="municipal_admin_created",
+            resource_type="user",
+            resource_id=user.id,
+            details={
+                "email": user.email,
+                "city_id": city.id,
+                "city_name": city.name,
+                "admin_level": AdministratorProfile.MUNICIPAL,
+            },
         )
         db.session.commit()
+        current_app.logger.info(
+            "Municipal administrator created",
+            extra={
+                "creator_id": creator_id,
+                "municipal_admin_user_id": user.id,
+                "city_id": city.id,
+            },
+        )
 
         return {"user": self._serialize_user(user)}
 
@@ -295,7 +310,26 @@ class AdminService:
         elif "city_state" in data and user.admin_profile.city:
             user.admin_profile.city.state = data["city_state"]
 
+        AuditLogService.record_action(
+            user_id=acting_admin_id,
+            action="municipal_admin_updated",
+            resource_type="user",
+            resource_id=user.id,
+            details={
+                "updated_fields": sorted(list(data.keys())),
+                "city_id": user.admin_profile.city_id,
+                "city_name": user.admin_city_name,
+                "is_active": user.is_active,
+            },
+        )
         db.session.commit()
+        current_app.logger.info(
+            "Municipal administrator updated",
+            extra={
+                "acting_admin_id": acting_admin_id,
+                "municipal_admin_user_id": user.id,
+            },
+        )
         return {"user": self._serialize_user(user)}
 
     # ── Dashboard ─────────────────────────────────────────────────────────
@@ -357,24 +391,18 @@ class AdminService:
 
     def _get_or_create_city(self, city_name: str, city_state: str = None) -> City:
         normalized_name = city_name.strip()
-        city = City.query.filter(func.lower(City.name) == normalized_name.lower()).first()
+        city = self.repository.find_city_by_name(normalized_name)
         if city:
             if city_state and not city.state:
                 city.state = city_state
                 db.session.flush()
             return city
 
-        city = City(name=normalized_name, state=city_state, is_active=True)
-        db.session.add(city)
-        db.session.flush()
-        return city
+        return self.repository.create_city(normalized_name, city_state)
 
-    @staticmethod
-    def _get_municipal_admin_user(user_id: int) -> User:
-        user = User.query.get(user_id)
+    def _get_municipal_admin_user(self, user_id: int) -> User:
+        user = self.repository.get_municipal_admin_user(user_id)
         if not user:
-            raise ValueError("User not found.")
-        if not user.admin_profile or not user.is_municipal_admin:
             raise ValueError("Municipal administrator not found.")
         return user
 
