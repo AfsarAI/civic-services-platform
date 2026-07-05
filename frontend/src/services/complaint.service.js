@@ -15,6 +15,14 @@ const complaintService = {
   },
 
   /**
+   * Get dashboard summary (statistics and recent complaints).
+   */
+  async getDashboardSummary() {
+    const response = await api.get('/citizen/dashboard')
+    return response.data
+  },
+
+  /**
    * Submit a new complaint.
    * @param {Object} data - Complaint payload
    */

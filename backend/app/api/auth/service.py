@@ -29,7 +29,8 @@ class AuthService:
         Raises:
             ValueError: If email or username is already taken.
         """
-        if User.query.filter_by(email=data["email"]).first():
+        email = data["email"].strip().lower()
+        if User.query.filter_by(email=email).first():
             raise ValueError("An account with this email already exists.")
 
         if User.query.filter_by(username=data["username"]).first():
@@ -41,7 +42,7 @@ class AuthService:
 
         user = User(
             username=data["username"],
-            email=data["email"],
+            email=email,
             first_name=data["first_name"],
             last_name=data["last_name"],
             phone=data.get("phone"),
@@ -115,7 +116,7 @@ class AuthService:
         Raises:
             ValueError: If the user no longer exists or is inactive.
         """
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user or not user.is_active:
             raise ValueError("User not found or account inactive.")
 
@@ -147,7 +148,7 @@ class AuthService:
         Raises:
             ValueError: If the user does not exist.
         """
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             raise ValueError("User not found.")
 
