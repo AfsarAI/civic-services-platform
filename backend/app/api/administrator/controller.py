@@ -57,6 +57,7 @@ _municipal_admin_create = ns.model("MunicipalAdminCreate", {
     "username": fields.String(required=True, example="lucknow_admin"),
     "email": fields.String(required=True, example="lucknow.admin@example.com"),
     "password": fields.String(required=True, example="Municipal@123"),
+    "confirm_password": fields.String(required=True, example="Municipal@123"),
     "first_name": fields.String(required=True, example="Lucknow"),
     "last_name": fields.String(required=True, example="Administrator"),
     "phone": fields.String(example="+91-9876543210"),
@@ -254,7 +255,9 @@ class MunicipalAdministratorListResource(Resource):
 
     @ns.expect(_municipal_admin_create)
     @ns.response(201, "Municipal administrator created", _envelope)
+    @ns.response(400, "Business rule violation", _envelope)
     @ns.response(409, "Conflict", _envelope)
+    @ns.response(422, "Validation error", _envelope)
     @jwt_required()
     @require_system_admin
     @validate_body(MunicipalAdminCreateSchema)
@@ -265,7 +268,10 @@ class MunicipalAdministratorListResource(Resource):
             data = _svc.create_municipal_administrator(creator_id, body)
             return success_response(data, "Municipal administrator created.", 201)
         except ValueError as exc:
-            return error_response(str(exc), status_code=409)
+            code = 409 if any(
+                token in str(exc).lower() for token in ("already exists", "already taken")
+            ) else 400
+            return error_response(str(exc), status_code=code)
 
 
 @ns.route("/municipal-administrators/<int:user_id>")
@@ -287,6 +293,7 @@ class MunicipalAdministratorResource(Resource):
     @ns.expect(_municipal_admin_update)
     @ns.response(200, "Municipal administrator updated", _envelope)
     @ns.response(404, "Not found", _envelope)
+    @ns.response(400, "Business rule violation", _envelope)
     @ns.response(422, "Validation error", _envelope)
     @jwt_required()
     @require_system_admin
@@ -300,6 +307,24 @@ class MunicipalAdministratorResource(Resource):
                 data=body,
             )
             return success_response(data, "Municipal administrator updated.")
+        except ValueError as exc:
+            code = 404 if "not found" in str(exc).lower() else 400
+            return error_response(str(exc), status_code=code)
+
+    @ns.response(200, "Municipal administrator deactivated", _envelope)
+    @ns.response(404, "Not found", _envelope)
+    @ns.response(400, "Business rule violation", _envelope)
+    @jwt_required()
+    @require_system_admin
+    def delete(self, user_id):
+        """Deactivate a municipal administrator."""
+        try:
+            data = _svc.update_municipal_administrator(
+                user_id=user_id,
+                acting_admin_id=int(get_jwt_identity()),
+                data={"is_active": False},
+            )
+            return success_response(data, "Municipal administrator deactivated.")
         except ValueError as exc:
             code = 404 if "not found" in str(exc).lower() else 400
             return error_response(str(exc), status_code=code)

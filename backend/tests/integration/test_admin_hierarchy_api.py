@@ -66,6 +66,7 @@ class TestAdminHierarchyEndpoints:
                 "username": "lucknow_admin",
                 "email": "lucknow@civicservices.local",
                 "password": "Municipal@123",
+                "confirm_password": "Municipal@123",
                 "first_name": "Lucknow",
                 "last_name": "Admin",
                 "city_name": "Lucknow",
@@ -95,6 +96,131 @@ class TestAdminHierarchyEndpoints:
 
         assert response.status_code == 403
         assert "access denied" in response.get_json()["message"].lower()
+
+    def test_citizen_cannot_create_municipal_administrator(self, app, client):
+        with app.app_context():
+            role = Role.query.filter_by(name=Role.CITIZEN).first()
+            citizen = User.query.filter_by(email="citizen-create-test@example.com").first()
+            if not citizen:
+                citizen = User(
+                    username="citizencreatetest",
+                    email="citizen-create-test@example.com",
+                    first_name="Citizen",
+                    last_name="Tester",
+                    role_id=role.id,
+                    is_active=True,
+                )
+                citizen.set_password("Citizen@123")
+                db.session.add(citizen)
+                db.session.commit()
+
+        token = self._login(client, "citizen-create-test@example.com", "Citizen@123")
+        response = client.post(
+            "/api/v1/admin/municipal-administrators",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "username": "citizen_blocked_admin",
+                "email": "blocked.admin@example.com",
+                "password": "Municipal@123",
+                "confirm_password": "Municipal@123",
+                "first_name": "Blocked",
+                "last_name": "Admin",
+                "city_name": "Agra",
+            },
+        )
+
+        assert response.status_code == 403
+        assert "administrator access required" in response.get_json()["message"].lower()
+
+    def test_anonymous_user_cannot_create_municipal_administrator(self, client):
+        response = client.post(
+            "/api/v1/admin/municipal-administrators",
+            json={
+                "username": "anonymous_admin",
+                "email": "anonymous.admin@example.com",
+                "password": "Municipal@123",
+                "confirm_password": "Municipal@123",
+                "first_name": "Anonymous",
+                "last_name": "Admin",
+                "city_name": "Noida",
+            },
+        )
+
+        assert response.status_code == 401
+
+    def test_duplicate_municipal_admin_email_returns_409(self, app, client):
+        with app.app_context():
+            self._ensure_admin("sysadmin-dup@civicservices.local", AdministratorProfile.SYSTEM)
+
+        token = self._login(client, "sysadmin-dup@civicservices.local")
+        payload = {
+            "username": "pune_admin_1",
+            "email": "pune.admin@example.com",
+            "password": "Municipal@123",
+            "confirm_password": "Municipal@123",
+            "first_name": "Pune",
+            "last_name": "Admin",
+            "city_name": "Pune",
+        }
+
+        first = client.post(
+            "/api/v1/admin/municipal-administrators",
+            headers={"Authorization": f"Bearer {token}"},
+            json=payload,
+        )
+        second = client.post(
+            "/api/v1/admin/municipal-administrators",
+            headers={"Authorization": f"Bearer {token}"},
+            json={**payload, "username": "pune_admin_2"},
+        )
+
+        assert first.status_code == 201
+        assert second.status_code == 409
+        assert "email" in second.get_json()["message"].lower()
+
+    def test_invalid_municipal_admin_payload_returns_422(self, app, client):
+        with app.app_context():
+            self._ensure_admin("sysadmin-invalid@civicservices.local", AdministratorProfile.SYSTEM)
+
+        token = self._login(client, "sysadmin-invalid@civicservices.local")
+        response = client.post(
+            "/api/v1/admin/municipal-administrators",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "username": "indore_admin",
+                "email": "indore.admin@example.com",
+                "password": "weakpassword",
+                "confirm_password": "does-not-match",
+                "first_name": "Indore",
+                "last_name": "Admin",
+                "phone": "abc",
+                "city_name": "Indore",
+            },
+        )
+
+        payload = response.get_json()
+        assert response.status_code == 422
+        assert payload["success"] is False
+        assert "password" in payload["errors"] or "confirm_password" in payload["errors"]
+
+    def test_system_admin_can_deactivate_municipal_administrator(self, app, client):
+        with app.app_context():
+            self._ensure_admin("sysadmin-delete@civicservices.local", AdministratorProfile.SYSTEM)
+            self._ensure_admin(
+                "municipal-delete@civicservices.local",
+                AdministratorProfile.MUNICIPAL,
+                city_name="Surat",
+            )
+            municipal_user = User.query.filter_by(email="municipal-delete@civicservices.local").first()
+
+        token = self._login(client, "sysadmin-delete@civicservices.local")
+        response = client.delete(
+            f"/api/v1/admin/municipal-administrators/{municipal_user.id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert response.status_code == 200
+        assert response.get_json()["data"]["user"]["is_active"] is False
 
     def test_system_admin_can_list_cities(self, app, client):
         with app.app_context():

@@ -191,6 +191,7 @@ The administrator role is now split internally using an administrator profile:
   - cannot self-register
   - is created only by the System Administrator
   - logs in through the same `/auth/login` endpoint and is still returned as role `administrator`
+  - can be managed from the System Administrator UI at `/admin/municipal-administrators`
 
 Implementation summary:
 - `users.role_id` remains unchanged
@@ -198,6 +199,7 @@ Implementation summary:
 - new `administrator_profiles` table stores `admin_level` and `city_id`
 - JWT and `/auth/me` now include `admin_level`, `city_id`, and `city_name`
 - frontend routing remains role-based, with subtype-aware restrictions for system-only pages
+- municipal-admin registration now uses the existing admin API with audit logging and validation parity for password and phone fields
 
 ---
 

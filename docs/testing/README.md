@@ -35,6 +35,16 @@ pytest tests/integration/ -v
 
 Minimum acceptable coverage: **80%**
 
+## TPS-110 Coverage
+
+Current automated coverage for Municipal Administrator registration includes:
+- successful System Administrator registration of a Municipal Administrator
+- duplicate email conflict handling
+- anonymous and citizen access denial
+- password, confirm-password, and phone validation failures
+- Municipal Administrator login with `admin_level` and `city_name`
+- service-level audit-log creation for municipal-administrator registration
+
 ## Test File Naming
 
 | Type | Pattern |
