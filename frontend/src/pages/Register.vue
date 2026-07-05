@@ -1,0 +1,404 @@
+<template>
+  <div class="w-full">
+    <!-- Header -->
+    <div class="text-center mb-6">
+      <h1 class="text-2xl font-bold text-white">Create your account</h1>
+      <p class="text-slate-400 text-sm mt-1">Join Civic Sense and report issues in your community</p>
+    </div>
+
+    <!-- Success State -->
+    <transition name="fade">
+      <div v-if="registered" class="text-center py-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
+          <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <h2 class="text-xl font-bold text-slate-900 mb-2">Account created!</h2>
+        <p class="text-slate-500 text-sm mb-6">
+          Welcome, <strong>{{ form.first_name }}</strong>! Your account has been registered successfully.
+        </p>
+        <div class="flex items-center justify-center gap-2 text-sm text-slate-400">
+          <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          Redirecting to sign in…
+        </div>
+      </div>
+    </transition>
+
+    <!-- Registration Form -->
+    <form v-if="!registered" @submit.prevent="handleRegister" class="space-y-5" novalidate>
+
+      <!-- Name Row -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="first_name" class="form-label">First Name <span class="text-red-500">*</span></label>
+          <input
+            id="first_name"
+            v-model.trim="form.first_name"
+            type="text"
+            class="form-input"
+            :class="fieldError('first_name') ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
+            placeholder="Priya"
+            autocomplete="given-name"
+            @blur="touch('first_name')"
+          />
+          <p v-if="fieldError('first_name')" class="field-error">{{ fieldError('first_name') }}</p>
+        </div>
+        <div>
+          <label for="last_name" class="form-label">Last Name <span class="text-red-500">*</span></label>
+          <input
+            id="last_name"
+            v-model.trim="form.last_name"
+            type="text"
+            class="form-input"
+            :class="fieldError('last_name') ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
+            placeholder="Sharma"
+            autocomplete="family-name"
+            @blur="touch('last_name')"
+          />
+          <p v-if="fieldError('last_name')" class="field-error">{{ fieldError('last_name') }}</p>
+        </div>
+      </div>
+
+      <!-- Username -->
+      <div>
+        <label for="username" class="form-label">Username <span class="text-red-500">*</span></label>
+        <input
+          id="username"
+          v-model.trim="form.username"
+          type="text"
+          class="form-input"
+          :class="fieldError('username') ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
+          placeholder="priya_sharma"
+          autocomplete="username"
+          @blur="touch('username')"
+        />
+        <p v-if="fieldError('username')" class="field-error">{{ fieldError('username') }}</p>
+      </div>
+
+      <!-- Email -->
+      <div>
+        <label for="email" class="form-label">Email Address <span class="text-red-500">*</span></label>
+        <input
+          id="email"
+          v-model.trim="form.email"
+          type="email"
+          class="form-input"
+          :class="fieldError('email') ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
+          placeholder="priya@example.com"
+          autocomplete="email"
+          @blur="touch('email')"
+        />
+        <p v-if="fieldError('email')" class="field-error">{{ fieldError('email') }}</p>
+      </div>
+
+      <!-- Mobile -->
+      <div>
+        <label for="phone" class="form-label">Mobile Number</label>
+        <input
+          id="phone"
+          v-model.trim="form.phone"
+          type="tel"
+          class="form-input"
+          :class="fieldError('phone') ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
+          placeholder="+91-9876543210"
+          autocomplete="tel"
+          @blur="touch('phone')"
+        />
+        <p v-if="fieldError('phone')" class="field-error">{{ fieldError('phone') }}</p>
+        <p v-else class="mt-1 text-xs text-slate-400">Format: +91-9876543210 or 10-digit number</p>
+      </div>
+
+      <!-- Password -->
+      <div>
+        <label for="password" class="form-label">Password <span class="text-red-500">*</span></label>
+        <div class="relative">
+          <input
+            id="password"
+            v-model="form.password"
+            :type="showPassword ? 'text' : 'password'"
+            class="form-input pr-12"
+            :class="fieldError('password') ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
+            placeholder="Min 8 chars with A, 1, @"
+            autocomplete="new-password"
+            @blur="touch('password')"
+            @input="touch('password')"
+          />
+          <button
+            type="button"
+            @click="showPassword = !showPassword"
+            class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+            :aria-label="showPassword ? 'Hide password' : 'Show password'"
+          >
+            <svg v-if="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+            </svg>
+          </button>
+        </div>
+        <!-- Password strength indicator -->
+        <div v-if="form.password" class="mt-2 space-y-1">
+          <div class="flex gap-1">
+            <div
+              v-for="i in 4"
+              :key="i"
+              class="h-1 flex-1 rounded-full transition-all duration-300"
+              :class="passwordStrengthBars[i - 1]"
+            ></div>
+          </div>
+          <p class="text-xs" :class="passwordStrengthTextClass">
+            {{ passwordStrengthLabel }}
+          </p>
+        </div>
+        <p v-if="fieldError('password')" class="field-error">{{ fieldError('password') }}</p>
+      </div>
+
+      <!-- Confirm Password -->
+      <div>
+        <label for="confirm_password" class="form-label">Confirm Password <span class="text-red-500">*</span></label>
+        <div class="relative">
+          <input
+            id="confirm_password"
+            v-model="form.confirm_password"
+            :type="showConfirm ? 'text' : 'password'"
+            class="form-input pr-12"
+            :class="fieldError('confirm_password') ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
+            placeholder="Re-enter your password"
+            autocomplete="new-password"
+            @blur="touch('confirm_password')"
+          />
+          <button
+            type="button"
+            @click="showConfirm = !showConfirm"
+            class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+            :aria-label="showConfirm ? 'Hide password' : 'Show password'"
+          >
+            <svg v-if="!showConfirm" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+            </svg>
+          </button>
+        </div>
+        <p v-if="fieldError('confirm_password')" class="field-error">{{ fieldError('confirm_password') }}</p>
+      </div>
+
+      <!-- Server Error -->
+      <transition name="fade">
+        <div
+          v-if="serverError"
+          class="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
+          role="alert"
+        >
+          <svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <p class="text-red-700 text-sm">{{ serverError }}</p>
+        </div>
+      </transition>
+
+      <!-- Submit -->
+      <button
+        type="submit"
+        class="btn-primary w-full mt-2"
+        :disabled="isLoading"
+        id="register-submit-btn"
+      >
+        <svg v-if="isLoading" class="w-4 h-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+        </svg>
+        {{ isLoading ? 'Creating account…' : 'Create Account' }}
+      </button>
+
+      <!-- Login Link -->
+      <p class="text-center text-sm text-slate-500 pt-1">
+        Already have an account?
+        <RouterLink to="/login" class="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+          Sign in
+        </RouterLink>
+      </p>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+const router = useRouter()
+
+// ── Form state ──────────────────────────────────────────────────────────────
+const form = reactive({
+  first_name: '',
+  last_name: '',
+  username: '',
+  email: '',
+  phone: '',
+  password: '',
+  confirm_password: '',
+})
+
+const touched = reactive({})
+const isLoading = ref(false)
+const serverError = ref(null)
+const registered = ref(false)
+const showPassword = ref(false)
+const showConfirm = ref(false)
+
+// ── Touch tracking ──────────────────────────────────────────────────────────
+function touch(field) {
+  touched[field] = true
+}
+
+// ── Client-side validation rules ────────────────────────────────────────────
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PHONE_RE = /^\+?(\d[\s-]?){9,14}\d$/
+
+function validateField(field) {
+  const v = form[field]
+  switch (field) {
+    case 'first_name':
+      if (!v || !v.trim()) return 'First name is required.'
+      if (v.trim().length > 80) return 'First name is too long.'
+      return null
+    case 'last_name':
+      if (!v || !v.trim()) return 'Last name is required.'
+      if (v.trim().length > 80) return 'Last name is too long.'
+      return null
+    case 'username':
+      if (!v) return 'Username is required.'
+      if (v.length < 3) return 'Username must be at least 3 characters.'
+      if (v.length > 80) return 'Username is too long.'
+      return null
+    case 'email':
+      if (!v) return 'Email address is required.'
+      if (!EMAIL_RE.test(v)) return 'Please enter a valid email address.'
+      return null
+    case 'phone':
+      if (!v) return null
+      if (!PHONE_RE.test(v)) return 'Enter a valid phone number (e.g. +91-9876543210).'
+      return null
+    case 'password': {
+      if (!v) return 'Password is required.'
+      if (v.length < 8) return 'Password must be at least 8 characters.'
+      if (!/[A-Z]/.test(v)) return 'Password must contain at least one uppercase letter.'
+      if (!/\d/.test(v)) return 'Password must contain at least one digit.'
+      if (!/[!@#$%^&*(),.?":{}|<>\-_]/.test(v)) return 'Password must contain at least one special character.'
+      return null
+    }
+    case 'confirm_password':
+      if (!v) return 'Please confirm your password.'
+      if (v !== form.password) return 'Passwords do not match.'
+      return null
+    default:
+      return null
+  }
+}
+
+function fieldError(field) {
+  if (!touched[field]) return null
+  return validateField(field)
+}
+
+// ── Password strength ───────────────────────────────────────────────────────
+const passwordStrength = computed(() => {
+  const p = form.password
+  if (!p) return 0
+  let score = 0
+  if (p.length >= 8) score++
+  if (/[A-Z]/.test(p)) score++
+  if (/\d/.test(p)) score++
+  if (/[!@#$%^&*(),.?":{}|<>\-_]/.test(p)) score++
+  return score
+})
+
+const passwordStrengthBars = computed(() => {
+  const s = passwordStrength.value
+  const colors = {
+    0: 'bg-slate-200',
+    1: 'bg-red-400',
+    2: 'bg-orange-400',
+    3: 'bg-yellow-400',
+    4: 'bg-green-500',
+  }
+  const active = colors[s]
+  return [
+    s >= 1 ? active : 'bg-slate-200',
+    s >= 2 ? active : 'bg-slate-200',
+    s >= 3 ? active : 'bg-slate-200',
+    s >= 4 ? active : 'bg-slate-200',
+  ]
+})
+
+const passwordStrengthLabel = computed(() => {
+  return ['', 'Weak', 'Fair', 'Good', 'Strong'][passwordStrength.value]
+})
+
+const passwordStrengthTextClass = computed(() => {
+  return ['', 'text-red-500', 'text-orange-500', 'text-yellow-600', 'text-green-600'][passwordStrength.value]
+})
+
+// ── Submit ──────────────────────────────────────────────────────────────────
+async function handleRegister() {
+  // Touch all fields to show errors
+  Object.keys(form).forEach(touch)
+
+  const allFields = ['first_name', 'last_name', 'username', 'email', 'phone', 'password', 'confirm_password']
+  const hasErrors = allFields.some(f => validateField(f) !== null)
+  if (hasErrors) return
+
+  isLoading.value = true
+  serverError.value = null
+
+  try {
+    const payload = {
+      username: form.username,
+      email: form.email,
+      password: form.password,
+      first_name: form.first_name,
+      last_name: form.last_name,
+    }
+    if (form.phone) payload.phone = form.phone
+
+    await authStore.register(payload)
+
+    registered.value = true
+
+    // Auto-redirect to login after 2.5s
+    setTimeout(() => {
+      router.push({ name: 'login' })
+    }, 2500)
+  } catch (err) {
+    serverError.value = err.message || 'Registration failed. Please try again.'
+  } finally {
+    isLoading.value = false
+  }
+}
+</script>
+
+<style scoped>
+.field-error {
+  @apply mt-1 text-xs text-red-600;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
