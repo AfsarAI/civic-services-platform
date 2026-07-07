@@ -10,6 +10,21 @@ const adminService = {
     return response.data
   },
 
+  async lookupPincode(pincode) {
+    const response = await api.get(`/locations/pincode/${pincode}`)
+    return response.data
+  },
+
+  async searchPincodes(prefix = '', limit = 10) {
+    const response = await api.get('/locations/pincodes', { params: { prefix, limit } })
+    return response.data
+  },
+
+  async searchCities(query = '', limit = 10) {
+    const response = await api.get('/locations/cities', { params: { query, limit } })
+    return response.data
+  },
+
   async getMunicipalAdministrators(params = {}) {
     const response = await api.get('/admin/municipal-administrators', { params })
     return response.data

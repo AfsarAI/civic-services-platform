@@ -2,6 +2,17 @@
   <header class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 shadow-sm">
     <!-- Brand -->
     <div class="flex items-center gap-3">
+      <button
+        type="button"
+        class="md:hidden inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-100"
+        @click="emit('toggle-sidebar')"
+        aria-label="Toggle navigation menu"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+
       <RouterLink to="/dashboard" class="flex items-center gap-2 text-primary-700 font-bold text-lg">
         <span class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">CS</span>
         Civic Services
@@ -54,6 +65,7 @@
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
+const emit = defineEmits(['toggle-sidebar'])
 const authStore = useAuthStore()
 const router = useRouter()
 

@@ -1,6 +1,6 @@
 # Civic Services Platform
 
-A university Scrum project — an enterprise-grade web platform that allows **citizens** to report potholes and civic issues, **administrators** to manage and assign complaints, and **field workers** to update repair progress in real time.
+A university Scrum project — an enterprise-grade web platform that lets **citizens** report potholes with a photo and map location, **administrators** manage and assign complaints, and **field workers** update repair progress in real time.
 
 ---
 
@@ -26,7 +26,7 @@ The **Civic Services Platform** enables:
 
 | Role | Capabilities |
 |---|---|
-| **Citizen** | Register, submit complaints (potholes, etc.), track status, provide feedback |
+| **Citizen** | Register, submit pothole complaints with photo and location, track status, provide feedback |
 | **Administrator** | System Administrator and Municipal Administrator accounts share the same `administrator` role, with subtype-based permissions |
 | **Field Worker** | View assigned tasks, update repair progress, upload evidence |
 
@@ -162,9 +162,22 @@ FLASK_APP=app.py flask db upgrade
 # 6. Seed roles and default admin user (safe to re-run)
 FLASK_APP=app.py flask seed
 
+# 6b. Import city/pincode mappings from database/pincode.csv
+FLASK_APP=app.py flask import-pincodes
+
 # 7. Start the development server
 FLASK_APP=app.py FLASK_ENV=development flask run
 ```
+
+### Database setup order
+
+Run these backend commands in order after creating `.env`:
+
+1. `FLASK_APP=app.py flask db upgrade`
+2. `FLASK_APP=app.py flask seed`
+3. `FLASK_APP=app.py flask import-pincodes`
+
+Use `FLASK_APP=app.py flask import-pincodes --replace` if you want to clear and reload the `city_pincodes` table from `database/pincode.csv`.
 
 The API will be available at `http://localhost:5000`.
 
@@ -200,6 +213,15 @@ Implementation summary:
 - JWT and `/auth/me` now include `admin_level`, `city_id`, and `city_name`
 - frontend routing remains role-based, with subtype-aware restrictions for system-only pages
 - municipal-admin registration now uses the existing admin API with audit logging and validation parity for password and phone fields
+
+## Recent Changes
+
+- Narrowed the product scope to pothole-only reporting.
+- Made complaint photo upload mandatory in the citizen flow.
+- Reworked the mobile report screen around photo, map pin, pincode, and city selection.
+- Added backend support for uploading complaint photos and serving them back by URL.
+- Added the `flask import-pincodes` command for loading `city_pincodes` from `database/pincode.csv`.
+- Updated the documentation set to match the current setup order and database seeding flow.
 
 ---
 

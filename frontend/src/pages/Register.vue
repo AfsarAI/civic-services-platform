@@ -2,8 +2,8 @@
   <div class="w-full">
     <!-- Header -->
     <div class="text-center mb-6">
-      <h1 class="text-2xl font-bold text-white">Create your account</h1>
-      <p class="text-slate-400 text-sm mt-1">Join Civic Sense and report issues in your community</p>
+      <h1 class="text-2xl font-bold text-slate-900">Create your account</h1>
+      <p class="text-slate-500 text-sm mt-1">Join Civic Services and report issues in your community</p>
     </div>
 
     <!-- Success State -->
@@ -112,6 +112,69 @@
         <p v-else class="mt-1 text-xs text-slate-400">Format: +91-9876543210 or 10-digit number</p>
       </div>
 
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="relative">
+          <label for="pincode" class="form-label">Pincode <span class="text-red-500">*</span></label>
+          <input
+            id="pincode"
+            v-model.trim="form.pincode"
+            type="text"
+            maxlength="6"
+            class="form-input"
+            :class="fieldError('pincode') ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
+            placeholder="226001"
+            @input="handlePincodeInput"
+            @focus="handlePincodeFocus"
+            @blur="handlePincodeBlur"
+          />
+          <div
+            v-if="isPincodeSuggesting"
+            class="absolute right-3 top-[2.15rem] text-[11px] text-slate-400"
+          >
+            Searching...
+          </div>
+
+          <div
+            v-if="showPincodeSuggestions && pincodeSuggestions.length"
+            class="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl"
+          >
+            <button
+              v-for="suggestion in pincodeSuggestions"
+              :key="`${suggestion.pincode}-${suggestion.city_id}-${suggestion.area_name}`"
+              type="button"
+              class="block w-full rounded-lg px-3 py-2 text-left text-xs text-slate-700 transition-colors hover:bg-slate-100"
+              @mousedown.prevent="applyPincodeSuggestion(suggestion)"
+            >
+              <div class="font-semibold text-slate-900">{{ suggestion.pincode }} - {{ suggestion.area_name || suggestion.city_name }}</div>
+              <div class="mt-0.5 text-[11px] text-slate-500">
+                {{ suggestion.district || suggestion.city_name }}{{ suggestion.state ? `, ${suggestion.state}` : '' }}
+              </div>
+            </button>
+          </div>
+
+          <p v-if="fieldError('pincode')" class="field-error">{{ fieldError('pincode') }}</p>
+          <p v-else class="mt-1 text-xs text-slate-400">Type at least 2 digits to see pincode suggestions.</p>
+        </div>
+
+        <div>
+          <label for="city_id" class="form-label">City <span class="text-red-500">*</span></label>
+          <select
+            id="city_id"
+            v-model="form.city_id"
+            class="form-input"
+            :class="fieldError('city_id') ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
+            @blur="touch('city_id')"
+          >
+            <option value="" disabled>Select city</option>
+            <option v-for="city in cityOptions" :key="city.city_id" :value="city.city_id">
+              {{ city.city_name }}{{ city.state ? `, ${city.state}` : '' }}
+            </option>
+          </select>
+          <p v-if="fieldError('city_id')" class="field-error">{{ fieldError('city_id') }}</p>
+          <p v-else-if="locationMessage" class="mt-1 text-xs text-slate-400">{{ locationMessage }}</p>
+        </div>
+      </div>
+
       <!-- Password -->
       <div>
         <label for="password" class="form-label">Password <span class="text-red-500">*</span></label>
@@ -130,7 +193,7 @@
           <button
             type="button"
             @click="showPassword = !showPassword"
-            class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+            class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-700 transition-colors"
             :aria-label="showPassword ? 'Hide password' : 'Show password'"
           >
             <svg v-if="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,7 +239,7 @@
           <button
             type="button"
             @click="showConfirm = !showConfirm"
-            class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+            class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-700 transition-colors"
             :aria-label="showConfirm ? 'Hide password' : 'Show password'"
           >
             <svg v-if="!showConfirm" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,9 +295,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onBeforeUnmount } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import locationService from '@/services/location.service'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -246,6 +310,8 @@ const form = reactive({
   username: '',
   email: '',
   phone: '',
+  pincode: '',
+  city_id: '',
   password: '',
   confirm_password: '',
 })
@@ -256,6 +322,12 @@ const serverError = ref(null)
 const registered = ref(false)
 const showPassword = ref(false)
 const showConfirm = ref(false)
+const cityOptions = ref([])
+const locationMessage = ref('')
+const pincodeSuggestions = ref([])
+const showPincodeSuggestions = ref(false)
+const isPincodeSuggesting = ref(false)
+let pincodeSuggestDebounce = null
 
 // ── Touch tracking ──────────────────────────────────────────────────────────
 function touch(field) {
@@ -301,6 +373,13 @@ function validateField(field) {
     case 'confirm_password':
       if (!v) return 'Please confirm your password.'
       if (v !== form.password) return 'Passwords do not match.'
+      return null
+    case 'pincode':
+      if (!v) return 'Pincode is required.'
+      if (!/^\d{6}$/.test(v)) return 'Pincode must be exactly 6 digits.'
+      return null
+    case 'city_id':
+      if (!form.city_id) return 'Please select a city for this pincode.'
       return null
     default:
       return null
@@ -355,7 +434,7 @@ async function handleRegister() {
   // Touch all fields to show errors
   Object.keys(form).forEach(touch)
 
-  const allFields = ['first_name', 'last_name', 'username', 'email', 'phone', 'password', 'confirm_password']
+  const allFields = ['first_name', 'last_name', 'username', 'email', 'phone', 'pincode', 'city_id', 'password', 'confirm_password']
   const hasErrors = allFields.some(f => validateField(f) !== null)
   if (hasErrors) return
 
@@ -369,6 +448,8 @@ async function handleRegister() {
       password: form.password,
       first_name: form.first_name,
       last_name: form.last_name,
+      pincode: form.pincode,
+      city_id: Number(form.city_id),
     }
     if (form.phone) payload.phone = form.phone
 
@@ -386,6 +467,107 @@ async function handleRegister() {
     isLoading.value = false
   }
 }
+
+async function handlePincodeBlur() {
+  normalizePincode()
+  touch('pincode')
+  touch('city_id')
+  locationMessage.value = ''
+  window.setTimeout(() => {
+    showPincodeSuggestions.value = false
+  }, 120)
+
+  if (validateField('pincode')) {
+    cityOptions.value = []
+    form.city_id = ''
+    return
+  }
+
+  try {
+    const response = await locationService.lookupPincode(form.pincode)
+    const matches = response?.data?.cities || []
+    cityOptions.value = matches
+
+    if (matches.length === 0) {
+      form.city_id = ''
+      locationMessage.value = 'No city mapping found for this pincode.'
+      return
+    }
+
+    if (matches.length === 1) {
+      form.city_id = matches[0].city_id
+      locationMessage.value = `City resolved: ${matches[0].city_name}`
+      return
+    }
+
+    if (!matches.some((city) => city.city_id === Number(form.city_id))) {
+      form.city_id = ''
+    }
+    locationMessage.value = 'Multiple city options found. Please select one.'
+  } catch (err) {
+    cityOptions.value = []
+    form.city_id = ''
+    locationMessage.value = err?.response?.data?.message || 'Could not resolve pincode right now.'
+  }
+}
+
+function normalizePincode() {
+  form.pincode = (form.pincode || '').replace(/\D/g, '').slice(0, 6)
+}
+
+function handlePincodeInput() {
+  normalizePincode()
+  locationMessage.value = ''
+
+  if (form.pincode.length < 6) {
+    cityOptions.value = []
+    form.city_id = ''
+  }
+
+  if (form.pincode.length < 2) {
+    pincodeSuggestions.value = []
+    showPincodeSuggestions.value = false
+    window.clearTimeout(pincodeSuggestDebounce)
+    return
+  }
+
+  window.clearTimeout(pincodeSuggestDebounce)
+  pincodeSuggestDebounce = window.setTimeout(() => {
+    fetchPincodeSuggestions(form.pincode)
+  }, 180)
+}
+
+function handlePincodeFocus() {
+  if (form.pincode.length >= 2 && pincodeSuggestions.value.length) {
+    showPincodeSuggestions.value = true
+  }
+}
+
+async function fetchPincodeSuggestions(prefix) {
+  isPincodeSuggesting.value = true
+  try {
+    const response = await locationService.searchPincodes(prefix, 8)
+    if (prefix !== form.pincode) return
+    pincodeSuggestions.value = response?.data?.items || []
+    showPincodeSuggestions.value = pincodeSuggestions.value.length > 0
+  } catch {
+    pincodeSuggestions.value = []
+    showPincodeSuggestions.value = false
+  } finally {
+    isPincodeSuggesting.value = false
+  }
+}
+
+async function applyPincodeSuggestion(suggestion) {
+  form.pincode = suggestion.pincode
+  showPincodeSuggestions.value = false
+  pincodeSuggestions.value = []
+  await handlePincodeBlur()
+}
+
+onBeforeUnmount(() => {
+  window.clearTimeout(pincodeSuggestDebounce)
+})
 </script>
 
 <style scoped>

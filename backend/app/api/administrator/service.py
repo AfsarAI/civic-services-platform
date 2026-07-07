@@ -238,7 +238,7 @@ class AdminService:
         if not admin_role:
             raise RuntimeError("Administrator role not found. Run 'flask seed' first.")
 
-        city = self._get_or_create_city(data["city_name"], data.get("city_state"))
+        city = self._resolve_city_for_onboarding(data)
 
         user = self.repository.create_user(
             username=username,
@@ -246,6 +246,7 @@ class AdminService:
             first_name=data["first_name"],
             last_name=data["last_name"],
             phone=data.get("phone"),
+            pincode=data.get("pincode"),
             role_id=admin_role.id,
             is_active=True,
         )
@@ -304,7 +305,12 @@ class AdminService:
             if field in data:
                 setattr(user, field, data[field])
 
-        if "city_name" in data:
+        if "pincode" in data or "city_id" in data:
+            city = self._resolve_city_from_pincode(data.get("pincode"), data.get("city_id"))
+            user.admin_profile.city_id = city.id
+            if "pincode" in data:
+                user.pincode = data.get("pincode")
+        elif "city_name" in data:
             city = self._get_or_create_city(data["city_name"], data.get("city_state"))
             user.admin_profile.city_id = city.id
         elif "city_state" in data and user.admin_profile.city:
@@ -391,14 +397,43 @@ class AdminService:
 
     def _get_or_create_city(self, city_name: str, city_state: str = None) -> City:
         normalized_name = city_name.strip()
-        city = self.repository.find_city_by_name(normalized_name)
+        normalized_state = city_state.strip() if isinstance(city_state, str) else city_state
+        city = self.repository.find_city_by_name(normalized_name, normalized_state)
         if city:
-            if city_state and not city.state:
-                city.state = city_state
+            if normalized_state and not city.state:
+                city.state = normalized_state
                 db.session.flush()
             return city
 
-        return self.repository.create_city(normalized_name, city_state)
+        return self.repository.create_city(normalized_name, normalized_state)
+
+    def _resolve_city_for_onboarding(self, data: dict) -> City:
+        pincode = data.get("pincode")
+        city_id = data.get("city_id")
+        if pincode:
+            return self._resolve_city_from_pincode(pincode, city_id)
+        if data.get("city_name"):
+            return self._get_or_create_city(data["city_name"], data.get("city_state"))
+        raise ValueError("Either pincode or city_name is required.")
+
+    def _resolve_city_from_pincode(self, pincode: str | None, city_id: int | None) -> City:
+        if not pincode:
+            raise ValueError("Pincode is required when selecting city by pincode.")
+
+        mappings = self.repository.find_cities_by_pincode(pincode)
+        if not mappings:
+            raise ValueError("No city mapping found for the provided pincode.")
+
+        if city_id is not None:
+            mapping = self.repository.get_city_pincode_mapping(pincode, city_id)
+            if not mapping:
+                raise ValueError("Selected city does not match the provided pincode.")
+            return mapping.city
+
+        unique_cities = {mapping.city_id: mapping.city for mapping in mappings}
+        if len(unique_cities) > 1:
+            raise ValueError("Multiple cities found for this pincode. Please select a city.")
+        return list(unique_cities.values())[0]
 
     def _get_municipal_admin_user(self, user_id: int) -> User:
         user = self.repository.get_municipal_admin_user(user_id)
@@ -433,6 +468,9 @@ class AdminService:
             "longitude": complaint.longitude,
             "address": complaint.address,
             "image_url": complaint.image_url,
+            "city_id": complaint.city_id,
+            "city_name": complaint.city.name if complaint.city else None,
+            "pincode": complaint.pincode,
             "citizen_id": complaint.citizen_id,
             "resolved_at": (
                 complaint.resolved_at.isoformat() if complaint.resolved_at else None
@@ -473,6 +511,7 @@ class AdminService:
             "admin_level": user.admin_level,
             "city_id": user.admin_city_id,
             "city_name": user.admin_city_name,
+            "pincode": user.pincode,
             "created_at": user.created_at.isoformat(),
         }
 

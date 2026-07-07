@@ -8,6 +8,7 @@ from marshmallow import ValidationError
 
 
 PHONE_PATTERN = re.compile(r"^\+?(\d[\s\-]?){9,14}\d$")
+PINCODE_PATTERN = re.compile(r"^\d{6}$")
 
 
 def normalize_email(value: str | None) -> str | None:
@@ -54,3 +55,11 @@ def validate_phone_number(value: str | None) -> None:
         raise ValidationError(
             "Enter a valid phone number (e.g. +91-9876543210 or 9876543210)."
         )
+
+
+def validate_pincode(value: str | None) -> None:
+    """Validate a 6-digit Indian pincode."""
+    if value is None:
+        return
+    if not PINCODE_PATTERN.match(value):
+        raise ValidationError("Pincode must be exactly 6 digits.")

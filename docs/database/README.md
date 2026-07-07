@@ -16,35 +16,41 @@ This folder contains the database schema, ERD, and migration history for the Civ
                 │ last_name        │    │ priority (low/med/high)   │
                 │ phone            │    │ latitude / longitude      │
                 │ role_id (FK)     │    │ address                   │
+                │ city_id (FK) ────────►│ city_id (FK)              │
+                │ pincode          │    │ pincode                   │
                 │ is_active        │    │ image_url                 │
                 │ created_at       │    │ citizen_id (FK → users)   │
                 │ updated_at       │    │ resolved_at               │
                 └────────┬─────────┘    │ created_at / updated_at   │
                          │              └──────────────┬────────────┘
                          │                             │
-         ┌───────────────▼───────────────┐             │
-         │     AdministratorProfile      │             │
-         │───────────────────────────────│             │
-         │ id (PK)                       │             │
-         │ user_id (FK → users, unique)  │             │
-         │ admin_level (system/municipal)│             │
-         │ city_id (FK → cities, null for│             │
-         │   system admin only)          │             │
-         │ created_by_id (FK → users)    │             │
-         └───────────────┬───────────────┘             │
                          │                             │
-                ┌────────▼────────┐                    │
-                │      City       │                    │
-                │─────────────────│                    │
-                │ id (PK)         │                    │
-                │ name            │                    │
-                │ state           │                    │
-                │ is_active       │                    │
-                └─────────────────┘                    │
-                                                       │
-              ┌────────────────────────────────────────┤
-              │                                        │
-┌─────────────▼──────────┐        ┌───────────────────▼──┐
+                ┌────────▼──────────┐         ┌────────▼───────────┐
+                │       City        │◄────────│    CityPincode     │
+                │───────────────────│         │────────────────────│
+                │ id (PK)           │         │ id (PK)            │
+                │ name              │         │ pincode            │
+                │ state             │         │ city_id (FK)       │
+                │ is_active         │         │ area_name          │
+                │ created_at        │         │ district           │
+                │ updated_at        │         │ state              │
+                └────────┬──────────┘         │ is_active          │
+                         │                    │ created_at         │
+                         │                    │ updated_at         │
+                         │                    └────────────────────┘
+                         │
+         ┌───────────────▼────────────────┐
+         │      AdministratorProfile      │
+         │────────────────────────────────│
+         │ id (PK)                        │
+         │ user_id (FK → users)           │
+         │ admin_level (system/municipal) │
+         │ city_id (FK → cities)          │
+         │ created_by_id (FK → users)     │
+         │ created_at / updated_at        │
+         └────────────────────────────────┘
+
+┌────────────────────────┐        ┌───────────────────────┐
 │   ComplaintAssignment  │        │       Feedback        │
 │────────────────────────│        │───────────────────────│
 │ id (PK)                │        │ id (PK)               │
@@ -67,6 +73,13 @@ This folder contains the database schema, ERD, and migration history for the Civ
 └───────────────────────────┘     └─────────────────────────┘
 ```
 
+### Location relationship summary
+
+- `users.city_id → cities.id` stores the citizen's or worker's home city context.
+- `complaints.city_id → cities.id` stores the routing snapshot used when the complaint was filed.
+- `administrator_profiles.city_id → cities.id` scopes municipal administrators to a single city.
+- `city_pincodes.city_id → cities.id` maps one pincode to one or more city records.
+
 ## Complaint Status Flow
 
 ```
@@ -81,13 +94,24 @@ pending → assigned → in_progress → resolved → closed
 |---|---|---|
 | `Role` | `roles` | User roles (Citizen, Administrator, Field Worker) |
 | `User` | `users` | Platform users with role association |
-| `City` | `cities` | Administrative city used for municipal administrator assignment |
-| `AdministratorProfile` | `administrator_profiles` | Administrator subtype (`system` or `municipal`) and city scope |
+| `City` | `cities` | Canonical city master used by onboarding, routing, and admin scope |
+| `AdministratorProfile` | `administrator_profiles` | Administrator subtype and municipal city scope |
 | `Complaint` | `complaints` | Civic complaints submitted by citizens |
+| `CityPincode` | `city_pincodes` | Master mapping of pincode to one/more cities |
 | `ComplaintAssignment` | `complaint_assignments` | Assignment of complaints to field workers |
 | `Notification` | `notifications` | System notifications to users |
 | `Feedback` | `feedback` | Citizen feedback on resolved complaints |
 | `AuditLog` | `audit_logs` | System audit trail |
+
+## Location Mapping Additions
+
+- `users.city_id`, `users.pincode`: stores citizen/admin onboarding location.
+- `complaints.city_id`, `complaints.pincode`: persisted routing snapshot at complaint creation time.
+- `city_pincodes` indexes:
+    - `ix_city_pincodes_pincode`
+    - `ix_city_pincodes_city_id`
+
+This makes runtime lookups DB-native and avoids querying CSV files in request paths.
 
 ## Migrations
 
@@ -104,12 +128,23 @@ flask db downgrade
 flask db history
 ```
 
-## Administrator Hierarchy Notes
+## Seeding Reference
 
-- The `roles` table still contains only `citizen`, `administrator`, and `field_worker`.
-- `administrator_profiles` is the authoritative source for distinguishing System and Municipal Administrators.
-- Municipal administrators must reference exactly one row in `cities`.
-- System administrators must not reference a city.
+The project uses two separate seed/import steps:
+
+1. `flask seed` creates the three base roles and the default system administrator.
+2. `flask import-pincodes` loads `city_pincodes` from `database/pincode.csv` and creates any missing `cities` rows.
+
+Recommended setup order after configuring the backend:
+
+```bash
+cd backend
+flask db upgrade
+flask seed
+flask import-pincodes
+```
+
+Use `flask import-pincodes --replace` if you need to rebuild the mapping table from the CSV.
 
 ## TODO
 

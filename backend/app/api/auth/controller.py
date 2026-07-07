@@ -40,6 +40,8 @@ _register_model = ns.model(
         "first_name": fields.String(required=True, example="John"),
         "last_name": fields.String(required=True, example="Doe"),
         "phone": fields.String(example="+91-9876543210"),
+        "pincode": fields.String(required=True, example="226001"),
+        "city_id": fields.Integer(example=42),
     },
 )
 

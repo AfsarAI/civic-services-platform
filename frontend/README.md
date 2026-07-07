@@ -49,3 +49,4 @@ Output is in `dist/`.
   - Citizen → `/citizen/dashboard`
   - Field Worker → `/fieldworker/dashboard`
 - Router-level guards in `src/router/index.js` enforce auth + role authorization.
+- Registration and municipal-admin onboarding call `GET /locations/pincode/<pincode>` for city resolution.

@@ -22,8 +22,14 @@ cp .env.example .env
 # 5. Apply DB migrations (creates all tables in instance/civic.db)
 FLASK_APP=app.py flask db upgrade
 
-# 6. Seed roles + default system administrator (idempotent — safe to re-run)
+# 6. Seed roles + default admin user (idempotent — safe to re-run)
 FLASK_APP=app.py flask seed
+
+# 6b. Import city-pincode master data from database/pincode.csv
+FLASK_APP=app.py flask import-pincodes
+
+# 6c. Rebuild the mapping from scratch when needed
+# FLASK_APP=app.py flask import-pincodes --replace
 
 # 7. Run the development server
 FLASK_APP=app.py FLASK_ENV=development flask run
@@ -32,27 +38,20 @@ FLASK_APP=app.py FLASK_ENV=development flask run
 **Swagger UI** → `http://localhost:5000/api/v1/docs`
 
 > `flask seed` creates roles (`citizen`, `field_worker`, `administrator`) and a default
-> **System Administrator** account from your `.env` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`).
-> Safe to re-run.
+> admin account from your `.env` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`). Safe to re-run.
 
-## Administrator Hierarchy
+> `flask import-pincodes` loads the `city_pincodes` master table from `database/pincode.csv`.
+> Use `--replace` if you want to clear existing mappings before re-importing.
 
-The backend does **not** introduce a fourth role such as `system_admin`.
+### Setup order
 
-Instead:
-- `users` still stores the coarse application role
-- `administrator_profiles` stores the administrator subtype
-- `cities` stores the city for municipal administrators
+Run the backend setup in this order:
 
-Current administrator subtypes:
-- `system`: global platform administration
-- `municipal`: administrator assigned to exactly one city
+1. `FLASK_APP=app.py flask db upgrade`
+2. `FLASK_APP=app.py flask seed`
+3. `FLASK_APP=app.py flask import-pincodes`
 
-Auth contract remains unchanged:
-- one login endpoint: `POST /api/v1/auth/login`
-- email/password authentication
-- both admin subtypes are returned with `role: "administrator"`
-- extra user metadata now includes `admin_level`, `city_id`, and `city_name`
+If you need to refresh the mapping data, rerun step 3 with `--replace`.
 
 ## Structure
 

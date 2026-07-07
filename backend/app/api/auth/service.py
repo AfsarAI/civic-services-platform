@@ -8,6 +8,7 @@ from flask_jwt_extended import (
 )
 
 from app.extensions import db
+from app.models.city_pincode import CityPincode
 from app.models.role import Role
 from app.models.user import User
 
@@ -46,6 +47,8 @@ class AuthService:
             first_name=data["first_name"],
             last_name=data["last_name"],
             phone=data.get("phone"),
+            city_id=self._resolve_city_id(data["pincode"], data.get("city_id")),
+            pincode=data.get("pincode"),
             role_id=citizen_role.id,
             is_active=True,
         )
@@ -83,7 +86,7 @@ class AuthService:
             "role": user.role.name,
             "email": user.email,
             "admin_level": user.admin_level,
-            "city_id": user.admin_city_id,
+            "city_id": self._jwt_city_id(user),
         }
 
         access_token = create_access_token(
@@ -124,7 +127,7 @@ class AuthService:
             "role": user.role.name,
             "email": user.email,
             "admin_level": user.admin_level,
-            "city_id": user.admin_city_id,
+            "city_id": self._jwt_city_id(user),
         }
 
         access_token = create_access_token(
@@ -159,6 +162,8 @@ class AuthService:
     @staticmethod
     def _serialize_user(user: User) -> dict:
         """Return a safe public representation of a User (no password hash)."""
+        city_id = user.admin_city_id if user.is_administrator else user.city_id
+        city_name = user.admin_city_name if user.is_administrator else (user.city.name if user.city else None)
         return {
             "id": user.id,
             "username": user.username,
@@ -169,8 +174,29 @@ class AuthService:
             "phone": user.phone,
             "role": user.role.name,
             "admin_level": user.admin_level,
-            "city_id": user.admin_city_id,
-            "city_name": user.admin_city_name,
+            "city_id": city_id,
+            "city_name": city_name,
+            "pincode": user.pincode,
             "is_active": user.is_active,
             "created_at": user.created_at.isoformat() if user.created_at else None,
         }
+
+    @staticmethod
+    def _jwt_city_id(user: User) -> int | None:
+        return user.admin_city_id if user.is_administrator else user.city_id
+
+    @staticmethod
+    def _resolve_city_id(pincode: str, city_id: int | None) -> int:
+        mappings = CityPincode.query.filter_by(pincode=pincode, is_active=True).all()
+        if not mappings:
+            raise ValueError("No city mapping found for the provided pincode.")
+
+        if city_id is not None:
+            if not any(m.city_id == city_id for m in mappings):
+                raise ValueError("Selected city does not match the provided pincode.")
+            return city_id
+
+        unique_city_ids = sorted({m.city_id for m in mappings})
+        if len(unique_city_ids) > 1:
+            raise ValueError("Multiple cities found for this pincode. Please select a city.")
+        return unique_city_ids[0]

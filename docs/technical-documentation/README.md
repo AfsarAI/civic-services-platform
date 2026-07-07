@@ -23,7 +23,8 @@ This folder contains technical documentation for developers working on the Civic
 4. Copy `.env.example` to `.env` and configure
 5. Run `flask db upgrade` to apply migrations and create all tables
 6. Run `flask seed` to create roles and the default system administrator
-7. Run `flask run` to start the development server
+7. Run `flask import-pincodes` to load the `city_pincodes` master table from `database/pincode.csv`
+8. Run `flask run` to start the development server
 
 ### Frontend
 

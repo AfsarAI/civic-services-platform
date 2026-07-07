@@ -16,6 +16,49 @@
       </RouterLink>
     </nav>
   </aside>
+
+  <transition name="fade">
+    <div v-if="mobileOpen" class="fixed inset-0 z-40 md:hidden">
+      <button
+        type="button"
+        class="absolute inset-0 bg-slate-900/45"
+        @click="emit('close')"
+        aria-label="Close navigation menu"
+      ></button>
+
+      <aside class="absolute left-0 top-0 h-full w-72 max-w-[85vw] bg-white border-r border-gray-200 shadow-xl">
+        <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+          <p class="text-sm font-semibold text-slate-700">Navigation</p>
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-100"
+            @click="emit('close')"
+            aria-label="Close navigation"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <nav class="p-4 space-y-1 overflow-y-auto h-[calc(100%-3.5rem)]">
+          <RouterLink
+            v-for="link in filteredLinks"
+            :key="`mobile-${link.name || link.to}`"
+            :to="link.to"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+            :class="isActive(link.to)
+              ? 'bg-primary-50 text-primary-700'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'"
+            @click="emit('close')"
+          >
+            <span class="w-5 h-5 flex-shrink-0" v-html="link.icon"></span>
+            {{ link.label }}
+          </RouterLink>
+        </nav>
+      </aside>
+    </div>
+  </transition>
 </template>
 
 <script setup>
@@ -23,6 +66,14 @@ import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
+defineProps({
+  mobileOpen: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+const emit = defineEmits(['close'])
 const authStore = useAuthStore()
 const route = useRoute()
 
@@ -102,3 +153,15 @@ function isActive(path) {
   return route.path.startsWith(path)
 }
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

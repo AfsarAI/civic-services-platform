@@ -4,12 +4,23 @@ import { useAuthStore } from '@/stores/auth'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/landing',
+      name: 'landing',
+      component: () => import('@/pages/Landing.vue'),
+      meta: { requiresGuest: true },
+    },
+
     // ── Public ──────────────────────────────────────────────────────────
     {
       path: '/',
       component: () => import('@/layouts/AuthLayout.vue'),
       meta: { requiresGuest: true },
       children: [
+        {
+          path: '',
+          redirect: { name: 'landing' },
+        },
         {
           path: 'login',
           name: 'login',

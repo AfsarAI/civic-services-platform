@@ -7,6 +7,7 @@ This folder contains UI design documentation, wireframes, and component guidelin
 | Page | Route | Role |
 |---|---|---|
 | Login | `/login` | All |
+| Register | `/register` | Citizen (pincode-first onboarding) |
 | Dashboard | `/dashboard` | All (redirects by role) |
 | Citizen Dashboard | `/citizen/dashboard` | Citizen |
 | Report Complaint | `/citizen/report` | Citizen |
@@ -28,20 +29,6 @@ This folder contains UI design documentation, wireframes, and component guidelin
 | `Sidebar` | Role-aware side navigation |
 | `Footer` | Application footer |
 
-## Authentication UX Flow (Implemented)
-
-1. `/login` is publicly accessible through `AuthLayout`.
-2. Credentials are submitted from `Login.vue` to the auth store action `login(email, password)`.
-3. On successful authentication:
-   - `administrator` → `/admin/dashboard`
-   - `citizen` → `/citizen/dashboard`
-   - `field_worker` → `/fieldworker/dashboard`
-4. Invalid credentials render inline error feedback in the login form.
-5. Route guards enforce:
-   - Guest-only access to `/login`
-   - Authenticated-only access for protected routes
-   - Role-specific access for admin/citizen/field-worker pages
-
 ## Design System
 
 - **CSS Framework:** Tailwind CSS v3
@@ -55,3 +42,12 @@ This folder contains UI design documentation, wireframes, and component guidelin
 - [ ] Document component library
 - [ ] Add responsive breakpoint guidelines
 - [ ] Define color tokens
+
+## Pincode-first Forms
+
+- Citizen registration now requires pincode lookup before city selection.
+- Municipal administrator creation uses the same flow: enter pincode, then select one resolved city.
+- UI behavior by lookup result:
+	- No match: show inline message and block submit.
+	- Single match: auto-select city.
+	- Multiple matches: require explicit city choice.

@@ -61,7 +61,9 @@ _municipal_admin_create = ns.model("MunicipalAdminCreate", {
     "first_name": fields.String(required=True, example="Lucknow"),
     "last_name": fields.String(required=True, example="Administrator"),
     "phone": fields.String(example="+91-9876543210"),
-    "city_name": fields.String(required=True, example="Lucknow"),
+    "pincode": fields.String(required=True, example="226001"),
+    "city_id": fields.Integer(example=42),
+    "city_name": fields.String(example="Lucknow"),
     "city_state": fields.String(example="Uttar Pradesh"),
 })
 
@@ -70,6 +72,8 @@ _municipal_admin_update = ns.model("MunicipalAdminUpdate", {
     "last_name": fields.String,
     "phone": fields.String,
     "is_active": fields.Boolean,
+    "pincode": fields.String(example="226001"),
+    "city_id": fields.Integer(example=42),
     "city_name": fields.String(example="Varanasi"),
     "city_state": fields.String(example="Uttar Pradesh"),
 })

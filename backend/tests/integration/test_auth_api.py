@@ -155,6 +155,7 @@ class TestAuthEndpoints:
                 "password": "Password123!",
                 "first_name": "New",
                 "last_name": "Citizen",
+                "pincode": "226001",
             },
         )
 
@@ -191,6 +192,7 @@ class TestAuthEndpoints:
             "password": "Secure@123",
             "first_name": "Dup",
             "last_name": "User",
+            "pincode": "226001",
         }
         r1 = client.post("/api/v1/auth/register", json=payload)
         assert r1.status_code == 201
@@ -211,6 +213,7 @@ class TestAuthEndpoints:
                 "password": "onlylowercase",   # no uppercase, digit, or special char
                 "first_name": "Weak",
                 "last_name": "Pwd",
+                "pincode": "226001",
             },
         )
         assert response.status_code == 422
@@ -227,6 +230,7 @@ class TestAuthEndpoints:
                 "first_name": "Phone",
                 "last_name": "Test",
                 "phone": "abc-not-a-phone",
+                "pincode": "226001",
             },
         )
         assert response.status_code == 422
@@ -245,6 +249,7 @@ class TestAuthEndpoints:
                 "first_name": "Valid",
                 "last_name": "Phone",
                 "phone": "+91-9876543210",
+                "pincode": "226001",
             },
         )
         assert response.status_code == 201
@@ -259,6 +264,7 @@ class TestAuthEndpoints:
                 "password": "",
                 "first_name": "",
                 "last_name": "",
+                "pincode": "",
             },
         )
         assert response.status_code == 422
@@ -267,6 +273,7 @@ class TestAuthEndpoints:
         assert "password" in errors
         assert "first_name" in errors
         assert "last_name" in errors
+        assert "pincode" in errors
 
     def test_register_blank_first_name_returns_422(self, client):
         """Blank (whitespace-only) first name must be rejected."""
@@ -278,6 +285,7 @@ class TestAuthEndpoints:
                 "password": "Secure@123",
                 "first_name": "   ",
                 "last_name": "User",
+                "pincode": "226001",
             },
         )
         assert response.status_code == 422
@@ -315,6 +323,7 @@ class TestAuthEndpoints:
                 "password": "Secure@123",
                 "first_name": "Me",
                 "last_name": "User",
+                "pincode": "226001",
             },
         )
         login_resp = self._login(client, "meuser@example.com", "Secure@123")

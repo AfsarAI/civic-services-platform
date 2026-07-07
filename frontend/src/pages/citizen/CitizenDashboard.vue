@@ -84,9 +84,9 @@
           <span class="inline-flex rounded-full bg-primary-500/20 px-3 py-1 text-xs font-semibold text-primary-300 tracking-wide mb-3">
             Civic Sense Platform
           </span>
-          <h3 class="text-lg font-bold">Have you noticed a civic issue around you?</h3>
+          <h3 class="text-lg font-bold">Have you noticed a pothole around you?</h3>
           <p class="text-slate-300 text-xs mt-2 leading-relaxed">
-            Report potholed roads, broken streetlights, water leakages, garbage pile-ups, or any other city maintenance issues. Your reports are automatically routed to municipal administrators and verified by field crews.
+            Report potholes with a photo and map pin. The app is focused on one thing: getting road defects logged fast and routed to the right city team.
           </p>
           <RouterLink to="/citizen/report" class="inline-flex items-center gap-1 text-xs font-semibold text-primary-400 hover:text-primary-300 mt-4 transition-colors">
             Start a new report
