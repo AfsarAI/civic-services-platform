@@ -16,6 +16,32 @@ def _seed_roles():
         if not Role.query.filter_by(name=name).first():
             _db.session.add(Role(name=name))
     _db.session.commit()
+
+
+def _seed_location_mappings():
+    """Insert deterministic city/pincode fixtures for onboarding tests."""
+    from app.models.city import City
+    from app.models.city_pincode import CityPincode
+
+    city = City.query.filter_by(name="Lucknow").first()
+    if not city:
+        city = City(name="Lucknow", state="Uttar Pradesh", is_active=True)
+        _db.session.add(city)
+        _db.session.flush()
+
+    mapping = CityPincode.query.filter_by(pincode="226001", city_id=city.id).first()
+    if not mapping:
+        _db.session.add(
+            CityPincode(
+                pincode="226001",
+                city_id=city.id,
+                area_name="Hazratganj",
+                district="Lucknow",
+                state="Uttar Pradesh",
+                is_active=True,
+            )
+        )
+    _db.session.commit()
 @pytest.fixture(scope="session")
 def app():
     """Create a Flask application instance for testing."""
@@ -24,6 +50,7 @@ def app():
     with application.app_context():
         _db.create_all()
         _seed_roles()
+        _seed_location_mappings()
         yield application
         _db.drop_all()
 

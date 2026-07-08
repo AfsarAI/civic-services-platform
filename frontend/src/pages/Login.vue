@@ -2,8 +2,8 @@
   <div class="w-full">
     <!-- Header -->
     <div class="text-center mb-6">
-      <h1 class="text-2xl font-bold text-white">Welcome back</h1>
-      <p class="text-slate-400 text-sm mt-1">Sign in to your Civic Sense account</p>
+      <h1 class="text-2xl font-bold text-slate-900">Welcome back</h1>
+      <p class="text-slate-500 text-sm mt-1">Sign in to your Civic Services account</p>
     </div>
 
     <form @submit.prevent="handleLogin" class="space-y-5" novalidate>
@@ -44,7 +44,7 @@
           <button
             type="button"
             @click="showPassword = !showPassword"
-            class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+            class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-700 transition-colors"
             :aria-label="showPassword ? 'Hide password' : 'Show password'"
           >
             <svg v-if="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

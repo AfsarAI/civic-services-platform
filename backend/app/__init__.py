@@ -54,9 +54,10 @@ def _register_blueprints(app: Flask) -> None:
 
 def _register_commands(app: Flask) -> None:
     """Register Flask CLI commands."""
-    from app.commands import seed_command
+    from app.commands import import_pincodes_command, seed_command
 
     app.cli.add_command(seed_command)
+    app.cli.add_command(import_pincodes_command)
 
 
 def _register_error_handlers(app: Flask) -> None:

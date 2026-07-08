@@ -8,6 +8,7 @@ from sqlalchemy.orm import joinedload
 from app.extensions import db
 from app.models.administrator_profile import AdministratorProfile
 from app.models.city import City
+from app.models.city_pincode import CityPincode
 from app.models.role import Role
 from app.models.user import User
 
@@ -40,9 +41,61 @@ class AdministratorRepository:
         return City.query.order_by(City.name.asc()).all()
 
     @staticmethod
-    def find_city_by_name(city_name: str) -> City | None:
+    def find_city_by_name(city_name: str, state: str | None = None) -> City | None:
         normalized_name = city_name.strip()
-        return City.query.filter(func.lower(City.name) == normalized_name.lower()).first()
+        query = City.query.filter(func.lower(City.name) == normalized_name.lower())
+        if state is not None:
+            query = query.filter(func.lower(func.coalesce(City.state, "")) == state.strip().lower())
+        return query.first()
+
+    @staticmethod
+    def find_cities_by_pincode(pincode: str) -> list[CityPincode]:
+        return (
+            CityPincode.query
+            .options(joinedload(CityPincode.city))
+            .join(City, City.id == CityPincode.city_id)
+            .filter(CityPincode.pincode == pincode, CityPincode.is_active.is_(True))
+            .order_by(City.name.asc())
+            .all()
+        )
+
+    @staticmethod
+    def get_city_pincode_mapping(pincode: str, city_id: int) -> CityPincode | None:
+        return CityPincode.query.filter_by(pincode=pincode, city_id=city_id, is_active=True).first()
+
+    @staticmethod
+    def upsert_city_pincode(
+        pincode: str,
+        city_id: int,
+        area_name: str | None = None,
+        district: str | None = None,
+        state: str | None = None,
+    ) -> CityPincode:
+        existing = CityPincode.query.filter_by(
+            pincode=pincode,
+            city_id=city_id,
+            area_name=area_name,
+        ).first()
+        if existing:
+            existing.is_active = True
+            if district and not existing.district:
+                existing.district = district
+            if state and not existing.state:
+                existing.state = state
+            db.session.flush()
+            return existing
+
+        mapping = CityPincode(
+            pincode=pincode,
+            city_id=city_id,
+            area_name=area_name,
+            district=district,
+            state=state,
+            is_active=True,
+        )
+        db.session.add(mapping)
+        db.session.flush()
+        return mapping
 
     @staticmethod
     def list_municipal_administrators(

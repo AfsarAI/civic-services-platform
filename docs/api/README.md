@@ -26,66 +26,6 @@ Authorization: Bearer <access_token>
 
 Obtain a token via `POST /api/v1/auth/login`.
 
-### Admin Login Flow (Implemented)
-
-1. `POST /api/v1/auth/login` validates credentials and returns `access_token`, `refresh_token`, and `user`.
-2. Frontend creates an authenticated session by storing:
-   - `access_token`
-   - `refresh_token`
-   - `user`
-3. Administrator users are redirected to `/admin/dashboard` after successful login.
-4. Admin APIs enforce:
-   - coarse role checks with `require_admin`
-   - subtype checks with `require_system_admin` where required
-5. Expired access tokens are renewed through `POST /api/v1/auth/refresh`.
-6. `POST /api/v1/auth/logout` ends the session client-side by clearing stored tokens and profile.
-
-### Administrator Hierarchy Payload
-
-The login contract is unchanged: both admin subtypes still return `role: "administrator"`.
-
-Additional fields now returned in `user` and JWT claims:
-- `admin_level`: `system` or `municipal`
-- `city_id`: nullable, present for municipal administrators
-- `city_name`: nullable, present for municipal administrators
-
-### New System Administrator Endpoints
-
-- `GET /api/v1/admin/cities`
-- `GET /api/v1/admin/municipal-administrators`
-- `POST /api/v1/admin/municipal-administrators`
-- `GET /api/v1/admin/municipal-administrators/<user_id>`
-- `PUT /api/v1/admin/municipal-administrators/<user_id>`
-- `DELETE /api/v1/admin/municipal-administrators/<user_id>`
-
-These endpoints are restricted to the System Administrator subtype.
-
-### Municipal Administrator Registration Contract
-
-`POST /api/v1/admin/municipal-administrators`
-
-```json
-{
-  "username": "lucknow_admin",
-  "email": "lucknow.admin@example.com",
-  "password": "Municipal@123",
-  "confirm_password": "Municipal@123",
-  "first_name": "Lucknow",
-  "last_name": "Administrator",
-  "phone": "+91-9876543210",
-  "city_name": "Lucknow",
-  "city_state": "Uttar Pradesh"
-}
-```
-
-Rules:
-- only authenticated System Administrators may call this endpoint
-- `email` and `username` must be unique
-- `confirm_password` must match `password`
-- password strength matches the citizen registration rules
-- every Municipal Administrator is created under role `administrator` with `admin_level: municipal`
-- every Municipal Administrator belongs to exactly one city
-
 ## Namespaces
 
 | Namespace | Base Path | Description |
@@ -96,6 +36,33 @@ Rules:
 | Field Worker | `/api/v1/fieldworker` | Task management, progress updates |
 | Reports | `/api/v1/reports` | Statistical reports and exports |
 | Notifications | `/api/v1/notifications` | User notifications |
+| Locations | `/api/v1/locations` | Pincode lookup and city autosuggest |
+
+## Location Lookup Endpoints
+
+- `GET /api/v1/locations/pincode/<pincode>`
+  - Resolves a 6-digit pincode into one or more city options.
+  - Returns `match_count = 0/1/N` so UI can handle no-match, auto-select, or user-choice flow.
+- `GET /api/v1/locations/cities?query=<text>&limit=<n>`
+  - Returns active city suggestions for autosuggest controls.
+
+## Registration Payload Update
+
+Citizen registration now requires pincode-backed location fields:
+
+```json
+{
+  "username": "citizen1",
+  "email": "citizen@example.com",
+  "password": "Secure@123",
+  "first_name": "Citizen",
+  "last_name": "User",
+  "pincode": "226001",
+  "city_id": 1
+}
+```
+
+`city_id` is optional only when pincode maps to exactly one city.
 
 ## Response Format
 

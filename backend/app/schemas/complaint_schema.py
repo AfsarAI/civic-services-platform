@@ -18,6 +18,8 @@ class ComplaintSchema(Schema):
     longitude = fields.Float(dump_only=True, allow_none=True)
     address = fields.Str(dump_only=True, allow_none=True)
     image_url = fields.Str(dump_only=True, allow_none=True)
+    city_id = fields.Int(dump_only=True, allow_none=True)
+    pincode = fields.Str(dump_only=True, allow_none=True)
     citizen_id = fields.Int(dump_only=True)
     resolved_at = fields.DateTime(dump_only=True, allow_none=True)
     created_at = fields.DateTime(dump_only=True)
@@ -31,9 +33,7 @@ class ComplaintCreateSchema(Schema):
     description = fields.Str(required=True, validate=validate.Length(min=10))
     category = fields.Str(
         required=True,
-        validate=validate.OneOf(
-            ["pothole", "streetlight", "drainage", "garbage", "road_damage", "other"]
-        ),
+        validate=validate.OneOf(["pothole"]),
     )
     priority = fields.Str(
         validate=validate.OneOf(["low", "medium", "high", "urgent"]),
@@ -42,7 +42,9 @@ class ComplaintCreateSchema(Schema):
     latitude = fields.Float(allow_none=True)
     longitude = fields.Float(allow_none=True)
     address = fields.Str(validate=validate.Length(max=500), allow_none=True)
-    image_url = fields.Str(validate=validate.Length(max=500), allow_none=True)
+    image_url = fields.Str(required=True, validate=validate.Length(max=500))
+    city_id = fields.Int(allow_none=True)
+    pincode = fields.Str(validate=validate.Regexp(r"^\d{6}$"), allow_none=True)
 
 
 class ComplaintUpdateSchema(Schema):
@@ -56,7 +58,7 @@ class ComplaintUpdateSchema(Schema):
     description = fields.Str(validate=validate.Length(min=10))
     category = fields.Str(
         validate=validate.OneOf(
-            ["pothole", "streetlight", "drainage", "garbage", "road_damage", "other"]
+            ["pothole"]
         )
     )
     address = fields.Str(validate=validate.Length(max=500), allow_none=True)

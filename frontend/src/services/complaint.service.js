@@ -32,6 +32,17 @@ const complaintService = {
   },
 
   /**
+   * Upload a complaint photo before submission.
+   * @param {File} file
+   */
+  async uploadComplaintPhoto(file) {
+    const formData = new FormData()
+    formData.append('photo', file)
+    const response = await api.post('/citizen/complaints/media', formData)
+    return response.data
+  },
+
+  /**
    * Get a specific complaint by ID.
    * @param {number} id
    */

@@ -23,7 +23,7 @@
           </div>
           <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-sm">
             <p class="text-xs uppercase tracking-wide text-slate-300">Cities</p>
-            <p class="mt-2 text-2xl font-semibold">{{ cityOptions.length }}</p>
+            <p class="mt-2 text-2xl font-semibold">{{ cityInventory.length }}</p>
           </div>
           <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-sm">
             <p class="text-xs uppercase tracking-wide text-slate-300">Inactive</p>
@@ -133,38 +133,66 @@
               />
               <p v-if="fieldError('phone')" class="mt-1 text-xs text-red-600">{{ fieldError('phone') }}</p>
             </div>
-            <div>
-              <label class="form-label" for="city_name">City</label>
+            <div class="relative">
+              <label class="form-label" for="pincode">Pincode</label>
               <input
-                id="city_name"
-                v-model.trim="form.city_name"
-                list="city-options"
+                id="pincode"
+                v-model.trim="form.pincode"
                 class="form-input"
-                :class="inputErrorClass('city_name')"
-                placeholder="Lucknow"
-                @blur="touch('city_name')"
+                :class="inputErrorClass('pincode')"
+                placeholder="226001"
+                maxlength="6"
+                @input="handlePincodeInput"
+                @focus="handlePincodeFocus"
+                @blur="handlePincodeBlur"
               />
-              <datalist id="city-options">
-                <option v-for="city in cityOptions" :key="city.id" :value="city.name">
-                  {{ city.name }}
-                </option>
-              </datalist>
-              <p v-if="fieldError('city_name')" class="mt-1 text-xs text-red-600">{{ fieldError('city_name') }}</p>
+              <div
+                v-if="isPincodeSuggesting"
+                class="absolute right-3 top-[2.15rem] text-[11px] text-slate-400"
+              >
+                Searching...
+              </div>
+
+              <div
+                v-if="showPincodeSuggestions && pincodeSuggestions.length"
+                class="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl"
+              >
+                <button
+                  v-for="suggestion in pincodeSuggestions"
+                  :key="`${suggestion.pincode}-${suggestion.city_id}-${suggestion.area_name}`"
+                  type="button"
+                  class="block w-full rounded-lg px-3 py-2 text-left text-xs text-slate-700 transition-colors hover:bg-slate-100"
+                  @mousedown.prevent="applyPincodeSuggestion(suggestion)"
+                >
+                  <div class="font-semibold text-slate-900">{{ suggestion.pincode }} - {{ suggestion.area_name || suggestion.city_name }}</div>
+                  <div class="mt-0.5 text-[11px] text-slate-500">
+                    {{ suggestion.district || suggestion.city_name }}{{ suggestion.state ? `, ${suggestion.state}` : '' }}
+                  </div>
+                </button>
+              </div>
+
+              <p v-if="fieldError('pincode')" class="mt-1 text-xs text-red-600">{{ fieldError('pincode') }}</p>
+              <p v-else class="mt-1 text-xs text-slate-500">Type at least 2 digits to see pincode suggestions.</p>
             </div>
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
-              <label class="form-label" for="city_state">State</label>
-              <input
-                id="city_state"
-                v-model.trim="form.city_state"
+              <label class="form-label" for="city_id">City</label>
+              <select
+                id="city_id"
+                v-model="form.city_id"
                 class="form-input"
-                :class="inputErrorClass('city_state')"
-                placeholder="Uttar Pradesh"
-                @blur="touch('city_state')"
-              />
-              <p v-if="fieldError('city_state')" class="mt-1 text-xs text-red-600">{{ fieldError('city_state') }}</p>
+                :class="inputErrorClass('city_id')"
+                @blur="touch('city_id')"
+              >
+                <option value="" disabled>Select city</option>
+                <option v-for="city in cityOptions" :key="city.city_id" :value="city.city_id">
+                  {{ city.city_name }}{{ city.state ? `, ${city.state}` : '' }}
+                </option>
+              </select>
+              <p v-if="fieldError('city_id')" class="mt-1 text-xs text-red-600">{{ fieldError('city_id') }}</p>
+              <p v-else-if="lookupMessage" class="mt-1 text-xs text-slate-500">{{ lookupMessage }}</p>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
               <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Authorization</p>
@@ -302,7 +330,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 
 import adminService from '@/services/admin.service'
 
@@ -314,8 +342,8 @@ const form = reactive({
   phone: '',
   password: '',
   confirm_password: '',
-  city_name: '',
-  city_state: '',
+  pincode: '',
+  city_id: '',
 })
 
 const touched = reactive({})
@@ -324,14 +352,20 @@ const filters = reactive({
   is_active: '',
 })
 
+const cityInventory = ref([])
 const cityOptions = ref([])
 const municipalAdministrators = ref([])
 const successMessage = ref('')
 const serverError = ref('')
+const lookupMessage = ref('')
+const pincodeSuggestions = ref([])
+const showPincodeSuggestions = ref(false)
+const isPincodeSuggesting = ref(false)
 const isSubmitting = ref(false)
 const isLoadingList = ref(false)
 const deactivatingIds = reactive(new Set())
 let filterDebounce = null
+let pincodeSuggestDebounce = null
 
 const adminStats = computed(() => {
   const total = municipalAdministrators.value.length
@@ -383,13 +417,12 @@ function validateField(field) {
       if (!value) return null
       if (!PHONE_RE.test(value)) return 'Enter a valid phone number.'
       return null
-    case 'city_name':
-      if (!value?.trim()) return 'City is required.'
-      if (value.trim().length < 2) return 'City name must be at least 2 characters.'
+    case 'pincode':
+      if (!value) return 'Pincode is required.'
+      if (!/^\d{6}$/.test(value)) return 'Pincode must be exactly 6 digits.'
       return null
-    case 'city_state':
-      if (!value) return null
-      if (value.trim().length > 120) return 'State must be 120 characters or fewer.'
+    case 'city_id':
+      if (!form.city_id) return 'Please select a city for this pincode.'
       return null
     case 'password':
       if (!value) return 'Password is required.'
@@ -414,8 +447,8 @@ function validateForm() {
     'username',
     'email',
     'phone',
-    'city_name',
-    'city_state',
+    'pincode',
+    'city_id',
     'password',
     'confirm_password',
   ]
@@ -432,7 +465,104 @@ function validateForm() {
 
 async function loadCities() {
   const response = await adminService.getCities()
-  cityOptions.value = response?.data?.cities || []
+  cityInventory.value = response?.data?.cities || []
+}
+
+async function handlePincodeBlur() {
+  normalizePincode()
+  touch('pincode')
+  touch('city_id')
+  lookupMessage.value = ''
+  window.setTimeout(() => {
+    showPincodeSuggestions.value = false
+  }, 120)
+
+  if (validateField('pincode')) {
+    cityOptions.value = []
+    form.city_id = ''
+    return
+  }
+
+  try {
+    const response = await adminService.lookupPincode(form.pincode)
+    const matches = response?.data?.cities || []
+    cityOptions.value = matches
+
+    if (matches.length === 0) {
+      form.city_id = ''
+      lookupMessage.value = 'No city mapping found for this pincode.'
+      return
+    }
+
+    if (matches.length === 1) {
+      form.city_id = matches[0].city_id
+      lookupMessage.value = `City resolved: ${matches[0].city_name}`
+      return
+    }
+
+    if (!matches.some((city) => city.city_id === Number(form.city_id))) {
+      form.city_id = ''
+    }
+    lookupMessage.value = 'Multiple city options found. Please select one.'
+  } catch (error) {
+    cityOptions.value = []
+    form.city_id = ''
+    lookupMessage.value = error?.response?.data?.message || 'Could not resolve pincode right now.'
+  }
+}
+
+function normalizePincode() {
+  form.pincode = (form.pincode || '').replace(/\D/g, '').slice(0, 6)
+}
+
+function handlePincodeInput() {
+  normalizePincode()
+  lookupMessage.value = ''
+
+  if (form.pincode.length < 6) {
+    cityOptions.value = []
+    form.city_id = ''
+  }
+
+  if (form.pincode.length < 2) {
+    pincodeSuggestions.value = []
+    showPincodeSuggestions.value = false
+    window.clearTimeout(pincodeSuggestDebounce)
+    return
+  }
+
+  window.clearTimeout(pincodeSuggestDebounce)
+  pincodeSuggestDebounce = window.setTimeout(() => {
+    fetchPincodeSuggestions(form.pincode)
+  }, 180)
+}
+
+function handlePincodeFocus() {
+  if (form.pincode.length >= 2 && pincodeSuggestions.value.length) {
+    showPincodeSuggestions.value = true
+  }
+}
+
+async function fetchPincodeSuggestions(prefix) {
+  isPincodeSuggesting.value = true
+  try {
+    const response = await adminService.searchPincodes(prefix, 8)
+    if (prefix !== form.pincode) return
+    pincodeSuggestions.value = response?.data?.items || []
+    showPincodeSuggestions.value = pincodeSuggestions.value.length > 0
+  } catch {
+    pincodeSuggestions.value = []
+    showPincodeSuggestions.value = false
+  } finally {
+    isPincodeSuggesting.value = false
+  }
+}
+
+async function applyPincodeSuggestion(suggestion) {
+  form.pincode = suggestion.pincode
+  showPincodeSuggestions.value = false
+  pincodeSuggestions.value = []
+  await handlePincodeBlur()
 }
 
 async function loadMunicipalAdministrators() {
@@ -465,9 +595,13 @@ function resetForm() {
     phone: '',
     password: '',
     confirm_password: '',
-    city_name: '',
-    city_state: '',
+    pincode: '',
+    city_id: '',
   })
+  cityOptions.value = []
+  pincodeSuggestions.value = []
+  showPincodeSuggestions.value = false
+  lookupMessage.value = ''
   for (const key of Object.keys(touched)) {
     touched[key] = false
   }
@@ -486,6 +620,7 @@ async function handleCreate() {
     const response = await adminService.createMunicipalAdministrator({
       ...form,
       email: form.email.trim().toLowerCase(),
+      city_id: Number(form.city_id),
     })
     const createdUser = response?.data?.user
     successMessage.value = createdUser
@@ -529,5 +664,10 @@ function formatDate(value) {
 
 onMounted(async () => {
   await Promise.all([loadCities(), loadMunicipalAdministrators()])
+})
+
+onBeforeUnmount(() => {
+  window.clearTimeout(filterDebounce)
+  window.clearTimeout(pincodeSuggestDebounce)
 })
 </script>

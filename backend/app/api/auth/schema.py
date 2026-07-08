@@ -9,6 +9,7 @@ from app.schemas.validators import (
     normalize_optional_string,
     normalize_string,
     validate_password_strength,
+    validate_pincode,
     validate_phone_number,
 )
 
@@ -61,6 +62,11 @@ class RegisterRequestSchema(Schema):
         load_default=None,
         allow_none=True,
     )
+    pincode = fields.Str(
+        required=True,
+        error_messages={"required": "Pincode is required."},
+    )
+    city_id = fields.Int(load_default=None, allow_none=True)
 
     @pre_load
     def normalize_fields(self, data: dict, **_) -> dict:
@@ -69,6 +75,7 @@ class RegisterRequestSchema(Schema):
         for field in ("username", "first_name", "last_name"):
             data[field] = normalize_string(data.get(field))
         data["phone"] = normalize_optional_string(data.get("phone"))
+        data["pincode"] = normalize_optional_string(data.get("pincode"))
         return data
 
     @validates("password")
@@ -78,6 +85,10 @@ class RegisterRequestSchema(Schema):
     @validates("phone")
     def validate_phone(self, value) -> None:
         validate_phone_number(value)
+
+    @validates("pincode")
+    def validate_postal_code(self, value) -> None:
+        validate_pincode(value)
 
     @validates("first_name")
     def validate_first_name(self, value: str) -> None:

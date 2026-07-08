@@ -69,7 +69,7 @@ class TestAdminHierarchyEndpoints:
                 "confirm_password": "Municipal@123",
                 "first_name": "Lucknow",
                 "last_name": "Admin",
-                "city_name": "Lucknow",
+                "pincode": "226001",
                 "city_state": "Uttar Pradesh",
             },
         )
@@ -125,7 +125,7 @@ class TestAdminHierarchyEndpoints:
                 "confirm_password": "Municipal@123",
                 "first_name": "Blocked",
                 "last_name": "Admin",
-                "city_name": "Agra",
+                "pincode": "226001",
             },
         )
 
@@ -142,7 +142,7 @@ class TestAdminHierarchyEndpoints:
                 "confirm_password": "Municipal@123",
                 "first_name": "Anonymous",
                 "last_name": "Admin",
-                "city_name": "Noida",
+                "pincode": "226001",
             },
         )
 
@@ -160,7 +160,7 @@ class TestAdminHierarchyEndpoints:
             "confirm_password": "Municipal@123",
             "first_name": "Pune",
             "last_name": "Admin",
-            "city_name": "Pune",
+            "pincode": "226001",
         }
 
         first = client.post(
@@ -194,7 +194,7 @@ class TestAdminHierarchyEndpoints:
                 "first_name": "Indore",
                 "last_name": "Admin",
                 "phone": "abc",
-                "city_name": "Indore",
+                "pincode": "226001",
             },
         )
 

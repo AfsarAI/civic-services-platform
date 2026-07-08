@@ -8,7 +8,7 @@ The platform has exactly **3 user roles** (per Milestone 1 Report):
 
 ### Citizen
 - Register an account and log in
-- Submit a complaint (report a pothole with photo and location)
+- Submit a pothole complaint with a photo, map pin, and location details
 - Track the status of submitted complaints in real time
 - Edit or cancel a complaint (only while status is `pending` and not yet assigned)
 - Provide feedback and a rating after a complaint is resolved

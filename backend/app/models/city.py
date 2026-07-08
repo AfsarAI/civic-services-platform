@@ -28,6 +28,9 @@ class City(db.Model):
         back_populates="city",
         lazy="dynamic",
     )
+    users = db.relationship("User", back_populates="city", lazy="dynamic")
+    complaint_records = db.relationship("Complaint", back_populates="city", lazy="dynamic")
+    pincode_mappings = db.relationship("CityPincode", back_populates="city", lazy="dynamic")
 
     def __repr__(self) -> str:
         return f"<City {self.name}>"

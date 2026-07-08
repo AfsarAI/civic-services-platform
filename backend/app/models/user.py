@@ -21,6 +21,8 @@ class User(db.Model):
     phone = db.Column(db.String(20), nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False)
+    city_id = db.Column(db.Integer, db.ForeignKey("cities.id"), nullable=True, index=True)
+    pincode = db.Column(db.String(6), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
@@ -30,6 +32,7 @@ class User(db.Model):
 
     # Relationships
     role = db.relationship("Role", back_populates="users")
+    city = db.relationship("City", back_populates="users")
     complaints = db.relationship(
         "Complaint", foreign_keys="Complaint.citizen_id",
         back_populates="citizen", lazy="dynamic"

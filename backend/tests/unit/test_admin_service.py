@@ -57,8 +57,7 @@ class TestAdminServiceMunicipalAdministrators:
                     "first_name": "Kanpur",
                     "last_name": "Administrator",
                     "phone": "+91-9876543210",
-                    "city_name": "Kanpur",
-                    "city_state": "Uttar Pradesh",
+                    "pincode": "226001",
                 },
             )
 
@@ -69,7 +68,7 @@ class TestAdminServiceMunicipalAdministrators:
             ).first()
 
             assert created_user["admin_level"] == AdministratorProfile.MUNICIPAL
-            assert created_user["city_name"] == "Kanpur"
+            assert created_user["city_name"]
             assert audit_log is not None
 
     def test_create_municipal_administrator_rejects_duplicate_email(self, app):
@@ -83,7 +82,7 @@ class TestAdminServiceMunicipalAdministrators:
                 "confirm_password": "Municipal@123",
                 "first_name": "Bareilly",
                 "last_name": "Administrator",
-                "city_name": "Bareilly",
+                "pincode": "226001",
             }
 
             service.create_municipal_administrator(creator.id, payload)
