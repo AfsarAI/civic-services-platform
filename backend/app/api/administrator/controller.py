@@ -12,13 +12,20 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.api.administrator.schema import (
     AdminComplaintUpdateSchema,
     AssignComplaintBodySchema,
+    FieldWorkerCreateSchema,
+    FieldWorkerUpdateSchema,
     MunicipalAdminCreateSchema,
     MunicipalAdminUpdateSchema,
     UserUpdateSchema,
 )
 from app.api.administrator.service import AdminService
 from app.models.user import User
-from app.utils.decorators import validate_body, require_admin, require_system_admin
+from app.utils.decorators import (
+    validate_body,
+    require_admin,
+    require_municipal_admin,
+    require_system_admin,
+)
 from app.utils.responses import success_response, error_response, paginated_response
 
 ns = Namespace("admin", description="Administrator operations", path="/admin")
@@ -78,9 +85,34 @@ _municipal_admin_update = ns.model("MunicipalAdminUpdate", {
     "city_state": fields.String(example="Uttar Pradesh"),
 })
 
+_field_worker_create = ns.model("FieldWorkerCreate", {
+    "username": fields.String(required=True, example="ravi_kumar"),
+    "email": fields.String(required=True, example="ravi.kumar@example.com"),
+    "password": fields.String(required=True, example="Worker@123"),
+    "confirm_password": fields.String(required=True, example="Worker@123"),
+    "first_name": fields.String(required=True, example="Ravi"),
+    "last_name": fields.String(required=True, example="Kumar"),
+    "phone": fields.String(example="+91-9876543210"),
+})
+
+_field_worker_update = ns.model("FieldWorkerUpdate", {
+    "first_name": fields.String,
+    "last_name": fields.String,
+    "phone": fields.String,
+    "is_active": fields.Boolean(example=True),
+})
+
 
 def _current_admin_user() -> User:
     return User.query.get(int(get_jwt_identity()))
+
+
+def _scoped_city_id(admin_user: User) -> int | None:
+    """Return the admin's city ID when they are a municipal administrator.
+
+    ``None`` means unscoped (system administrators see every city).
+    """
+    return admin_user.admin_city_id if admin_user.is_municipal_admin else None
 
 
 @ns.route("/complaints")
@@ -92,17 +124,18 @@ class AdminComplaintListResource(Resource):
     @jwt_required()
     @require_admin
     def get(self):
-        """List all complaints."""
+        """List complaints. Municipal administrators only see their own city's complaints."""
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 20, type=int)
         status = request.args.get("status")
         category = request.args.get("category")
         priority = request.args.get("priority")
         citizen_id = request.args.get("citizen_id", type=int)
+        city_id = _scoped_city_id(_current_admin_user())
 
         try:
             result = _svc.get_all_complaints(
-                page, per_page, status, category, priority, citizen_id
+                page, per_page, status, category, priority, citizen_id, city_id
             )
             return paginated_response(
                 result["items"], result["total"],
@@ -123,8 +156,9 @@ class AdminComplaintResource(Resource):
     @require_admin
     def get(self, complaint_id):
         """Get full complaint details including assignment and feedback."""
+        city_id = _scoped_city_id(_current_admin_user())
         try:
-            data = _svc.get_complaint(complaint_id)
+            data = _svc.get_complaint(complaint_id, city_id)
             return success_response(data, "Complaint retrieved.")
         except ValueError as exc:
             return error_response(str(exc), status_code=404)
@@ -137,8 +171,9 @@ class AdminComplaintResource(Resource):
     @validate_body(AdminComplaintUpdateSchema)
     def put(self, body, complaint_id):
         """Update a complaint's status and/or priority."""
+        city_id = _scoped_city_id(_current_admin_user())
         try:
-            data = _svc.update_complaint(complaint_id, body)
+            data = _svc.update_complaint(complaint_id, body, city_id)
             return success_response(data, "Complaint updated successfully.")
         except ValueError as exc:
             code = 404 if "not found" in str(exc).lower() else 400
@@ -157,10 +192,15 @@ class AdminAssignComplaintResource(Resource):
     @require_admin
     @validate_body(AssignComplaintBodySchema)
     def post(self, body, complaint_id):
-        """Assign a complaint to a field worker."""
+        """Assign a complaint to a field worker.
+
+        Municipal administrators can only assign to field workers in their
+        own city, and only for complaints filed within that same city.
+        """
         admin_id = int(get_jwt_identity())
+        city_id = _scoped_city_id(_current_admin_user())
         try:
-            data = _svc.assign_complaint(complaint_id, admin_id, body)
+            data = _svc.assign_complaint(complaint_id, admin_id, body, city_id)
             return success_response(data, "Complaint assigned successfully.", 201)
         except ValueError as exc:
             code = 404 if "not found" in str(exc).lower() else 400
@@ -349,13 +389,81 @@ class AdminCityListResource(Resource):
 @ns.route("/field-workers")
 class AdminFieldWorkerListResource(Resource):
 
-    @ns.response(200, "Active field workers", _envelope)
+    @ns.response(200, "Field workers", _envelope)
     @jwt_required()
     @require_admin
     def get(self):
-        """List all active field workers for the assignment dropdown."""
-        data = _svc.get_field_workers()
+        """List field workers for the assignment dropdown and management page.
+
+        Municipal administrators only see field workers in their own city.
+        Query param ``is_active`` (true/false) filters by status; omit it to
+        see both active and inactive workers.
+        """
+        is_active_str = request.args.get("is_active")
+        is_active = is_active_str.lower() == "true" if is_active_str is not None else None
+        data = _svc.get_field_workers(_current_admin_user(), is_active)
         return success_response(data, "Field workers retrieved.")
+
+    @ns.expect(_field_worker_create)
+    @ns.response(201, "Field worker created", _envelope)
+    @ns.response(400, "Business rule violation", _envelope)
+    @ns.response(409, "Conflict", _envelope)
+    @ns.response(422, "Validation error", _envelope)
+    @jwt_required()
+    @require_municipal_admin
+    @validate_body(FieldWorkerCreateSchema)
+    def post(self, body):
+        """Create a field worker in the acting municipal administrator's city."""
+        try:
+            data = _svc.create_field_worker(_current_admin_user(), body)
+            return success_response(data, "Field worker created.", 201)
+        except ValueError as exc:
+            code = 409 if "already" in str(exc).lower() else 400
+            return error_response(str(exc), status_code=code)
+
+
+@ns.route("/field-workers/<int:user_id>")
+@ns.param("user_id", "Field worker user ID")
+class AdminFieldWorkerResource(Resource):
+
+    @ns.response(200, "Field worker details", _envelope)
+    @ns.response(404, "Not found", _envelope)
+    @jwt_required()
+    @require_admin
+    def get(self, user_id):
+        """Get one field worker. Municipal administrators may only view their own city's workers."""
+        try:
+            data = _svc.get_field_worker(user_id, _current_admin_user())
+            return success_response(data, "Field worker retrieved.")
+        except ValueError as exc:
+            return error_response(str(exc), status_code=404)
+
+    @ns.expect(_field_worker_update)
+    @ns.response(200, "Field worker updated", _envelope)
+    @ns.response(404, "Not found", _envelope)
+    @ns.response(422, "Validation error", _envelope)
+    @jwt_required()
+    @require_municipal_admin
+    @validate_body(FieldWorkerUpdateSchema)
+    def put(self, body, user_id):
+        """Edit or activate/deactivate a field worker in the acting administrator's city."""
+        try:
+            data = _svc.update_field_worker(user_id, _current_admin_user(), body)
+            return success_response(data, "Field worker updated.")
+        except ValueError as exc:
+            return error_response(str(exc), status_code=404)
+
+    @ns.response(200, "Field worker deactivated", _envelope)
+    @ns.response(404, "Not found", _envelope)
+    @jwt_required()
+    @require_municipal_admin
+    def delete(self, user_id):
+        """Deactivate a field worker in the acting administrator's city."""
+        try:
+            data = _svc.update_field_worker(user_id, _current_admin_user(), {"is_active": False})
+            return success_response(data, "Field worker deactivated.")
+        except ValueError as exc:
+            return error_response(str(exc), status_code=404)
 
 
 @ns.route("/dashboard")

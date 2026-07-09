@@ -32,8 +32,9 @@
 
       <!-- User menu placeholder -->
       <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded-lg px-3 py-2 transition-colors">
-        <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm">
-          {{ authStore.fullName.charAt(0) || 'U' }}
+        <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm overflow-hidden">
+          <img v-if="avatarUrl" :src="avatarUrl" alt="Profile photo" class="h-full w-full object-cover" />
+          <span v-else>{{ authStore.fullName.charAt(0) || 'U' }}</span>
         </div>
         <div class="hidden sm:block">
           <p class="text-sm font-medium text-gray-900">{{ authStore.fullName || 'User' }}</p>
@@ -62,12 +63,21 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const emit = defineEmits(['toggle-sidebar'])
 const authStore = useAuthStore()
 const router = useRouter()
+
+const avatarUrl = computed(() => {
+  const url = authStore.user?.avatar_url
+  if (!url) return ''
+  if (/^https?:\/\//i.test(url)) return url
+  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1'
+  return `${apiBase.replace(/\/api\/v1$/, '')}${url}`
+})
 
 async function handleLogout() {
   await authStore.logout()

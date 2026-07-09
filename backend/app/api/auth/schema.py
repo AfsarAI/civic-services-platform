@@ -2,7 +2,7 @@
 Auth namespace — Marshmallow schemas (request/response validation).
 """
 
-from marshmallow import Schema, ValidationError, fields, pre_load, validate, validates
+from marshmallow import Schema, ValidationError, fields, pre_load, validate, validates, validates_schema
 
 from app.schemas.validators import (
     normalize_email,
@@ -105,3 +105,74 @@ class TokenResponseSchema(Schema):
     access_token = fields.Str(dump_only=True)
     refresh_token = fields.Str(dump_only=True)
     token_type = fields.Str(dump_only=True, dump_default="Bearer")
+
+
+class ProfileUpdateSchema(Schema):
+    """Schema for a logged-in user editing their own profile.
+
+    Username, email, and role are intentionally not editable here.
+    """
+
+    first_name = fields.Str(
+        required=True,
+        validate=validate.Length(min=1, max=80),
+        error_messages={"required": "First name is required."},
+    )
+    last_name = fields.Str(
+        required=True,
+        validate=validate.Length(min=1, max=80),
+        error_messages={"required": "Last name is required."},
+    )
+    phone = fields.Str(load_default=None, allow_none=True)
+
+    @pre_load
+    def normalize_fields(self, data: dict, **_) -> dict:
+        for field in ("first_name", "last_name"):
+            data[field] = normalize_string(data.get(field))
+        data["phone"] = normalize_optional_string(data.get("phone"))
+        return data
+
+    @validates("phone")
+    def validate_phone(self, value: str | None) -> None:
+        validate_phone_number(value)
+
+    @validates("first_name")
+    def validate_first_name(self, value: str) -> None:
+        if not value or not value.strip():
+            raise ValidationError("First name cannot be blank.")
+
+    @validates("last_name")
+    def validate_last_name(self, value: str) -> None:
+        if not value or not value.strip():
+            raise ValidationError("Last name cannot be blank.")
+
+
+class ChangePasswordSchema(Schema):
+    """Schema for a logged-in user changing their own password."""
+
+    current_password = fields.Str(
+        required=True,
+        load_only=True,
+        error_messages={"required": "Current password is required."},
+    )
+    new_password = fields.Str(
+        required=True,
+        load_only=True,
+        error_messages={"required": "New password is required."},
+    )
+    confirm_password = fields.Str(
+        required=True,
+        load_only=True,
+        error_messages={"required": "Confirm password is required."},
+    )
+
+    @validates("new_password")
+    def validate_new_password(self, value: str) -> None:
+        validate_password_strength(value)
+
+    @validates_schema
+    def validate_password_match(self, data: dict, **_) -> None:
+        if data.get("new_password") != data.get("confirm_password"):
+            raise ValidationError({"confirm_password": ["Confirm password must match new password."]})
+        if data.get("new_password") == data.get("current_password"):
+            raise ValidationError({"new_password": ["New password must be different from the current password."]})

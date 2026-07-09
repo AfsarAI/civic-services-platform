@@ -47,6 +47,35 @@ class AuthService {
     const response = await api.get('/auth/me')
     return response.data
   }
+
+  /**
+   * Update the current user's own profile (no username/email change).
+   * @param {Object} data - { first_name, last_name, phone }
+   */
+  async updateProfile(data) {
+    const response = await api.put('/auth/me', data)
+    return response.data
+  }
+
+  /**
+   * Change the current user's own password.
+   * @param {Object} data - { current_password, new_password, confirm_password }
+   */
+  async changePassword(data) {
+    const response = await api.post('/auth/change-password', data)
+    return response.data
+  }
+
+  /**
+   * Upload and set the current user's profile photo.
+   * @param {File} file
+   */
+  async uploadAvatar(file) {
+    const formData = new FormData()
+    formData.append('photo', file)
+    const response = await api.post('/auth/me/avatar', formData)
+    return response.data
+  }
 }
 
 const authService = new AuthService()

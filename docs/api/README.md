@@ -38,6 +38,37 @@ Obtain a token via `POST /api/v1/auth/login`.
 | Notifications | `/api/v1/notifications` | User notifications |
 | Locations | `/api/v1/locations` | Pincode lookup and city autosuggest |
 
+## Field Worker Assignment Evidence
+
+- `POST /api/v1/fieldworker/assignments/media` — multipart photo upload (field name `photo`), returns `{ "filename": ..., "evidence_url": "/api/v1/fieldworker/assignments/media/<file>" }`.
+- `GET /api/v1/fieldworker/assignments/media/<filename>` — serves the uploaded photo.
+- `POST /api/v1/fieldworker/assignments/<id>/complete` — optional JSON body `{ "evidence_url": "..." }` to attach the uploaded photo when marking a task complete. Body is optional; omit it to complete without evidence.
+
+## Administrator City Scoping
+
+Municipal administrators (`admin_level=municipal`) are automatically scoped to their own city on:
+- `GET /api/v1/admin/complaints`, `GET/PUT /api/v1/admin/complaints/<id>`, `POST /api/v1/admin/complaints/<id>/assign`
+- `GET /api/v1/admin/field-workers`
+
+System administrators (`admin_level=system`) are unscoped and see every city. Requesting a complaint or field worker outside a municipal administrator's own city returns `404`.
+
+## Field Worker Management (Municipal Administrator only)
+
+- `POST /api/v1/admin/field-workers` — create a field worker. `city_id` is never accepted in the body; it is always the creating administrator's own city. Body: `username`, `email`, `password`, `confirm_password`, `first_name`, `last_name`, `phone` (optional).
+- `GET /api/v1/admin/field-workers/<id>` — view one field worker (system admins can view any; municipal admins only their own city's).
+- `PUT /api/v1/admin/field-workers/<id>` — edit profile fields and/or `is_active` (activate/deactivate).
+- `DELETE /api/v1/admin/field-workers/<id>` — shorthand for deactivating.
+- `GET /api/v1/admin/field-workers?is_active=true|false` — list/filter; omit `is_active` to see both active and inactive workers.
+
+System administrators cannot create, edit, or deactivate field workers — these endpoints require `admin_level=municipal` (`require_municipal_admin`).
+
+## Self-Service Profile (all authenticated roles)
+
+- `PUT /api/v1/auth/me` — update own `first_name`, `last_name`, `phone`. Username, email, and role are never editable here.
+- `POST /api/v1/auth/change-password` — body `current_password`, `new_password`, `confirm_password`. Rejects if the current password is wrong, the new password fails strength rules, or confirm doesn't match.
+- `POST /api/v1/auth/me/avatar` — multipart photo upload (field name `photo`), stores the file and immediately sets `users.avatar_url`, returns the updated user.
+- `GET /api/v1/auth/me/avatar/<filename>` — serves the uploaded photo (public, unguessable UUID filename).
+
 ## Location Lookup Endpoints
 
 - `GET /api/v1/locations/pincode/<pincode>`

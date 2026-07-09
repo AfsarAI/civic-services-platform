@@ -110,6 +110,12 @@ const router = createRouter({
               component: () => import('@/pages/administrator/MunicipalAdministrators.vue'),
               meta: { requiresAuth: true, role: 'administrator', adminLevel: 'system' },
             },
+            {
+              path: 'field-workers',
+              name: 'admin-field-workers',
+              component: () => import('@/pages/administrator/FieldWorkers.vue'),
+              meta: { requiresAuth: true, role: 'administrator', adminLevel: 'municipal' },
+            },
           ],
         },
 
@@ -121,6 +127,12 @@ const router = createRouter({
               path: 'dashboard',
               name: 'fieldworker-dashboard',
               component: () => import('@/pages/fieldworker/FieldWorkerDashboard.vue'),
+              meta: { requiresAuth: true, role: 'field_worker' },
+            },
+            {
+              path: 'assignments/:id',
+              name: 'fieldworker-assignment-details',
+              component: () => import('@/pages/fieldworker/AssignmentDetails.vue'),
               meta: { requiresAuth: true, role: 'field_worker' },
             },
           ],

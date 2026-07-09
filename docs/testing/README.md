@@ -45,6 +45,25 @@ Current automated coverage for Municipal Administrator registration includes:
 - Municipal Administrator login with `admin_level` and `city_name`
 - service-level audit-log creation for municipal-administrator registration
 
+## Field Worker Coverage
+
+`tests/integration/test_fieldworker_api.py` covers:
+- auth-required checks on assignments list and dashboard
+- full lifecycle: accept → in_progress → evidence photo upload → complete
+- reject transitions the complaint back to `pending`
+- ownership enforcement (a worker cannot view another worker's assignment — 404)
+- dashboard summary counts by status
+
+## Administrator City Scoping Coverage
+
+`tests/integration/test_admin_city_scoping_api.py` covers:
+- municipal administrators only see/can act on their own city's complaints (list, detail, assign)
+- system administrators remain unscoped across all cities
+- municipal administrators can create, list, view, edit, and activate/deactivate field workers in their own city only
+- system administrators are forbidden (403) from creating field workers
+- assigning a complaint to a field worker from a different city is rejected
+- municipal dashboard summary reflects only that city's complaint/field-worker data
+
 ## Test File Naming
 
 | Type | Pattern |
