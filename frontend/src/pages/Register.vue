@@ -44,6 +44,7 @@
             placeholder="Priya"
             autocomplete="given-name"
             @blur="touch('first_name')"
+            @input="clearBackendError('first_name')"
           />
           <p v-if="fieldError('first_name')" class="field-error">{{ fieldError('first_name') }}</p>
         </div>
@@ -58,6 +59,7 @@
             placeholder="Sharma"
             autocomplete="family-name"
             @blur="touch('last_name')"
+            @input="clearBackendError('last_name')"
           />
           <p v-if="fieldError('last_name')" class="field-error">{{ fieldError('last_name') }}</p>
         </div>
@@ -75,6 +77,7 @@
           placeholder="priya_sharma"
           autocomplete="username"
           @blur="touch('username')"
+          @input="clearBackendError('username')"
         />
         <p v-if="fieldError('username')" class="field-error">{{ fieldError('username') }}</p>
       </div>
@@ -91,6 +94,7 @@
           placeholder="priya@example.com"
           autocomplete="email"
           @blur="touch('email')"
+          @input="clearBackendError('email')"
         />
         <p v-if="fieldError('email')" class="field-error">{{ fieldError('email') }}</p>
       </div>
@@ -107,6 +111,7 @@
           placeholder="+91-9876543210"
           autocomplete="tel"
           @blur="touch('phone')"
+          @input="clearBackendError('phone')"
         />
         <p v-if="fieldError('phone')" class="field-error">{{ fieldError('phone') }}</p>
         <p v-else class="mt-1 text-xs text-slate-400">Format: +91-9876543210 or 10-digit number</p>
@@ -188,7 +193,7 @@
             placeholder="Min 8 chars with A, 1, @"
             autocomplete="new-password"
             @blur="touch('password')"
-            @input="touch('password')"
+            @input="() => { touch('password'); clearBackendError('password') }"
           />
           <button
             type="button"
@@ -235,6 +240,7 @@
             placeholder="Re-enter your password"
             autocomplete="new-password"
             @blur="touch('confirm_password')"
+            @input="clearBackendError('confirm_password')"
           />
           <button
             type="button"
@@ -329,6 +335,14 @@ const showPincodeSuggestions = ref(false)
 const isPincodeSuggesting = ref(false)
 let pincodeSuggestDebounce = null
 
+// Backend field-level errors (populated from API 422/409 responses)
+const backendErrors = reactive({})
+
+function clearBackendError(field) {
+  delete backendErrors[field]
+  serverError.value = null
+}
+
 // ── Touch tracking ──────────────────────────────────────────────────────────
 function touch(field) {
   touched[field] = true
@@ -387,6 +401,8 @@ function validateField(field) {
 }
 
 function fieldError(field) {
+  // Backend errors take precedence over local validation
+  if (backendErrors[field]) return backendErrors[field]
   if (!touched[field]) return null
   return validateField(field)
 }
@@ -462,7 +478,75 @@ async function handleRegister() {
       router.push({ name: 'login' })
     }, 2500)
   } catch (err) {
-    serverError.value = err.message || 'Registration failed. Please try again.'
+    // Handle field-level validation errors from backend (422 Unprocessable Entity)
+    const status = err?.response?.status
+    const responseData = err?.response?.data
+
+    if (status === 422 && responseData?.errors) {
+      // Map each backend field error directly to the field
+      const fieldMap = {
+        first_name: 'first_name',
+        last_name: 'last_name',
+        username: 'username',
+        email: 'email',
+        phone: 'phone',
+        password: 'password',
+        pincode: 'pincode',
+        city_id: 'city_id',
+      }
+      let hasFieldError = false
+      for (const [key, field] of Object.entries(fieldMap)) {
+        if (responseData.errors[key]) {
+          const msgs = responseData.errors[key]
+          backendErrors[field] = Array.isArray(msgs) ? msgs[0] : msgs
+          touch(field)
+          hasFieldError = true
+        }
+      }
+      if (!hasFieldError) {
+        serverError.value = responseData?.message || 'Validation failed. Please check your input.'
+      }
+      return
+    }
+
+    if (status === 409) {
+      // Conflict — duplicate email or username
+      const msg = responseData?.message || ''
+      if (msg.toLowerCase().includes('email')) {
+        backendErrors.email = 'An account with this email already exists.'
+        touch('email')
+      } else if (msg.toLowerCase().includes('username')) {
+        backendErrors.username = 'This username is already taken. Please choose another.'
+        touch('username')
+      } else {
+        serverError.value = msg || 'This account already exists.'
+      }
+      return
+    }
+
+    // Network / timeout failures
+    if (!err.response) {
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        serverError.value = 'The request timed out. Please check your connection and try again.'
+      } else {
+        serverError.value = 'Unable to reach the server. Please check your internet connection.'
+      }
+      return
+    }
+
+    // All other HTTP errors — show a clean generic message
+    const fallbackMessages = {
+      400: 'Invalid request. Please check your input and try again.',
+      401: 'Unauthorised. Please log in again.',
+      403: 'Access denied.',
+      500: 'A server error occurred. Please try again later.',
+      502: 'The server is temporarily unavailable. Please try again shortly.',
+      503: 'Service unavailable. Please try again later.',
+    }
+    serverError.value =
+      fallbackMessages[status] ||
+      responseData?.message ||
+      'Registration failed. Please try again.'
   } finally {
     isLoading.value = false
   }

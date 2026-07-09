@@ -15,13 +15,21 @@
           v-model.trim="form.email"
           type="email"
           class="form-input"
-          :class="touched.email && !form.email ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
+          :class="emailHasError ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
           placeholder="you@example.com"
           required
           autocomplete="email"
           @blur="touched.email = true"
+          @input="clearFieldError('email')"
         />
-        <p v-if="touched.email && !form.email" class="mt-1 text-xs text-red-600">Email address is required.</p>
+        <transition name="slide-error">
+          <p v-if="emailErrorMsg" class="field-error" id="email-error">
+            <svg class="inline w-3.5 h-3.5 mr-1 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            {{ emailErrorMsg }}
+          </p>
+        </transition>
       </div>
 
       <!-- Password -->
@@ -35,11 +43,12 @@
             v-model="form.password"
             :type="showPassword ? 'text' : 'password'"
             class="form-input pr-12"
-            :class="touched.password && !form.password ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
+            :class="passwordHasError ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
             placeholder="••••••••"
             required
             autocomplete="current-password"
             @blur="touched.password = true"
+            @input="clearFieldError('password')"
           />
           <button
             type="button"
@@ -59,13 +68,20 @@
             </svg>
           </button>
         </div>
-        <p v-if="touched.password && !form.password" class="mt-1 text-xs text-red-600">Password is required.</p>
+        <transition name="slide-error">
+          <p v-if="passwordErrorMsg" class="field-error" id="password-error">
+            <svg class="inline w-3.5 h-3.5 mr-1 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            {{ passwordErrorMsg }}
+          </p>
+        </transition>
       </div>
 
-      <!-- Server Error -->
+      <!-- General Server Error (non-field) -->
       <transition name="fade">
         <div
-          v-if="error"
+          v-if="generalError"
           class="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
           role="alert"
           id="login-error-alert"
@@ -74,7 +90,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          <p class="text-red-700 text-sm">{{ error }}</p>
+          <p class="text-red-700 text-sm">{{ generalError }}</p>
         </div>
       </transition>
 
@@ -108,7 +124,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -119,17 +135,112 @@ const route = useRoute()
 const form = reactive({ email: '', password: '' })
 const touched = reactive({ email: false, password: false })
 const isLoading = ref(false)
-const error = ref(null)
 const showPassword = ref(false)
 
+// Separate field-level and general errors
+const fieldErrors = reactive({ email: null, password: null })
+const generalError = ref(null)
+
+// ── Client-side validation ───────────────────────────────────────────────────
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function validateEmail() {
+  if (!form.email) return 'Email address is required.'
+  if (!EMAIL_RE.test(form.email)) return 'Please enter a valid email address.'
+  return null
+}
+
+function validatePassword() {
+  if (!form.password) return 'Password is required.'
+  return null
+}
+
+// ── Computed error messages ──────────────────────────────────────────────────
+const emailErrorMsg = computed(() => {
+  if (fieldErrors.email) return fieldErrors.email
+  if (touched.email) return validateEmail()
+  return null
+})
+
+const passwordErrorMsg = computed(() => {
+  if (fieldErrors.password) return fieldErrors.password
+  if (touched.password) return validatePassword()
+  return null
+})
+
+const emailHasError = computed(() => !!emailErrorMsg.value)
+const passwordHasError = computed(() => !!passwordErrorMsg.value)
+
+// ── Clear errors on input ────────────────────────────────────────────────────
+function clearFieldError(field) {
+  fieldErrors[field] = null
+  generalError.value = null
+}
+
+// ── Map backend error → field or general error ───────────────────────────────
+function mapAuthError(message) {
+  // Field-specific mapping (uses prefixes set in backend service.py)
+  if (message.includes('No account found with this email')) {
+    fieldErrors.email = 'No account found with this email.'
+    return
+  }
+  if (message.includes('Incorrect password')) {
+    fieldErrors.password = 'Incorrect password. Please try again.'
+    return
+  }
+  if (message.includes('deactivated')) {
+    generalError.value = 'Your account has been deactivated. Please contact support.'
+    return
+  }
+
+  // HTTP status-based messages from Axios error object are passed as `message`
+  generalError.value = message
+}
+
+function getFriendlyErrorMessage(err) {
+  // Network / timeout / server unavailable
+  if (!err.response) {
+    if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+      return 'The request timed out. Please check your connection and try again.'
+    }
+    return 'Unable to reach the server. Please check your internet connection.'
+  }
+
+  const status = err.response.status
+  const serverMessage = err.response.data?.message || ''
+
+  // Return server message for field-mapping (it contains the "Invalid email or password: …" prefix)
+  if (serverMessage) return serverMessage
+
+  // Fallback per HTTP status
+  const statusMessages = {
+    400: 'Invalid request. Please check your input and try again.',
+    401: 'Invalid credentials. Please check your email and password.',
+    403: 'Access denied. You do not have permission to perform this action.',
+    404: 'Service not found. Please try again later.',
+    409: 'A conflict occurred. Please try again.',
+    422: 'Validation failed. Please check your input.',
+    500: 'A server error occurred. Please try again later.',
+    502: 'The server is temporarily unavailable. Please try again shortly.',
+    503: 'Service unavailable. Please try again later.',
+  }
+  return statusMessages[status] || 'An unexpected error occurred. Please try again.'
+}
+
+// ── Submit handler ───────────────────────────────────────────────────────────
 async function handleLogin() {
+  // Mark all fields as touched to trigger client-side validation display
   touched.email = true
   touched.password = true
 
-  if (!form.email || !form.password) return
+  // Client-side guard — do not hit the API if basic validation fails
+  if (validateEmail() || validatePassword()) return
 
+  // Clear all prior errors
+  fieldErrors.email = null
+  fieldErrors.password = null
+  generalError.value = null
   isLoading.value = true
-  error.value = null
 
   try {
     const loggedInUser = await authStore.login(form.email, form.password)
@@ -154,7 +265,8 @@ async function handleLogin() {
     }
     await router.push({ name: 'dashboard' })
   } catch (err) {
-    error.value = err.message || 'Login failed. Please check your credentials.'
+    const message = getFriendlyErrorMessage(err)
+    mapAuthError(message)
   } finally {
     isLoading.value = false
   }
@@ -162,6 +274,11 @@ async function handleLogin() {
 </script>
 
 <style scoped>
+.field-error {
+  @apply mt-1.5 flex items-center text-xs text-red-600 font-medium;
+}
+
+/* General alert fade */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -169,5 +286,18 @@ async function handleLogin() {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Inline field error slide-down */
+.slide-error-enter-active {
+  transition: all 0.2s ease-out;
+}
+.slide-error-leave-active {
+  transition: all 0.15s ease-in;
+}
+.slide-error-enter-from,
+.slide-error-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 </style>

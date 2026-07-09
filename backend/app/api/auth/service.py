@@ -76,8 +76,15 @@ class AuthService:
         """
         user = User.query.filter_by(email=email).first()
 
-        if not user or not user.check_password(password):
-            raise ValueError("Invalid email or password.")
+        if not user:
+            raise ValueError(
+                "Invalid email or password: No account found with this email."
+            )
+
+        if not user.check_password(password):
+            raise ValueError(
+                "Invalid email or password: Incorrect password. Please try again."
+            )
 
         if not user.is_active:
             raise ValueError("Your account has been deactivated. Contact support.")

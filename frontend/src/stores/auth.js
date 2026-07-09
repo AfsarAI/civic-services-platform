@@ -32,7 +32,9 @@ export const useAuthStore = defineStore('auth', () => {
       return response.data.user
     } catch (error) {
       _clearSession()
-      throw _toUserFriendlyError(error, 'Login failed. Please check your credentials.')
+      // Re-throw the original error so the component can inspect
+      // err.response.status and err.response.data for field-level mapping.
+      throw error
     }
   }
 
@@ -44,7 +46,9 @@ export const useAuthStore = defineStore('auth', () => {
       }
       return response.data?.user || null
     } catch (error) {
-      throw _toUserFriendlyError(error, 'Registration failed.')
+      // Re-throw the original error so the component can inspect
+      // err.response.status and err.response.data for field-level mapping.
+      throw error
     }
   }
 
