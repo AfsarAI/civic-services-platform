@@ -157,7 +157,12 @@ class FieldWorkerCompleteResource(Resource):
         first via ``POST /fieldworker/assignments/media`` to obtain the URL.
         """
         worker_id = int(get_jwt_identity())
-        body = request.get_json(silent=True) or {}
+        body = {}
+        if request.data:
+            try:
+                body = request.get_json() or {}
+            except Exception:
+                return error_response("Invalid JSON body.", status_code=400)
         evidence_url = body.get("evidence_url")
         try:
             data = _svc.complete_assignment(assignment_id, worker_id, evidence_url)
