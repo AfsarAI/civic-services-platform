@@ -170,6 +170,8 @@ class FieldWorkerService:
         assignment.status = ComplaintAssignment.STATUS_COMPLETED
         assignment.completed_at = datetime.now(timezone.utc)
         if evidence_url:
+            if not evidence_url.startswith("/api/v1/fieldworker/assignments/media/"):
+                raise ValueError("Invalid evidence URL.")
             assignment.evidence_url = evidence_url
 
         db.session.commit()
