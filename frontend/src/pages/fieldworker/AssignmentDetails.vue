@@ -359,12 +359,21 @@ async function handleReject() {
 function handleEvidenceSelected(event) {
   const file = event.target.files?.[0]
   if (!file) return
+
+  if (evidencePreviewUrl.value) {
+    URL.revokeObjectURL(evidencePreviewUrl.value)
+  }
+
   evidenceFile.value = file
   evidenceUrl.value = ''
   evidencePreviewUrl.value = URL.createObjectURL(file)
 }
 
 function clearEvidence() {
+  if (evidencePreviewUrl.value) {
+    URL.revokeObjectURL(evidencePreviewUrl.value)
+  }
+
   evidenceFile.value = null
   evidenceUrl.value = ''
   evidencePreviewUrl.value = ''
