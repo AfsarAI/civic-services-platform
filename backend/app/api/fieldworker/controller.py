@@ -190,7 +190,9 @@ class FieldWorkerAssignmentMediaUploadResource(Resource):
 
         original_name = secure_filename(photo.filename)
         _, extension = os.path.splitext(original_name)
-        extension = extension.lower() if extension else ".jpg"
+        extension = (extension or ".jpg").lower()
+        if extension not in {".jpg", ".jpeg", ".png", ".webp"}:
+            extension = ".jpg"
         filename = f"{uuid4().hex}{extension}"
         file_path = os.path.join(_assignment_media_dir(), filename)
         photo.save(file_path)
