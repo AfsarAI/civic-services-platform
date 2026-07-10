@@ -142,12 +142,16 @@ class FieldWorkerService:
 
     # ── Complete assignment ───────────────────────────────────────────────
 
-    def complete_assignment(self, assignment_id: int, worker_id: int) -> dict:
+    def complete_assignment(
+        self, assignment_id: int, worker_id: int, evidence_url: str = None
+    ) -> dict:
         """Mark an assignment as completed.
 
         Transitions: ``accepted`` or ``in_progress`` → ``completed``.
-        Sets ``completed_at``.  The complaint status remains ``in_progress``
-        until an administrator marks it as resolved.
+        Sets ``completed_at`` and, if provided, ``evidence_url`` (photo proof
+        of the repair work, uploaded via ``POST /fieldworker/assignments/media``).
+        The complaint status remains ``in_progress`` until an administrator
+        marks it as resolved.
 
         Raises:
             ValueError: Business rule violations.
@@ -165,6 +169,10 @@ class FieldWorkerService:
 
         assignment.status = ComplaintAssignment.STATUS_COMPLETED
         assignment.completed_at = datetime.now(timezone.utc)
+        if evidence_url:
+            if not evidence_url.startswith("/api/v1/fieldworker/assignments/media/"):
+                raise ValueError("Invalid evidence URL.")
+            assignment.evidence_url = evidence_url
 
         db.session.commit()
         return {"assignment": self._serialize(assignment, full=True)}
@@ -232,6 +240,7 @@ class FieldWorkerService:
             "assigned_by_id": assignment.assigned_by_id,
             "status": assignment.status,
             "notes": assignment.notes,
+            "evidence_url": assignment.evidence_url,
             "assigned_at": assignment.assigned_at.isoformat(),
             "accepted_at": (
                 assignment.accepted_at.isoformat()
@@ -255,6 +264,10 @@ class FieldWorkerService:
                 "latitude": c.latitude,
                 "longitude": c.longitude,
                 "image_url": c.image_url,
+                "pincode": c.pincode,
+                "city_name": c.city.name if c.city else None,
+                "citizen_name": c.citizen.full_name if c.citizen else None,
+                "citizen_phone": c.citizen.phone if c.citizen else None,
                 "created_at": c.created_at.isoformat(),
             }
         return data

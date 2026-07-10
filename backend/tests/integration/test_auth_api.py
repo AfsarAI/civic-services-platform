@@ -337,3 +337,111 @@ class TestAuthEndpoints:
         assert me_resp.status_code == 200
         assert me_payload["data"]["user"]["email"] == "meuser@example.com"
         assert me_payload["data"]["user"]["role"] == Role.CITIZEN
+
+    # ── Profile / password / avatar tests ─────────────────────────────────
+
+    def _register_and_login(self, client, email: str):
+        client.post(
+            "/api/v1/auth/register",
+            json={
+                "username": email.split("@")[0],
+                "email": email,
+                "password": "Secure@123",
+                "first_name": "Profile",
+                "last_name": "Tester",
+                "pincode": "226001",
+            },
+        )
+        login_resp = self._login(client, email, "Secure@123")
+        return login_resp.get_json()["data"]["access_token"]
+
+    def test_update_profile_changes_name_and_phone_but_not_username(self, client):
+        """PUT /auth/me updates first/last name and phone, never username/email."""
+        token = self._register_and_login(client, "profileupdate@example.com")
+
+        response = client.put(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"first_name": "Updated", "last_name": "Name", "phone": "+91-9876543210"},
+        )
+        payload = response.get_json()
+
+        assert response.status_code == 200
+        assert payload["data"]["user"]["first_name"] == "Updated"
+        assert payload["data"]["user"]["last_name"] == "Name"
+        assert payload["data"]["user"]["phone"] == "+91-9876543210"
+        assert payload["data"]["user"]["username"] == "profileupdate"
+        assert payload["data"]["user"]["email"] == "profileupdate@example.com"
+
+    def test_update_profile_requires_auth(self, client):
+        response = client.put("/api/v1/auth/me", json={"first_name": "X", "last_name": "Y"})
+        assert response.status_code == 401
+
+    def test_change_password_success_and_relogin(self, client):
+        """Changing password must allow login with the new password only."""
+        token = self._register_and_login(client, "pwchange@example.com")
+
+        response = client.post(
+            "/api/v1/auth/change-password",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "current_password": "Secure@123",
+                "new_password": "NewSecure@456",
+                "confirm_password": "NewSecure@456",
+            },
+        )
+        assert response.status_code == 200
+
+        old_login = self._login(client, "pwchange@example.com", "Secure@123")
+        assert old_login.status_code == 401
+
+        new_login = self._login(client, "pwchange@example.com", "NewSecure@456")
+        assert new_login.status_code == 200
+
+    def test_change_password_wrong_current_password_returns_400(self, client):
+        token = self._register_and_login(client, "pwwrong@example.com")
+
+        response = client.post(
+            "/api/v1/auth/change-password",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "current_password": "WrongOldPassword1!",
+                "new_password": "NewSecure@456",
+                "confirm_password": "NewSecure@456",
+            },
+        )
+        assert response.status_code == 400
+        assert "incorrect" in response.get_json()["message"].lower()
+
+    def test_change_password_mismatch_confirm_returns_422(self, client):
+        token = self._register_and_login(client, "pwmismatch@example.com")
+
+        response = client.post(
+            "/api/v1/auth/change-password",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "current_password": "Secure@123",
+                "new_password": "NewSecure@456",
+                "confirm_password": "Different@789",
+            },
+        )
+        assert response.status_code == 422
+
+    def test_upload_avatar_sets_avatar_url_on_profile(self, client):
+        from io import BytesIO
+
+        token = self._register_and_login(client, "avatarupload@example.com")
+
+        upload_response = client.post(
+            "/api/v1/auth/me/avatar",
+            headers={"Authorization": f"Bearer {token}"},
+            data={"photo": (BytesIO(b"fake-image-bytes"), "selfie.jpg")},
+            content_type="multipart/form-data",
+        )
+        payload = upload_response.get_json()
+        assert upload_response.status_code == 200
+        avatar_url = payload["data"]["user"]["avatar_url"]
+        assert avatar_url.startswith("/api/v1/auth/me/avatar/")
+
+        me_response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+        assert me_response.get_json()["data"]["user"]["avatar_url"] == avatar_url

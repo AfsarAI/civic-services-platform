@@ -16,6 +16,7 @@ This folder contains UI design documentation, wireframes, and component guidelin
 | Administrator Dashboard | `/admin/dashboard` | Administrator |
 | Reports | `/admin/reports` | Administrator |
 | Field Worker Dashboard | `/fieldworker/dashboard` | Field Worker |
+| Field Worker Assignment Details | `/fieldworker/assignments/:id` | Field Worker |
 | Profile | `/profile` | All |
 | Not Found | `/:pathMatch(.*)` | All |
 
@@ -51,3 +52,20 @@ This folder contains UI design documentation, wireframes, and component guidelin
 	- No match: show inline message and block submit.
 	- Single match: auto-select city.
 	- Multiple matches: require explicit city choice.
+
+## Field Worker Task Flow
+
+- `FieldWorkerDashboard.vue` shows stat cards (total/active/completed/rejected) sourced from `GET /fieldworker/dashboard`, plus a paginated, status-filterable assignment table sourced from `GET /fieldworker/assignments` (same card/table/badge styling as `CitizenDashboard.vue`).
+- `AssignmentDetails.vue` (route `/fieldworker/assignments/:id`) shows the complaint photo, description, location (with an external map link), reporter contact info, a status timeline, and an actions panel that adapts to the current status:
+	- `assigned` → Accept
+	- `accepted` → Start repair work (notes optional) or Reject
+	- `accepted`/`in_progress` → Mark as complete, with an optional photo-evidence upload (camera or gallery) reusing the citizen photo-upload UX
+	- `in_progress` → Reject still available
+	- `completed`/`rejected` → read-only, no actions shown
+
+## Shared Profile Page (all roles)
+
+- `Profile.vue` (route `/profile`) is one shared page for citizen, administrator, and field worker — no per-role profile screens.
+- Two tabs: "Profile Details" and "Change Password".
+- Profile Details: circular avatar (photo or initials fallback) with camera/gallery upload buttons; editable `first_name`/`last_name`/`phone`; `username` and `email` shown read-only (never editable); administrator level shown as an info chip when applicable.
+- Change Password: current/new/confirm password fields with show/hide toggles, using the same password-strength rules as registration.

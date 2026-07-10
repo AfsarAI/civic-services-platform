@@ -15,6 +15,8 @@ from app.schemas.user_schema import (
     UserUpdateSchema,
     MunicipalAdminCreateSchema,
     MunicipalAdminUpdateSchema,
+    FieldWorkerCreateSchema,
+    FieldWorkerUpdateSchema,
 )
 
 __all__ = [
@@ -28,4 +30,6 @@ __all__ = [
     "UserUpdateSchema",
     "MunicipalAdminCreateSchema",
     "MunicipalAdminUpdateSchema",
+    "FieldWorkerCreateSchema",
+    "FieldWorkerUpdateSchema",
 ]

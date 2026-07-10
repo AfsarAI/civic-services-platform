@@ -5,13 +5,23 @@ All endpoints return the standard envelope:
     { "success": bool, "message": str, "data": dict|null, "errors": dict|null }
 """
 
+import os
+from uuid import uuid4
+
+from flask import current_app, request, send_from_directory
 from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity,
 )
+from werkzeug.utils import secure_filename
 
-from app.api.auth.schema import LoginRequestSchema, RegisterRequestSchema
+from app.api.auth.schema import (
+    ChangePasswordSchema,
+    LoginRequestSchema,
+    ProfileUpdateSchema,
+    RegisterRequestSchema,
+)
 from app.api.auth.service import AuthService
 from app.utils.decorators import validate_body
 from app.utils.responses import success_response, error_response
@@ -52,6 +62,30 @@ _login_model = ns.model(
         "password": fields.String(required=True, example="Secret@123"),
     },
 )
+
+_profile_update_model = ns.model(
+    "ProfileUpdateRequest",
+    {
+        "first_name": fields.String(required=True, example="John"),
+        "last_name": fields.String(required=True, example="Doe"),
+        "phone": fields.String(example="+91-9876543210"),
+    },
+)
+
+_change_password_model = ns.model(
+    "ChangePasswordRequest",
+    {
+        "current_password": fields.String(required=True, example="OldSecret@123"),
+        "new_password": fields.String(required=True, example="NewSecret@456"),
+        "confirm_password": fields.String(required=True, example="NewSecret@456"),
+    },
+)
+
+
+def _avatar_media_dir() -> str:
+    directory = os.path.join(current_app.instance_path, "uploads", "avatars")
+    os.makedirs(directory, exist_ok=True)
+    return directory
 
 
 # -- Endpoints --------------------------------------------------------------
@@ -130,3 +164,76 @@ class CurrentUserResource(Resource):
             return success_response(data, "User profile retrieved.")
         except ValueError as exc:
             return error_response(str(exc), status_code=404)
+
+    @ns.expect(_profile_update_model)
+    @ns.response(200, "Profile updated", _envelope)
+    @ns.response(422, "Validation error", _envelope)
+    @jwt_required()
+    @validate_body(ProfileUpdateSchema)
+    def put(self, body):
+        """Update the authenticated user's own profile (no username/email/role change)."""
+        user_id = int(get_jwt_identity())
+        try:
+            data = _svc.update_profile(user_id, body)
+            return success_response(data, "Profile updated successfully.")
+        except ValueError as exc:
+            return error_response(str(exc), status_code=404)
+
+
+@ns.route("/change-password")
+class ChangePasswordResource(Resource):
+    @ns.expect(_change_password_model)
+    @ns.response(200, "Password changed", _envelope)
+    @ns.response(400, "Current password incorrect", _envelope)
+    @ns.response(422, "Validation error", _envelope)
+    @jwt_required()
+    @validate_body(ChangePasswordSchema)
+    def post(self, body):
+        """Change the authenticated user's own password."""
+        user_id = int(get_jwt_identity())
+        try:
+            _svc.change_password(user_id, body)
+            return success_response(None, "Password changed successfully.")
+        except ValueError as exc:
+            return error_response(str(exc), status_code=400)
+
+
+@ns.route("/me/avatar")
+class CurrentUserAvatarUploadResource(Resource):
+    @ns.response(200, "Avatar uploaded", _envelope)
+    @ns.response(400, "Invalid photo upload", _envelope)
+    @jwt_required()
+    def post(self):
+        """Upload and set the authenticated user's profile photo."""
+        photo = request.files.get("photo")
+        if not photo or not photo.filename:
+            return error_response("A photo file is required.", status_code=400)
+
+        if not (photo.mimetype or "").startswith("image/"):
+            return error_response("Please upload a valid image file.", status_code=400)
+
+        original_name = secure_filename(photo.filename)
+        _, extension = os.path.splitext(original_name)
+        extension = (extension or ".jpg").lower()
+        if extension not in {".jpg", ".jpeg", ".png", ".webp"}:
+            extension = ".jpg"
+        filename = f"{uuid4().hex}{extension}"
+        file_path = os.path.join(_avatar_media_dir(), filename)
+        photo.save(file_path)
+
+        avatar_url = f"/api/v1/auth/me/avatar/{filename}"
+        user_id = int(get_jwt_identity())
+        try:
+            data = _svc.update_avatar(user_id, avatar_url)
+            return success_response(data, "Profile photo updated successfully.")
+        except ValueError as exc:
+            return error_response(str(exc), status_code=404)
+
+
+@ns.route("/me/avatar/<string:filename>")
+@ns.param("filename", "Uploaded avatar filename")
+class CurrentUserAvatarResource(Resource):
+    @ns.response(200, "Avatar photo")
+    def get(self, filename):
+        """Serve an uploaded profile photo."""
+        return send_from_directory(_avatar_media_dir(), filename)

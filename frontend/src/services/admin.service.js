@@ -39,6 +39,21 @@ const adminService = {
     const response = await api.delete(`/admin/municipal-administrators/${userId}`)
     return response.data
   },
+
+  async getFieldWorkers(params = {}) {
+    const response = await api.get('/admin/field-workers', { params })
+    return response.data
+  },
+
+  async createFieldWorker(payload) {
+    const response = await api.post('/admin/field-workers', payload)
+    return response.data
+  },
+
+  async updateFieldWorker(userId, payload) {
+    const response = await api.put(`/admin/field-workers/${userId}`, payload)
+    return response.data
+  },
 }
 
 export default adminService

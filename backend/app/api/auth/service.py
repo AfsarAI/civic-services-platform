@@ -157,6 +157,55 @@ class AuthService:
 
         return {"user": self._serialize_user(user)}
 
+    def update_profile(self, user_id: int, data: dict) -> dict:
+        """Update the authenticated user's own profile fields.
+
+        Username, email, and role are never editable through this method.
+
+        Raises:
+            ValueError: If the user does not exist.
+        """
+        user = db.session.get(User, user_id)
+        if not user:
+            raise ValueError("User not found.")
+
+        user.first_name = data["first_name"]
+        user.last_name = data["last_name"]
+        user.phone = data.get("phone")
+
+        db.session.commit()
+        return {"user": self._serialize_user(user)}
+
+    def change_password(self, user_id: int, data: dict) -> None:
+        """Change the authenticated user's own password.
+
+        Raises:
+            ValueError: If the user does not exist or the current password is wrong.
+        """
+        user = db.session.get(User, user_id)
+        if not user:
+            raise ValueError("User not found.")
+
+        if not user.check_password(data["current_password"]):
+            raise ValueError("Current password is incorrect.")
+
+        user.set_password(data["new_password"])
+        db.session.commit()
+
+    def update_avatar(self, user_id: int, avatar_url: str) -> dict:
+        """Set the authenticated user's profile photo URL.
+
+        Raises:
+            ValueError: If the user does not exist.
+        """
+        user = db.session.get(User, user_id)
+        if not user:
+            raise ValueError("User not found.")
+
+        user.avatar_url = avatar_url
+        db.session.commit()
+        return {"user": self._serialize_user(user)}
+
     # ── Helpers ───────────────────────────────────────────────────────────
 
     @staticmethod
@@ -172,6 +221,7 @@ class AuthService:
             "last_name": user.last_name,
             "full_name": user.full_name,
             "phone": user.phone,
+            "avatar_url": user.avatar_url,
             "role": user.role.name,
             "admin_level": user.admin_level,
             "city_id": city_id,

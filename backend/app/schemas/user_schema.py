@@ -176,3 +176,66 @@ class MunicipalAdminUpdateSchema(Schema):
     @validates("pincode")
     def validate_postal_code(self, value: str | None) -> None:
         validate_pincode(value)
+
+
+class FieldWorkerCreateSchema(Schema):
+    """Schema for a municipal administrator creating a field worker.
+
+    The field worker's ``city_id`` is not accepted from the request — it is
+    always derived from the creating municipal administrator's own city.
+    """
+
+    username = fields.Str(required=True, validate=validate.Length(min=3, max=80))
+    email = fields.Email(required=True)
+    password = fields.Str(required=True, load_only=True)
+    confirm_password = fields.Str(
+        required=True,
+        load_only=True,
+        error_messages={"required": "Confirm password is required."},
+    )
+    first_name = fields.Str(required=True, validate=validate.Length(min=1, max=80))
+    last_name = fields.Str(required=True, validate=validate.Length(min=1, max=80))
+    phone = fields.Str(load_default=None, allow_none=True)
+
+    @pre_load
+    def normalize_fields(self, data: dict, **_) -> dict:
+        data["email"] = normalize_email(data.get("email"))
+        for field in ("username", "first_name", "last_name"):
+            data[field] = normalize_string(data.get(field))
+        data["phone"] = normalize_optional_string(data.get("phone"))
+        return data
+
+    @validates("password")
+    def validate_password(self, value: str) -> None:
+        validate_password_strength(value)
+
+    @validates("phone")
+    def validate_phone(self, value: str | None) -> None:
+        validate_phone_number(value)
+
+    @validates_schema
+    def validate_password_match(self, data: dict, **_) -> None:
+        if data.get("password") != data.get("confirm_password"):
+            raise ValidationError({"confirm_password": ["Confirm password must match password."]})
+
+
+class FieldWorkerUpdateSchema(Schema):
+    """Schema for a municipal administrator editing/activating/deactivating a field worker."""
+
+    first_name = fields.Str(validate=validate.Length(min=1, max=80))
+    last_name = fields.Str(validate=validate.Length(min=1, max=80))
+    phone = fields.Str(allow_none=True)
+    is_active = fields.Bool()
+
+    @pre_load
+    def normalize_fields(self, data: dict, **_) -> dict:
+        for field in ("first_name", "last_name"):
+            if field in data:
+                data[field] = normalize_string(data.get(field))
+        if "phone" in data:
+            data["phone"] = normalize_optional_string(data.get("phone"))
+        return data
+
+    @validates("phone")
+    def validate_phone(self, value: str | None) -> None:
+        validate_phone_number(value)

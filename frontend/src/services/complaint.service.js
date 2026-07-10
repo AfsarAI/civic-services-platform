@@ -90,6 +90,25 @@ const complaintService = {
   },
 
   /**
+   * Get a specific complaint by ID (admin).
+   * @param {number} id
+   */
+  async getAdminComplaint(id) {
+    const response = await api.get(`/admin/complaints/${id}`)
+    return response.data
+  },
+
+  /**
+   * Update a complaint's status and/or priority (admin).
+   * @param {number} id
+   * @param {Object} data
+   */
+  async updateAdminComplaint(id, data) {
+    const response = await api.put(`/admin/complaints/${id}`, data)
+    return response.data
+  },
+
+  /**
    * Assign a complaint to a field worker (admin).
    * @param {number} complaintId
    * @param {Object} assignData

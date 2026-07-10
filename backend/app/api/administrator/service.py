@@ -32,11 +32,20 @@ class AdminService:
         category: str = None,
         priority: str = None,
         citizen_id: int = None,
+        city_id: int = None,
     ) -> dict:
-        """Return paginated complaints, optionally filtered."""
+        """Return paginated complaints, optionally filtered.
+
+        Args:
+            city_id: When provided (municipal administrators), restricts the
+                result set to complaints filed in that city. ``None`` means
+                unscoped (system administrators see every city).
+        """
         per_page = min(per_page, 100)
         query = Complaint.query
 
+        if city_id is not None:
+            query = query.filter_by(city_id=city_id)
         if status:
             if status not in Complaint.VALID_STATUSES:
                 raise ValueError(f"Invalid status '{status}'.")
@@ -58,17 +67,22 @@ class AdminService:
             "per_page": pagination.per_page,
         }
 
-    def get_complaint(self, complaint_id: int) -> dict:
-        """Return full complaint details including assignment and feedback."""
+    def get_complaint(self, complaint_id: int, city_id: int = None) -> dict:
+        """Return full complaint details including assignment and feedback.
+
+        Args:
+            city_id: When provided, the complaint must belong to this city
+                or a ``ValueError`` (treated as 404) is raised.
+        """
         complaint = Complaint.query.get(complaint_id)
-        if not complaint:
+        if not complaint or (city_id is not None and complaint.city_id != city_id):
             raise ValueError("Complaint not found.")
         return {"complaint": self._serialize_complaint(complaint, full=True)}
 
-    def update_complaint(self, complaint_id: int, data: dict) -> dict:
+    def update_complaint(self, complaint_id: int, data: dict, city_id: int = None) -> dict:
         """Update a complaint's status and/or priority."""
         complaint = Complaint.query.get(complaint_id)
-        if not complaint:
+        if not complaint or (city_id is not None and complaint.city_id != city_id):
             raise ValueError("Complaint not found.")
 
         if "status" in data:
@@ -83,11 +97,16 @@ class AdminService:
         return {"complaint": self._serialize_complaint(complaint, full=True)}
 
     def assign_complaint(
-        self, complaint_id: int, admin_id: int, data: dict
+        self, complaint_id: int, admin_id: int, data: dict, city_id: int = None
     ) -> dict:
-        """Assign a complaint to a field worker."""
+        """Assign a complaint to a field worker.
+
+        Args:
+            city_id: When provided (municipal administrators), the complaint
+                and the field worker must both belong to this city.
+        """
         complaint = Complaint.query.get(complaint_id)
-        if not complaint:
+        if not complaint or (city_id is not None and complaint.city_id != city_id):
             raise ValueError("Complaint not found.")
 
         if complaint.status not in (
@@ -108,6 +127,9 @@ class AdminService:
 
         if not worker.is_active:
             raise ValueError("The specified field worker is inactive.")
+
+        if city_id is not None and worker.city_id != city_id:
+            raise ValueError("The specified field worker does not belong to your city.")
 
         assignment = ComplaintAssignment(
             complaint_id=complaint_id,
@@ -180,19 +202,117 @@ class AdminService:
         db.session.commit()
         return {"user": self._serialize_user(user)}
 
-    def get_field_workers(self) -> dict:
-        """Return all active field workers."""
+    def get_field_workers(self, acting_admin: User = None, is_active: bool = None) -> dict:
+        """Return field workers, optionally filtered by active status.
+
+        Municipal administrators only see field workers that belong to their
+        own city; system administrators see field workers across all cities.
+        """
         fw_role = Role.query.filter_by(name=Role.FIELD_WORKER).first()
         if not fw_role:
             return {"field_workers": []}
 
-        workers = (
-            User.query
-            .filter_by(role_id=fw_role.id, is_active=True)
-            .order_by(User.first_name)
-            .all()
-        )
+        query = User.query.filter_by(role_id=fw_role.id)
+        if is_active is not None:
+            query = query.filter_by(is_active=is_active)
+        if acting_admin is not None and acting_admin.is_municipal_admin:
+            query = query.filter_by(city_id=acting_admin.admin_city_id)
+
+        workers = query.order_by(User.first_name).all()
         return {"field_workers": [self._serialize_user(w) for w in workers]}
+
+    def create_field_worker(self, acting_admin: User, data: dict) -> dict:
+        """Create a field worker in the acting municipal administrator's city.
+
+        Field workers are always created by a municipal administrator and are
+        automatically scoped to that administrator's own city — the city is
+        never accepted from the request body.
+        """
+        city_id = acting_admin.admin_city_id
+        if not city_id:
+            raise ValueError("Your administrator account is not scoped to a city.")
+
+        email = data["email"].strip().lower()
+        if self.repository.get_user_by_email(email):
+            raise ValueError("An account with this email already exists.")
+
+        username = data["username"].strip()
+        if self.repository.get_user_by_username(username):
+            raise ValueError("This username is already taken.")
+
+        fw_role = self.repository.get_role_by_name(Role.FIELD_WORKER)
+        if not fw_role:
+            raise RuntimeError("Field worker role not found. Run 'flask seed' first.")
+
+        worker = self.repository.create_user(
+            username=username,
+            email=email,
+            first_name=data["first_name"],
+            last_name=data["last_name"],
+            phone=data.get("phone"),
+            role_id=fw_role.id,
+            city_id=city_id,
+            is_active=True,
+        )
+        worker.set_password(data["password"])
+        db.session.flush()
+
+        AuditLogService.record_action(
+            user_id=acting_admin.id,
+            action="field_worker_created",
+            resource_type="user",
+            resource_id=worker.id,
+            details={"email": worker.email, "city_id": city_id},
+        )
+        db.session.commit()
+        current_app.logger.info(
+            "Field worker created",
+            extra={"creator_id": acting_admin.id, "field_worker_id": worker.id, "city_id": city_id},
+        )
+        return {"user": self._serialize_user(worker)}
+
+    def get_field_worker(self, user_id: int, acting_admin: User) -> dict:
+        """Return details for one field worker, enforcing city ownership."""
+        worker = self._get_owned_field_worker(user_id, acting_admin)
+        return {"user": self._serialize_user(worker)}
+
+    def update_field_worker(self, user_id: int, acting_admin: User, data: dict) -> dict:
+        """Edit or activate/deactivate a field worker owned by the acting administrator's city."""
+        worker = self._get_owned_field_worker(user_id, acting_admin)
+
+        for field in ("first_name", "last_name", "phone", "is_active"):
+            if field in data:
+                setattr(worker, field, data[field])
+
+        AuditLogService.record_action(
+            user_id=acting_admin.id,
+            action="field_worker_updated",
+            resource_type="user",
+            resource_id=worker.id,
+            details={"updated_fields": sorted(list(data.keys())), "is_active": worker.is_active},
+        )
+        db.session.commit()
+        current_app.logger.info(
+            "Field worker updated",
+            extra={"acting_admin_id": acting_admin.id, "field_worker_id": worker.id},
+        )
+        return {"user": self._serialize_user(worker)}
+
+    @staticmethod
+    def _get_owned_field_worker(user_id: int, acting_admin: User) -> User:
+        """Fetch a field worker, enforcing city ownership for municipal administrators.
+
+        Raises:
+            ValueError: If not found, not a field worker, or (for municipal
+                administrators) belonging to a different city.
+        """
+        fw_role = Role.query.filter_by(name=Role.FIELD_WORKER).first()
+        worker = User.query.get(user_id)
+        if not worker or not fw_role or worker.role_id != fw_role.id:
+            raise ValueError("Field worker not found.")
+        if acting_admin.is_municipal_admin and worker.city_id != acting_admin.admin_city_id:
+            raise ValueError("Field worker not found.")
+        return worker
 
     # ── Admin hierarchy ───────────────────────────────────────────────────
 
@@ -383,14 +503,38 @@ class AdminService:
                 "recent_complaints": [self._serialize_complaint(c) for c in recent],
             }
 
+        city_id = admin_user.admin_city_id
+        base_query = Complaint.query.filter_by(city_id=city_id)
+
+        counts = {s: base_query.filter_by(status=s).count() for s in Complaint.VALID_STATUSES}
+        total = base_query.count()
+        open_count = base_query.filter(
+            Complaint.status.in_([
+                Complaint.STATUS_PENDING,
+                Complaint.STATUS_ASSIGNED,
+                Complaint.STATUS_IN_PROGRESS,
+            ])
+        ).count()
+        recent = base_query.order_by(Complaint.created_at.desc()).limit(10).all()
+
+        fw_role = Role.query.filter_by(name=Role.FIELD_WORKER).first()
+        fw_query = (
+            User.query.filter_by(role_id=fw_role.id, city_id=city_id)
+            if fw_role else User.query.filter(False)
+        )
+        total_workers = fw_query.count()
+        active_workers = fw_query.filter_by(is_active=True).count()
+
         return {
             "scope": "municipal",
             "administrator": self._serialize_user(admin_user),
             "managed_city": self._serialize_city(admin_user.admin_profile.city),
-            "message": (
-                "Municipal administrators are scoped to their assigned city. "
-                "City-level complaint and worker analytics will use city-linked domain data."
-            ),
+            "total_complaints": total,
+            "open_complaints": open_count,
+            "by_status": counts,
+            "total_field_workers": total_workers,
+            "active_field_workers": active_workers,
+            "recent_complaints": [self._serialize_complaint(c) for c in recent],
         }
 
     # ── Internal helpers ──────────────────────────────────────────────────
@@ -509,8 +653,11 @@ class AdminService:
             "role_id": user.role_id,
             "role": user.role.name if user.role else None,
             "admin_level": user.admin_level,
-            "city_id": user.admin_city_id,
-            "city_name": user.admin_city_name,
+            "city_id": user.admin_city_id if user.is_administrator else user.city_id,
+            "city_name": (
+                user.admin_city_name if user.is_administrator
+                else (user.city.name if user.city else None)
+            ),
             "pincode": user.pincode,
             "created_at": user.created_at.isoformat(),
         }
