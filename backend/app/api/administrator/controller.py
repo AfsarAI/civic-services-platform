@@ -16,6 +16,7 @@ from app.api.administrator.schema import (
     FieldWorkerUpdateSchema,
     MunicipalAdminCreateSchema,
     MunicipalAdminUpdateSchema,
+    SystemSettingUpdateSchema,
     UserUpdateSchema,
 )
 from app.api.administrator.service import AdminService
@@ -100,6 +101,14 @@ _field_worker_update = ns.model("FieldWorkerUpdate", {
     "last_name": fields.String,
     "phone": fields.String,
     "is_active": fields.Boolean(example=True),
+})
+
+_system_settings_update = ns.model("SystemSettingsUpdate", {
+    "site_name": fields.String(example="Civic Services Platform"),
+    "support_email": fields.String(example="support@civicservices.local"),
+    "maintenance_mode": fields.Boolean(example=False),
+    "notify_on_status_change": fields.Boolean(example=True),
+    "default_complaint_priority": fields.String(example="medium", enum=["low", "medium", "high", "urgent"]),
 })
 
 
@@ -479,3 +488,27 @@ class AdminDashboardResource(Resource):
             return error_response("User not found.", status_code=404)
         data = _svc.get_dashboard_summary(admin_user)
         return success_response(data, "Dashboard data retrieved.")
+
+
+@ns.route("/settings")
+class AdminSystemSettingsResource(Resource):
+
+    @ns.response(200, "System settings", _envelope)
+    @jwt_required()
+    @require_system_admin
+    def get(self):
+        """Get the current platform-wide system settings (TPS-99, system admin only)."""
+        data = _svc.get_system_settings()
+        return success_response(data, "System settings retrieved.")
+
+    @ns.expect(_system_settings_update)
+    @ns.response(200, "System settings updated", _envelope)
+    @ns.response(422, "Validation error", _envelope)
+    @jwt_required()
+    @require_system_admin
+    @validate_body(SystemSettingUpdateSchema)
+    def put(self, body):
+        """Update platform-wide system settings (TPS-99, system admin only)."""
+        admin_id = int(get_jwt_identity())
+        data = _svc.update_system_settings(body, admin_id)
+        return success_response(data, "System settings updated successfully.")

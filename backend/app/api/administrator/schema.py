@@ -18,6 +18,7 @@ from app.schemas.user_schema import (
     FieldWorkerCreateSchema,
     FieldWorkerUpdateSchema,
 )
+from app.schemas.system_setting_schema import SystemSettingUpdateSchema
 
 __all__ = [
     "ComplaintSchema",
@@ -32,4 +33,5 @@ __all__ = [
     "MunicipalAdminUpdateSchema",
     "FieldWorkerCreateSchema",
     "FieldWorkerUpdateSchema",
+    "SystemSettingUpdateSchema",
 ]

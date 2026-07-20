@@ -219,7 +219,8 @@ const stats = ref({
     in_progress: 0,
     resolved: 0,
     closed: 0,
-    rejected: 0
+    rejected: 0,
+    cancelled: 0
   }
 })
 const recentComplaints = ref([])
@@ -247,8 +248,11 @@ const statsData = computed(() => [
     icon: '✅'
   },
   {
-    label: 'Closed / Rejected',
-    value: (stats.value.by_status?.closed || 0) + (stats.value.by_status?.rejected || 0),
+    label: 'Closed / Cancelled',
+    value:
+      (stats.value.by_status?.closed || 0) +
+      (stats.value.by_status?.rejected || 0) +
+      (stats.value.by_status?.cancelled || 0),
     colorClass: 'text-slate-600',
     icon: '📁'
   }
@@ -268,6 +272,7 @@ async function fetchDashboardData() {
         resolved: 0,
         closed: 0,
         rejected: 0,
+        cancelled: 0,
         ...(res.data.by_status || {})
       }
       recentComplaints.value = res.data.recent_complaints || []
@@ -321,6 +326,8 @@ function statusBadgeClass(status) {
       return 'badge-closed'
     case 'rejected':
       return 'badge-rejected'
+    case 'cancelled':
+      return 'badge-cancelled'
     default:
       return 'inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700'
   }

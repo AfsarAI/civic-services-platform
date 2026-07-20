@@ -124,6 +124,9 @@
               <td class="py-3 px-4 max-w-xs truncate">
                 <span class="block font-semibold text-slate-900">{{ a.complaint?.title || `Complaint #${a.complaint_id}` }}</span>
                 <span class="block text-xs text-slate-400 mt-0.5">Ref: #{{ a.complaint_id }}</span>
+                <span v-if="isComplaintTerminal(a)" class="mt-1 block text-[11px] font-semibold text-amber-600">
+                  Complaint {{ a.complaint?.status?.replaceAll('_', ' ') }} by admin — no action needed
+                </span>
               </td>
               <td class="py-3 px-4 text-xs">
                 <span :class="priorityClass(a.complaint?.priority)">{{ a.complaint?.priority || '-' }}</span>
@@ -324,6 +327,14 @@ function statusBadgeClass(status) {
     default:
       return 'inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700'
   }
+}
+
+// The complaint can be rejected/closed by an administrator independently of
+// this assignment's own status (still `assigned`/`accepted`/`in_progress`).
+function isComplaintTerminal(assignment) {
+  const complaintStatus = assignment.complaint?.status
+  const assignmentActive = ['assigned', 'accepted', 'in_progress'].includes(assignment.status)
+  return assignmentActive && ['rejected', 'cancelled', 'resolved', 'closed'].includes(complaintStatus)
 }
 
 onMounted(() => {

@@ -12,6 +12,7 @@ from app.models.complaint_assignment import ComplaintAssignment
 from app.models.notification import Notification
 from app.models.feedback import Feedback
 from app.models.audit_log import AuditLog
+from app.models.system_setting import SystemSetting
 
 __all__ = [
     "Role",
@@ -24,4 +25,5 @@ __all__ = [
     "Notification",
     "Feedback",
     "AuditLog",
+    "SystemSetting",
 ]

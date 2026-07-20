@@ -18,6 +18,7 @@ class Complaint(db.Model):
     STATUS_RESOLVED = "resolved"
     STATUS_CLOSED = "closed"
     STATUS_REJECTED = "rejected"
+    STATUS_CANCELLED = "cancelled"
 
     VALID_STATUSES = [
         STATUS_PENDING,
@@ -26,6 +27,7 @@ class Complaint(db.Model):
         STATUS_RESOLVED,
         STATUS_CLOSED,
         STATUS_REJECTED,
+        STATUS_CANCELLED,
     ]
 
     # Category constants

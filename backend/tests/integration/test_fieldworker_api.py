@@ -7,6 +7,7 @@ from io import BytesIO
 from app.extensions import db as _db
 from app.models.complaint import Complaint
 from app.models.complaint_assignment import ComplaintAssignment
+from app.models.notification import Notification
 from app.models.role import Role
 from app.models.user import User
 
@@ -125,6 +126,20 @@ class TestFieldWorkerEndpoints:
         )
         assert list_response.status_code == 200
         assert list_response.get_json()["data"]["pagination"]["total"] >= 1
+        listed_assignment = list_response.get_json()["data"]["items"][0]
+        # List view must include nested complaint data (title/priority/status)
+        # so the dashboard table doesn't fall back to "Complaint #<id>".
+        assert listed_assignment["complaint"]["id"] == complaint_id
+        assert listed_assignment["complaint"]["title"]
+
+        # Dashboard summary's recent_assignments must also include it.
+        dashboard_response = client.get(
+            "/api/v1/fieldworker/dashboard",
+            headers={"Authorization": f"Bearer {worker_token}"},
+        )
+        assert dashboard_response.status_code == 200
+        recent = dashboard_response.get_json()["data"]["recent_assignments"]
+        assert any(a.get("complaint", {}).get("id") == complaint_id for a in recent)
 
         # Get assignment details
         detail_response = client.get(
@@ -172,6 +187,36 @@ class TestFieldWorkerEndpoints:
         completed = complete_response.get_json()["data"]["assignment"]
         assert completed["status"] == "completed"
         assert completed["evidence_url"] == evidence_url
+
+        # Complaint status intentionally stays in_progress until an admin verifies.
+        with app.app_context():
+            complaint = Complaint.query.get(complaint_id)
+            assert complaint.status == Complaint.STATUS_IN_PROGRESS
+
+            assignment = ComplaintAssignment.query.get(assignment_id)
+            notification = Notification.query.filter_by(
+                user_id=assignment.assigned_by_id,
+                related_complaint_id=complaint_id,
+            ).order_by(Notification.id.desc()).first()
+            assert notification is not None
+            assert "verif" in notification.title.lower()
+
+        # Citizen-facing complaint view surfaces the completed assignment status
+        # so the UI can show "awaiting verification" instead of bare "in progress".
+        with app.app_context():
+            citizen = User.query.join(Complaint, Complaint.citizen_id == User.id).filter(
+                Complaint.id == complaint_id
+            ).first()
+        citizen_token = self._login(client, citizen.email)
+        citizen_response = client.get(
+            f"/api/v1/citizen/complaints/{complaint_id}",
+            headers={"Authorization": f"Bearer {citizen_token}"},
+        )
+        assert citizen_response.status_code == 200
+        citizen_complaint = citizen_response.get_json()["data"]["complaint"]
+        assert citizen_complaint["status"] == "in_progress"
+        assert citizen_complaint["assignment_status"] == "completed"
+        assert citizen_complaint["repair_completed_at"] is not None
 
     def test_reject_assignment_returns_complaint_to_pending(self, app, client):
         """Rejecting an assignment moves the complaint back to pending."""
