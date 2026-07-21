@@ -1,5 +1,7 @@
 # Sprint Retrospective Meeting Notes
 
+> Last reviewed: 2026-07-21
+
 This folder contains Sprint Retrospective meeting notes.
 
 ## Template

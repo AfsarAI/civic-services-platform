@@ -1,5 +1,7 @@
 # Frontend — Civic Services Platform
 
+> Last reviewed: 2026-07-21
+
 Vue 3 SPA for the Civic Services Platform.
 
 ## Quick Start
@@ -37,3 +39,16 @@ npm run build
 ```
 
 Output is in `dist/`.
+
+## Authentication Session Flow
+
+- Login API integration is handled by `src/services/auth.service.js` (`AuthService` class).
+- Session state is managed in `src/stores/auth.js`:
+  - `login`, `logout`, `fetchCurrentUser`, `hydrateSession`
+  - localStorage keys: `access_token`, `refresh_token`, `user`
+- Role-based redirection after login:
+  - Administrator → `/admin/dashboard`
+  - Citizen → `/citizen/dashboard`
+  - Field Worker → `/fieldworker/dashboard`
+- Router-level guards in `src/router/index.js` enforce auth + role authorization.
+- Registration and municipal-admin onboarding call `GET /locations/pincode/<pincode>` for city resolution.

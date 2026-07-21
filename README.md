@@ -1,6 +1,8 @@
 # Civic Services Platform
 
-A university Scrum project — an enterprise-grade web platform that allows **citizens** to report potholes and civic issues, **administrators** to manage and assign complaints, and **field workers** to update repair progress in real time.
+> Last reviewed: 2026-07-21
+
+A university Scrum project — an enterprise-grade web platform that lets **citizens** report potholes with a photo and map location, **administrators** manage and assign complaints, and **field workers** update repair progress in real time.
 
 ---
 
@@ -26,8 +28,8 @@ The **Civic Services Platform** enables:
 
 | Role | Capabilities |
 |---|---|
-| **Citizen** | Register, submit complaints (potholes, etc.), track status, provide feedback |
-| **Administrator** | View all complaints, assign field workers, manage users, generate reports |
+| **Citizen** | Register, submit pothole complaints with photo and location, track status, provide feedback |
+| **Administrator** | System Administrator and Municipal Administrator accounts share the same `administrator` role, with subtype-based permissions |
 | **Field Worker** | View assigned tasks, update repair progress, upload evidence |
 
 **Development Methodology:** Scrum
@@ -162,16 +164,66 @@ FLASK_APP=app.py flask db upgrade
 # 6. Seed roles and default admin user (safe to re-run)
 FLASK_APP=app.py flask seed
 
+# 6b. Import city/pincode mappings from database/pincode.csv
+FLASK_APP=app.py flask import-pincodes
+
 # 7. Start the development server
 FLASK_APP=app.py FLASK_ENV=development flask run
 ```
+
+### Database setup order
+
+Run these backend commands in order after creating `.env`:
+
+1. `FLASK_APP=app.py flask db upgrade`
+2. `FLASK_APP=app.py flask seed`
+3. `FLASK_APP=app.py flask import-pincodes`
+
+Use `FLASK_APP=app.py flask import-pincodes --replace` if you want to clear and reload the `city_pincodes` table from `database/pincode.csv`.
 
 The API will be available at `http://localhost:5000`.
 
 > **Swagger UI** (interactive API docs): `http://localhost:5000/api/v1/docs`
 
-> **Default admin credentials** (set in `.env` before running `flask seed`):
+> **Default system administrator credentials** (set in `.env` before running `flask seed`):
 > Email: `admin@civicservices.local` | Password: `Admin@123456`
+
+## Administrator Hierarchy
+
+The platform still uses exactly **3 application roles** in the `roles` table:
+- `citizen`
+- `administrator`
+- `field_worker`
+
+The administrator role is now split internally using an administrator profile:
+- **System Administrator**
+  - created by default through `flask seed`
+  - can create, manage, and disable Municipal Administrators
+  - can view all cities
+  - can access global reports and platform-wide user management
+- **Municipal Administrator**
+  - belongs to exactly one city
+  - cannot self-register
+  - is created only by the System Administrator
+  - logs in through the same `/auth/login` endpoint and is still returned as role `administrator`
+  - can be managed from the System Administrator UI at `/admin/municipal-administrators`
+
+Implementation summary:
+- `users.role_id` remains unchanged
+- new `cities` table stores administrative cities
+- new `administrator_profiles` table stores `admin_level` and `city_id`
+- JWT and `/auth/me` now include `admin_level`, `city_id`, and `city_name`
+- frontend routing remains role-based, with subtype-aware restrictions for system-only pages
+- municipal-admin registration now uses the existing admin API with audit logging and validation parity for password and phone fields
+
+## Recent Changes
+
+- Narrowed the product scope to pothole-only reporting.
+- Made complaint photo upload mandatory in the citizen flow.
+- Reworked the mobile report screen around photo, map pin, pincode, and city selection.
+- Added backend support for uploading complaint photos and serving them back by URL.
+- Added the `flask import-pincodes` command for loading `city_pincodes` from `database/pincode.csv`.
+- Updated the documentation set to match the current setup order and database seeding flow.
 
 ---
 
@@ -330,11 +382,11 @@ Sprint documentation is stored under `docs/meetings/`.
 
 | Name | Role | GitHub |
 |---|---|---|
-| TBD | Scrum Master | @tbd |
-| TBD | Product Owner | @tbd |
-| TBD | Frontend Developer | @tbd |
-| TBD | Backend Developer | @tbd |
-| TBD | Full Stack Developer | @tbd |
+| Gautham (21f3002294) | Team Member | @21f3002294 |
+| MOHD AFSAR (23f2002023) | Team Member | @23f2002023 |
+| RAHUL VERMA (21f1001325) | Team Member | @21f1001325 |
+| HAFIZA NOOR (23f2004875) | Team Member | @23f2004875 |
+| Jitendra Kumar (23f1000704) | Team Member | @23f1000704 |
 
 ---
 

@@ -1,5 +1,7 @@
 # Deployment
 
+> Last reviewed: 2026-07-21
+
 This folder contains deployment configuration for the Civic Services Platform.
 
 ## Deployment Options
@@ -24,7 +26,7 @@ Always use environment-specific `.env` files — **never commit secrets**.
 
 Production secrets should be managed via a secrets manager (e.g. GitHub Actions Secrets, AWS Secrets Manager).
 
-## TODO
+## Deployment Backlog
 
 - [ ] Create `Dockerfile` for backend
 - [ ] Create `Dockerfile` for frontend

@@ -11,6 +11,7 @@ from app.api.administrator.controller import ns as admin_ns
 from app.api.fieldworker.controller import ns as fieldworker_ns
 from app.api.reports.controller import ns as reports_ns
 from app.api.notifications.controller import ns as notifications_ns
+from app.api.locations.controller import ns as locations_ns
 
 api_bp = Blueprint("api", __name__)
 
@@ -37,3 +38,4 @@ api.add_namespace(admin_ns)
 api.add_namespace(fieldworker_ns)
 api.add_namespace(reports_ns)
 api.add_namespace(notifications_ns)
+api.add_namespace(locations_ns)

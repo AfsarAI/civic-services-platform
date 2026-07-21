@@ -1,0 +1,1 @@
+"""Locations API namespace package."""

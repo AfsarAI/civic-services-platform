@@ -5,9 +5,14 @@ All endpoints require field_worker role.
 Covered Jira stories: TPS-86, TPS-87, TPS-88, TPS-89, TPS-90
 """
 
+import os
+from uuid import uuid4
+
 from flask import request
+from flask import current_app, send_from_directory
 from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from werkzeug.utils import secure_filename
 
 from app.api.fieldworker.schema import FieldWorkerProgressSchema
 from app.api.fieldworker.service import FieldWorkerService
@@ -35,6 +40,19 @@ _progress_update = ns.model("FieldWorkerProgressUpdate", {
     ),
     "notes": fields.String(example="Pothole marked, materials ordered."),
 })
+
+_complete_body = ns.model("FieldWorkerCompleteBody", {
+    "evidence_url": fields.String(
+        example="/api/v1/fieldworker/assignments/media/photo.jpg",
+        description="Optional URL returned by POST /fieldworker/assignments/media",
+    ),
+})
+
+
+def _assignment_media_dir() -> str:
+    directory = os.path.join(current_app.instance_path, "uploads", "assignments")
+    os.makedirs(directory, exist_ok=True)
+    return directory
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────
@@ -126,20 +144,77 @@ class FieldWorkerAcceptResource(Resource):
 @ns.param("assignment_id", "Assignment ID")
 class FieldWorkerCompleteResource(Resource):
 
+    @ns.expect(_complete_body)
     @ns.response(200, "Assignment completed", _envelope)
     @ns.response(400, "Invalid transition", _envelope)
     @ns.response(404, "Not found", _envelope)
     @jwt_required()
     @require_field_worker
     def post(self, assignment_id):
-        """Mark a task as completed (TPS-90)."""
+        """Mark a task as completed, optionally attaching photo evidence (TPS-90).
+
+        Body is optional JSON: ``{"evidence_url": "..."}``. Upload the photo
+        first via ``POST /fieldworker/assignments/media`` to obtain the URL.
+        """
         worker_id = int(get_jwt_identity())
+        body = {}
+        if request.data:
+            try:
+                body = request.get_json() or {}
+            except Exception:
+                return error_response("Invalid JSON body.", status_code=400)
+        evidence_url = body.get("evidence_url")
         try:
-            data = _svc.complete_assignment(assignment_id, worker_id)
+            data = _svc.complete_assignment(assignment_id, worker_id, evidence_url)
             return success_response(data, "Assignment marked as completed.")
         except ValueError as exc:
             code = 404 if "not found" in str(exc).lower() else 400
             return error_response(str(exc), status_code=code)
+
+
+@ns.route("/assignments/media")
+class FieldWorkerAssignmentMediaUploadResource(Resource):
+
+    @ns.response(201, "Evidence photo uploaded", _envelope)
+    @ns.response(400, "Invalid photo upload", _envelope)
+    @jwt_required()
+    @require_field_worker
+    def post(self):
+        """Upload a repair-completion evidence photo from a mobile camera or gallery."""
+        photo = request.files.get("photo")
+        if not photo or not photo.filename:
+            return error_response("A photo file is required.", status_code=400)
+
+        if not (photo.mimetype or "").startswith("image/"):
+            return error_response("Please upload a valid image file.", status_code=400)
+
+        original_name = secure_filename(photo.filename)
+        _, extension = os.path.splitext(original_name)
+        extension = (extension or ".jpg").lower()
+        if extension not in {".jpg", ".jpeg", ".png", ".webp"}:
+            extension = ".jpg"
+        filename = f"{uuid4().hex}{extension}"
+        file_path = os.path.join(_assignment_media_dir(), filename)
+        photo.save(file_path)
+
+        return success_response(
+            {
+                "filename": filename,
+                "evidence_url": f"/api/v1/fieldworker/assignments/media/{filename}",
+            },
+            "Evidence photo uploaded successfully.",
+            201,
+        )
+
+
+@ns.route("/assignments/media/<string:filename>")
+@ns.param("filename", "Uploaded evidence photo filename")
+class FieldWorkerAssignmentMediaResource(Resource):
+
+    @ns.response(200, "Evidence photo")
+    def get(self, filename):
+        """Serve an uploaded evidence photo."""
+        return send_from_directory(_assignment_media_dir(), filename)
 
 
 @ns.route("/dashboard")

@@ -3,8 +3,12 @@ Citizen service — business logic for citizen-facing operations.
 """
 
 from app.extensions import db
+from app.models.city import City
+from app.models.city_pincode import CityPincode
 from app.models.complaint import Complaint
+from app.models.complaint_assignment import ComplaintAssignment
 from app.models.feedback import Feedback
+from app.models.user import User
 
 
 class CitizenService:
@@ -60,16 +64,24 @@ class CitizenService:
         Returns:
             Dict with ``complaint`` key.
         """
+        citizen = User.query.get(citizen_id)
+        if not citizen:
+            raise ValueError("Citizen account not found.")
+
+        city_id, pincode = self._resolve_complaint_city(citizen, data)
+
         complaint = Complaint(
             citizen_id=citizen_id,
             title=data["title"],
             description=data["description"],
-            category=data["category"],
+            category=Complaint.CATEGORY_POTHOLE,
             priority=data.get("priority", "medium"),
             latitude=data.get("latitude"),
             longitude=data.get("longitude"),
             address=data.get("address"),
             image_url=data.get("image_url"),
+            city_id=city_id,
+            pincode=pincode,
             status=Complaint.STATUS_PENDING,
         )
         db.session.add(complaint)
@@ -106,7 +118,7 @@ class CitizenService:
                 f"Current status: '{complaint.status}'."
             )
 
-        for field in ("title", "description", "category", "address", "image_url",
+        for field in ("title", "description", "address", "image_url",
                       "latitude", "longitude"):
             if field in data and data[field] is not None:
                 setattr(complaint, field, data[field])
@@ -116,8 +128,12 @@ class CitizenService:
 
     # ── Cancel complaint ──────────────────────────────────────────────────
 
-    def cancel_complaint(self, complaint_id: int, citizen_id: int) -> None:
-        """Cancel (delete) a pending complaint.
+    def cancel_complaint(self, complaint_id: int, citizen_id: int) -> dict:
+        """Cancel a pending complaint (TPS-75).
+
+        The complaint record is preserved with status ``cancelled`` (not
+        deleted) so it remains visible in the citizen's history but is
+        never considered for assignment or repair again.
 
         Raises:
             ValueError: If not found, not owned, or already assigned/in-progress.
@@ -130,8 +146,9 @@ class CitizenService:
                 f"Current status: '{complaint.status}'."
             )
 
-        db.session.delete(complaint)
+        complaint.status = Complaint.STATUS_CANCELLED
         db.session.commit()
+        return {"complaint": self._serialize(complaint)}
 
     # ── Submit feedback ───────────────────────────────────────────────────
 
@@ -210,6 +227,9 @@ class CitizenService:
     @staticmethod
     def _serialize(complaint: Complaint) -> dict:
         """Safe public representation of a Complaint."""
+        latest_assignment = (
+            complaint.assignments.order_by(ComplaintAssignment.assigned_at.desc()).first()
+        )
         return {
             "id": complaint.id,
             "title": complaint.title,
@@ -221,6 +241,9 @@ class CitizenService:
             "longitude": complaint.longitude,
             "address": complaint.address,
             "image_url": complaint.image_url,
+            "city_id": complaint.city_id,
+            "city_name": complaint.city.name if complaint.city else None,
+            "pincode": complaint.pincode,
             "citizen_id": complaint.citizen_id,
             "resolved_at": (
                 complaint.resolved_at.isoformat() if complaint.resolved_at else None
@@ -230,6 +253,14 @@ class CitizenService:
             "feedback": (
                 CitizenService._serialize_feedback(complaint.feedback)
                 if complaint.feedback else None
+            ),
+            # Lets the citizen UI distinguish "repair work still ongoing" from
+            # "field worker finished, awaiting administrator verification" even
+            # though the complaint itself stays `in_progress` until resolved.
+            "assignment_status": latest_assignment.status if latest_assignment else None,
+            "repair_completed_at": (
+                latest_assignment.completed_at.isoformat()
+                if latest_assignment and latest_assignment.completed_at else None
             ),
         }
 
@@ -243,3 +274,32 @@ class CitizenService:
             "comment": feedback.comment,
             "created_at": feedback.created_at.isoformat(),
         }
+
+    @staticmethod
+    def _resolve_complaint_city(citizen: User, data: dict) -> tuple[int | None, str | None]:
+        payload_pincode = data.get("pincode")
+        payload_city_id = data.get("city_id")
+        if payload_pincode:
+            mappings = CityPincode.query.filter_by(pincode=payload_pincode, is_active=True).all()
+            if not mappings:
+                raise ValueError("No city mapping found for the provided pincode.")
+
+            if payload_city_id is not None:
+                if not any(mapping.city_id == payload_city_id for mapping in mappings):
+                    raise ValueError("Selected city does not match the provided pincode.")
+                return payload_city_id, payload_pincode
+
+            unique_city_ids = sorted({mapping.city_id for mapping in mappings})
+            if len(unique_city_ids) > 1:
+                raise ValueError("Multiple cities found for this pincode. Please select a city.")
+            return unique_city_ids[0], payload_pincode
+
+        if payload_city_id is not None:
+            city = City.query.get(payload_city_id)
+            if not city or not city.is_active:
+                raise ValueError("Selected city is not valid.")
+            return payload_city_id, None
+
+        if citizen.city_id and citizen.pincode:
+            return citizen.city_id, citizen.pincode
+        return citizen.city_id, citizen.pincode

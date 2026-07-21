@@ -1,5 +1,7 @@
 # Backend — Civic Services Platform
 
+> Last reviewed: 2026-07-21
+
 Flask REST API for the Civic Services Platform.
 
 ## Quick Start
@@ -25,6 +27,12 @@ FLASK_APP=app.py flask db upgrade
 # 6. Seed roles + default admin user (idempotent — safe to re-run)
 FLASK_APP=app.py flask seed
 
+# 6b. Import city-pincode master data from database/pincode.csv
+FLASK_APP=app.py flask import-pincodes
+
+# 6c. Rebuild the mapping from scratch when needed
+# FLASK_APP=app.py flask import-pincodes --replace
+
 # 7. Run the development server
 FLASK_APP=app.py FLASK_ENV=development flask run
 ```
@@ -33,6 +41,19 @@ FLASK_APP=app.py FLASK_ENV=development flask run
 
 > `flask seed` creates roles (`citizen`, `field_worker`, `administrator`) and a default
 > admin account from your `.env` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`). Safe to re-run.
+
+> `flask import-pincodes` loads the `city_pincodes` master table from `database/pincode.csv`.
+> Use `--replace` if you want to clear existing mappings before re-importing.
+
+### Setup order
+
+Run the backend setup in this order:
+
+1. `FLASK_APP=app.py flask db upgrade`
+2. `FLASK_APP=app.py flask seed`
+3. `FLASK_APP=app.py flask import-pincodes`
+
+If you need to refresh the mapping data, rerun step 3 with `--replace`.
 
 ## Structure
 
@@ -51,7 +72,7 @@ backend/
 │   ├── services/           # Business logic
 │   ├── repositories/       # Data access layer
 │   ├── extensions/         # Flask extensions (db, migrate, jwt, ma)
-│   ├── commands.py         # Flask CLI commands (flask seed)
+│   ├── commands.py         # Flask CLI commands (flask seed, flask import-pincodes)
 │   ├── config/             # App config helpers
 │   └── utils/              # Shared decorators (validate_body, require_role)
 ├── migrations/             # Alembic migrations

@@ -66,6 +66,48 @@ def require_admin(fn):
     return wrapper
 
 
+def require_admin_level(*levels: str):
+    """Restrict access to administrators with one of the specified levels."""
+
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            verify_jwt_in_request()
+            claims = get_jwt()
+            if claims.get("role") != "administrator":
+                return {
+                    "success": False,
+                    "message": "Administrator access required",
+                    "data": None,
+                    "errors": None,
+                }, 403
+
+            if claims.get("admin_level") not in levels:
+                return {
+                    "success": False,
+                    "message": "Administrator level access denied",
+                    "data": None,
+                    "errors": None,
+                }, 403
+            return fn(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def require_system_admin(fn):
+    """Restrict access to system administrators only."""
+
+    return require_admin_level("system")(fn)
+
+
+def require_municipal_admin(fn):
+    """Restrict access to municipal administrators only."""
+
+    return require_admin_level("municipal")(fn)
+
+
 def require_field_worker(fn):
     """Restrict access to field workers only."""
 

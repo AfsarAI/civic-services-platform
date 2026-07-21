@@ -1,5 +1,7 @@
 # Daily Scrum Notes
 
+> Last reviewed: 2026-07-21
+
 This folder contains Daily Scrum stand-up notes.
 
 ## Template

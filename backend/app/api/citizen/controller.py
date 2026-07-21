@@ -5,9 +5,14 @@ All endpoints require a valid JWT; role check enforces citizen-only access.
 Covered Jira stories: TPS-70, TPS-71, TPS-72, TPS-73, TPS-74, TPS-75, TPS-77
 """
 
+import os
+from uuid import uuid4
+
 from flask import request
+from flask import current_app, send_from_directory
 from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from werkzeug.utils import secure_filename
 
 from app.api.citizen.schema import (
     ComplaintCreateSchema,
@@ -35,14 +40,16 @@ _complaint_create = ns.model("ComplaintCreate", {
     "description": fields.String(required=True, example="Deep pothole causing damage"),
     "category": fields.String(
         required=True, example="pothole",
-        enum=["pothole", "streetlight", "drainage", "garbage", "road_damage", "other"],
+        enum=["pothole"],
     ),
     "priority": fields.String(example="medium",
                               enum=["low", "medium", "high", "urgent"]),
     "latitude": fields.Float(example=12.9716),
     "longitude": fields.Float(example=77.5946),
     "address": fields.String(example="MG Road, Bengaluru"),
-    "image_url": fields.String(example="https://example.com/photo.jpg"),
+    "image_url": fields.String(required=True, example="/api/v1/citizen/complaints/media/photo.jpg"),
+    "pincode": fields.String(example="560001"),
+    "city_id": fields.Integer(example=42),
 })
 
 _complaint_update = ns.model("ComplaintUpdate", {
@@ -53,12 +60,20 @@ _complaint_update = ns.model("ComplaintUpdate", {
     "image_url": fields.String,
     "latitude": fields.Float,
     "longitude": fields.Float,
+    "pincode": fields.String,
+    "city_id": fields.Integer,
 })
 
 _feedback_create = ns.model("FeedbackCreate", {
     "rating": fields.Integer(required=True, min=1, max=5, example=4),
     "comment": fields.String(example="Repair was done quickly!"),
 })
+
+
+def _complaint_media_dir() -> str:
+    directory = os.path.join(current_app.instance_path, "uploads", "complaints")
+    os.makedirs(directory, exist_ok=True)
+    return directory
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────
@@ -90,6 +105,10 @@ class CitizenComplaintListResource(Resource):
         except ValueError as exc:
             return error_response(str(exc), status_code=400)
 
+
+@ns.route("/complaints")
+class CitizenComplaintCreateResource(Resource):
+
     @ns.expect(_complaint_create)
     @ns.response(201, "Complaint submitted", _envelope)
     @ns.response(422, "Validation error", _envelope)
@@ -97,10 +116,53 @@ class CitizenComplaintListResource(Resource):
     @require_citizen
     @validate_body(ComplaintCreateSchema)
     def post(self, body):
-        """Submit a new civic complaint (TPS-70)."""
+        """Submit a new pothole complaint (TPS-70)."""
         citizen_id = int(get_jwt_identity())
         data = _svc.submit_complaint(citizen_id, body)
         return success_response(data, "Complaint submitted successfully.", 201)
+
+
+@ns.route("/complaints/media")
+class CitizenComplaintMediaUploadResource(Resource):
+
+    @ns.response(201, "Complaint photo uploaded", _envelope)
+    @ns.response(400, "Invalid photo upload", _envelope)
+    @jwt_required()
+    @require_citizen
+    def post(self):
+        """Upload a complaint photo from a mobile camera or gallery."""
+        photo = request.files.get("photo")
+        if not photo or not photo.filename:
+            return error_response("A photo file is required.", status_code=400)
+
+        if not (photo.mimetype or "").startswith("image/"):
+            return error_response("Please upload a valid image file.", status_code=400)
+
+        original_name = secure_filename(photo.filename)
+        _, extension = os.path.splitext(original_name)
+        extension = extension.lower() if extension else ".jpg"
+        filename = f"{uuid4().hex}{extension}"
+        file_path = os.path.join(_complaint_media_dir(), filename)
+        photo.save(file_path)
+
+        return success_response(
+            {
+                "filename": filename,
+                "image_url": f"/api/v1/citizen/complaints/media/{filename}",
+            },
+            "Complaint photo uploaded successfully.",
+            201,
+        )
+
+
+@ns.route("/complaints/media/<string:filename>")
+@ns.param("filename", "Uploaded complaint photo filename")
+class CitizenComplaintMediaResource(Resource):
+
+    @ns.response(200, "Complaint photo")
+    def get(self, filename):
+        """Serve an uploaded complaint photo."""
+        return send_from_directory(_complaint_media_dir(), filename)
 
 
 @ns.route("/complaints/<int:complaint_id>")
@@ -146,8 +208,8 @@ class CitizenComplaintResource(Resource):
         """Cancel a pending complaint (TPS-75)."""
         citizen_id = int(get_jwt_identity())
         try:
-            _svc.cancel_complaint(complaint_id, citizen_id)
-            return success_response(None, "Complaint cancelled successfully.")
+            data = _svc.cancel_complaint(complaint_id, citizen_id)
+            return success_response(data, "Complaint cancelled successfully.")
         except ValueError as exc:
             code = 404 if "not found" in str(exc).lower() else 400
             return error_response(str(exc), status_code=code)

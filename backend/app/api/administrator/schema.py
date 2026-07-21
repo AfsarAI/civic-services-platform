@@ -10,7 +10,15 @@ from app.schemas.assignment_schema import (
     AssignmentCreateSchema,
     AssignComplaintBodySchema,
 )
-from app.schemas.user_schema import UserSchema, UserUpdateSchema
+from app.schemas.user_schema import (
+    UserSchema,
+    UserUpdateSchema,
+    MunicipalAdminCreateSchema,
+    MunicipalAdminUpdateSchema,
+    FieldWorkerCreateSchema,
+    FieldWorkerUpdateSchema,
+)
+from app.schemas.system_setting_schema import SystemSettingUpdateSchema
 
 __all__ = [
     "ComplaintSchema",
@@ -21,4 +29,9 @@ __all__ = [
     "AssignComplaintBodySchema",
     "UserSchema",
     "UserUpdateSchema",
+    "MunicipalAdminCreateSchema",
+    "MunicipalAdminUpdateSchema",
+    "FieldWorkerCreateSchema",
+    "FieldWorkerUpdateSchema",
+    "SystemSettingUpdateSchema",
 ]

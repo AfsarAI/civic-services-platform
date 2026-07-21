@@ -18,6 +18,7 @@ class Complaint(db.Model):
     STATUS_RESOLVED = "resolved"
     STATUS_CLOSED = "closed"
     STATUS_REJECTED = "rejected"
+    STATUS_CANCELLED = "cancelled"
 
     VALID_STATUSES = [
         STATUS_PENDING,
@@ -26,6 +27,7 @@ class Complaint(db.Model):
         STATUS_RESOLVED,
         STATUS_CLOSED,
         STATUS_REJECTED,
+        STATUS_CANCELLED,
     ]
 
     # Category constants
@@ -46,6 +48,8 @@ class Complaint(db.Model):
     longitude = db.Column(db.Float, nullable=True)
     address = db.Column(db.String(500), nullable=True)
     image_url = db.Column(db.String(500), nullable=True)
+    city_id = db.Column(db.Integer, db.ForeignKey("cities.id"), nullable=True, index=True)
+    pincode = db.Column(db.String(6), nullable=True, index=True)
     citizen_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     resolved_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -57,6 +61,7 @@ class Complaint(db.Model):
 
     # Relationships
     citizen = db.relationship("User", foreign_keys=[citizen_id], back_populates="complaints")
+    city = db.relationship("City", back_populates="complaint_records")
     assignments = db.relationship("ComplaintAssignment", back_populates="complaint", lazy="dynamic")
     feedback = db.relationship("Feedback", back_populates="complaint", uselist=False)
 

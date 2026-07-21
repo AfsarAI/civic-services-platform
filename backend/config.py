@@ -12,6 +12,17 @@ load_dotenv()
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
+def _build_cors_origins() -> list[str]:
+    """Build allowed CORS origins with safe local development defaults."""
+    raw = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+    configured = [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+    # Always allow both common Vite dev origins, even if only one is configured.
+    defaults = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    origins = list(dict.fromkeys(configured + defaults))
+    return origins
+
+
 class Config:
     """Base configuration."""
 
@@ -35,7 +46,7 @@ class Config:
     JWT_ALGORITHM = "HS256"
 
     # CORS
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+    CORS_ORIGINS = _build_cors_origins()
 
     # Flask-RESTX / Swagger
     RESTX_SWAGGER_UI_DOC_EXPANSION = "list"

@@ -3,6 +3,8 @@ Unit tests for SQLAlchemy models.
 """
 
 import pytest
+from app.models.administrator_profile import AdministratorProfile
+from app.models.city import City
 from app.models.role import Role
 from app.models.user import User
 from app.models.complaint import Complaint
@@ -44,6 +46,21 @@ class TestUserModel:
             user = User(first_name="Jane", last_name="Doe", role_id=1)
             assert user.full_name == "Jane Doe"
 
+    def test_admin_profile_properties(self, app):
+        with app.app_context():
+            city = City(name="Lucknow")
+            profile = AdministratorProfile(
+                admin_level=AdministratorProfile.MUNICIPAL,
+                city=city,
+            )
+            user = User(first_name="Jane", last_name="Doe", role_id=1)
+            user.role = Role(name=Role.ADMINISTRATOR)
+            user.admin_profile = profile
+
+            assert user.is_administrator is True
+            assert user.is_municipal_admin is True
+            assert user.admin_city_name == "Lucknow"
+
 
 class TestComplaintModel:
     """Unit tests for the Complaint model."""
@@ -55,4 +72,5 @@ class TestComplaintModel:
     def test_valid_statuses_list(self):
         assert "pending" in Complaint.VALID_STATUSES
         assert "resolved" in Complaint.VALID_STATUSES
-        assert len(Complaint.VALID_STATUSES) == 6
+        assert "cancelled" in Complaint.VALID_STATUSES
+        assert len(Complaint.VALID_STATUSES) == 7

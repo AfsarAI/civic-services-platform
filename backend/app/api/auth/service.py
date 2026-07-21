@@ -8,8 +8,10 @@ from flask_jwt_extended import (
 )
 
 from app.extensions import db
+from app.models.city_pincode import CityPincode
 from app.models.role import Role
 from app.models.user import User
+from app.services.system_settings_service import SystemSettingsService
 
 
 class AuthService:
@@ -29,7 +31,8 @@ class AuthService:
         Raises:
             ValueError: If email or username is already taken.
         """
-        if User.query.filter_by(email=data["email"]).first():
+        email = data["email"].strip().lower()
+        if User.query.filter_by(email=email).first():
             raise ValueError("An account with this email already exists.")
 
         if User.query.filter_by(username=data["username"]).first():
@@ -41,10 +44,12 @@ class AuthService:
 
         user = User(
             username=data["username"],
-            email=data["email"],
+            email=email,
             first_name=data["first_name"],
             last_name=data["last_name"],
             phone=data.get("phone"),
+            city_id=self._resolve_city_id(data["pincode"], data.get("city_id")),
+            pincode=data.get("pincode"),
             role_id=citizen_role.id,
             is_active=True,
         )
@@ -78,9 +83,16 @@ class AuthService:
         if not user.is_active:
             raise ValueError("Your account has been deactivated. Contact support.")
 
+        if not user.is_administrator and SystemSettingsService.is_maintenance_mode():
+            raise ValueError(
+                "The platform is currently under maintenance. Please try again later."
+            )
+
         additional_claims = {
             "role": user.role.name,
             "email": user.email,
+            "admin_level": user.admin_level,
+            "city_id": self._jwt_city_id(user),
         }
 
         access_token = create_access_token(
@@ -113,13 +125,15 @@ class AuthService:
         Raises:
             ValueError: If the user no longer exists or is inactive.
         """
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user or not user.is_active:
             raise ValueError("User not found or account inactive.")
 
         additional_claims = {
             "role": user.role.name,
             "email": user.email,
+            "admin_level": user.admin_level,
+            "city_id": self._jwt_city_id(user),
         }
 
         access_token = create_access_token(
@@ -143,10 +157,59 @@ class AuthService:
         Raises:
             ValueError: If the user does not exist.
         """
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             raise ValueError("User not found.")
 
+        return {"user": self._serialize_user(user)}
+
+    def update_profile(self, user_id: int, data: dict) -> dict:
+        """Update the authenticated user's own profile fields.
+
+        Username, email, and role are never editable through this method.
+
+        Raises:
+            ValueError: If the user does not exist.
+        """
+        user = db.session.get(User, user_id)
+        if not user:
+            raise ValueError("User not found.")
+
+        user.first_name = data["first_name"]
+        user.last_name = data["last_name"]
+        user.phone = data.get("phone")
+
+        db.session.commit()
+        return {"user": self._serialize_user(user)}
+
+    def change_password(self, user_id: int, data: dict) -> None:
+        """Change the authenticated user's own password.
+
+        Raises:
+            ValueError: If the user does not exist or the current password is wrong.
+        """
+        user = db.session.get(User, user_id)
+        if not user:
+            raise ValueError("User not found.")
+
+        if not user.check_password(data["current_password"]):
+            raise ValueError("Current password is incorrect.")
+
+        user.set_password(data["new_password"])
+        db.session.commit()
+
+    def update_avatar(self, user_id: int, avatar_url: str) -> dict:
+        """Set the authenticated user's profile photo URL.
+
+        Raises:
+            ValueError: If the user does not exist.
+        """
+        user = db.session.get(User, user_id)
+        if not user:
+            raise ValueError("User not found.")
+
+        user.avatar_url = avatar_url
+        db.session.commit()
         return {"user": self._serialize_user(user)}
 
     # ── Helpers ───────────────────────────────────────────────────────────
@@ -154,6 +217,8 @@ class AuthService:
     @staticmethod
     def _serialize_user(user: User) -> dict:
         """Return a safe public representation of a User (no password hash)."""
+        city_id = user.admin_city_id if user.is_administrator else user.city_id
+        city_name = user.admin_city_name if user.is_administrator else (user.city.name if user.city else None)
         return {
             "id": user.id,
             "username": user.username,
@@ -162,7 +227,32 @@ class AuthService:
             "last_name": user.last_name,
             "full_name": user.full_name,
             "phone": user.phone,
+            "avatar_url": user.avatar_url,
             "role": user.role.name,
+            "admin_level": user.admin_level,
+            "city_id": city_id,
+            "city_name": city_name,
+            "pincode": user.pincode,
             "is_active": user.is_active,
             "created_at": user.created_at.isoformat() if user.created_at else None,
         }
+
+    @staticmethod
+    def _jwt_city_id(user: User) -> int | None:
+        return user.admin_city_id if user.is_administrator else user.city_id
+
+    @staticmethod
+    def _resolve_city_id(pincode: str, city_id: int | None) -> int:
+        mappings = CityPincode.query.filter_by(pincode=pincode, is_active=True).all()
+        if not mappings:
+            raise ValueError("No city mapping found for the provided pincode.")
+
+        if city_id is not None:
+            if not any(m.city_id == city_id for m in mappings):
+                raise ValueError("Selected city does not match the provided pincode.")
+            return city_id
+
+        unique_city_ids = sorted({m.city_id for m in mappings})
+        if len(unique_city_ids) > 1:
+            raise ValueError("Multiple cities found for this pincode. Please select a city.")
+        return unique_city_ids[0]
