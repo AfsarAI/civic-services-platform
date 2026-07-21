@@ -1,5 +1,7 @@
 # Civic Services Platform
 
+> Last reviewed: 2026-07-21
+
 A university Scrum project — an enterprise-grade web platform that lets **citizens** report potholes with a photo and map location, **administrators** manage and assign complaints, and **field workers** update repair progress in real time.
 
 ---
@@ -380,11 +382,11 @@ Sprint documentation is stored under `docs/meetings/`.
 
 | Name | Role | GitHub |
 |---|---|---|
-| TBD | Scrum Master | @tbd |
-| TBD | Product Owner | @tbd |
-| TBD | Frontend Developer | @tbd |
-| TBD | Backend Developer | @tbd |
-| TBD | Full Stack Developer | @tbd |
+| Gautham (21f3002294) | Team Member | @21f3002294 |
+| MOHD AFSAR (23f2002023) | Team Member | @23f2002023 |
+| RAHUL VERMA (21f1001325) | Team Member | @21f1001325 |
+| HAFIZA NOOR (23f2004875) | Team Member | @23f2004875 |
+| Jitendra Kumar (23f1000704) | Team Member | @23f1000704 |
 
 ---
 

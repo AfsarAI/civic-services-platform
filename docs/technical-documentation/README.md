@@ -1,17 +1,19 @@
 # Technical Documentation
 
+> Last reviewed: 2026-07-21
+
 This folder contains technical documentation for developers working on the Civic Services Platform.
 
 ## Contents
 
 | Document | Description |
 |---|---|
-| `backend-setup.md` | Backend development setup guide |
-| `frontend-setup.md` | Frontend development setup guide |
-| `api-conventions.md` | API design and naming conventions |
-| `database-guide.md` | Database schema and migration guide |
-| `authentication.md` | JWT authentication implementation details |
-| `deployment.md` | Deployment procedures |
+| `README.md` | This technical documentation index and implementation notes |
+| `../../backend/README.md` | Backend setup and commands |
+| `../../frontend/README.md` | Frontend setup and structure |
+| `../../docs/api/README.md` | API behavior and endpoint conventions |
+| `../../docs/database/README.md` | Database schema and ERD |
+| `../../deployment/README.md` | Deployment guidance |
 
 ## Development Environment Setup
 
@@ -64,7 +66,7 @@ This folder contains technical documentation for developers working on the Civic
 | `VITE_API_BASE_URL` | Backend API URL | `http://localhost:5000/api/v1` |
 | `VITE_APP_NAME` | Application name | `Civic Services Platform` |
 
-## TODO
+## Documentation Backlog
 
 - [ ] Add detailed backend developer guide
 - [ ] Add frontend component development guide

@@ -1,5 +1,7 @@
 # Database — Civic Services Platform
 
+> Last reviewed: 2026-07-21
+
 This folder contains database-related scripts, documentation, and seed data.
 
 ## Database Engine

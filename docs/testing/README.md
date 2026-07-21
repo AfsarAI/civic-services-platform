@@ -1,5 +1,7 @@
 # Testing Documentation
 
+> Last reviewed: 2026-07-21
+
 This folder contains test plans, test cases, and testing reports for the Civic Services Platform.
 
 ## Test Strategy
@@ -35,7 +37,7 @@ pytest tests/integration/ -v
 
 Minimum acceptable coverage: **80%**
 
-## TPS-110 Coverage
+## Admin Hierarchy Coverage
 
 Current automated coverage for Municipal Administrator registration includes:
 - successful System Administrator registration of a Municipal Administrator
@@ -89,7 +91,7 @@ Current automated coverage for Municipal Administrator registration includes:
 | Unit test | `test_<module>.py` |
 | Integration test | `test_<endpoint>_api.py` |
 
-## TODO
+## Testing Docs Backlog
 
 - [ ] Add test plan document
 - [ ] Add test case matrix

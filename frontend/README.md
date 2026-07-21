@@ -1,5 +1,7 @@
 # Frontend — Civic Services Platform
 
+> Last reviewed: 2026-07-21
+
 Vue 3 SPA for the Civic Services Platform.
 
 ## Quick Start

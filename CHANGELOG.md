@@ -1,5 +1,7 @@
 # Changelog
 
+> Last reviewed: 2026-07-21
+
 All notable changes to the **Civic Services Platform** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -45,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `flask seed` now creates a default System Administrator profile
 - administrator reports and global user-management endpoints are restricted to the System Administrator subtype
 - frontend admin routing and navigation now respect administrator subtype
+- refreshed repository documentation (`README.md`, `docs/**/*.md`, and setup guides) to align Jira keys (`TPS-*`), location schema docs, and current complaint lifecycle rules
 
 ---
 

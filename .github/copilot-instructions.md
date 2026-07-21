@@ -1,5 +1,7 @@
 # GitHub Copilot Instructions — MAY2026-Team-005
 
+> Last reviewed: 2026-07-21
+
 This file is read automatically by GitHub Copilot in VS Code.
 Every team member's Copilot will use these instructions as project context.
 
@@ -24,7 +26,7 @@ Course: Software Engineering | IITM Online BS Degree | Team: MAY2026-Team-005
 
 ## Roles (exactly 3 — no others)
 - `citizen` — submits and tracks complaints
-- `field_worker` — accepts and resolves assigned complaints
+- `field_worker` — accepts assignments, updates repair progress, and marks work complete
 - `administrator` — manages everything: complaints, users, assignments, reports
 
 ### Administrator hierarchy (subtype, NOT a 4th role)

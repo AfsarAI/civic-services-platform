@@ -1,5 +1,7 @@
 # API Documentation
 
+> Last reviewed: 2026-07-21
+
 This folder contains API documentation for the Civic Services Platform REST API.
 
 ## Base URL
@@ -129,7 +131,7 @@ All responses follow this envelope structure:
 | `422` | Unprocessable Entity — Marshmallow validation failed (field-level errors in `errors` key) |
 | `500` | Internal Server Error |
 
-## TODO
+## Documentation Backlog
 
 - [ ] Export Swagger JSON to this folder
 - [ ] Add endpoint-level request/response examples
