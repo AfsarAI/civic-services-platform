@@ -123,6 +123,20 @@ erDiagram
 - `administrator_profiles.city_id → cities.id` scopes municipal administrators to a single city.
 - `city_pincodes.city_id → cities.id` maps one pincode to one or more city records.
 
+### Core relationship summary
+
+- One `Role` can be assigned to many `User` records.
+- One `User` with the citizen role can create many `Complaint` records.
+- One `Complaint` can have many `ComplaintAssignment` records over time, but at most one active assignment in the business workflow at a time.
+- One `User` with the field worker role can receive many `ComplaintAssignment` records and therefore work on many complaints over time.
+- One `Complaint` can receive one `Feedback` record after it reaches a completed state (`resolved` or `closed`).
+- One `User` can receive many `Notification` records.
+- One `City` can be linked to many `User`, `Complaint`, `AdministratorProfile`, and `CityPincode` records.
+- One administrator `User` can have zero or one `AdministratorProfile` record.
+- One administrator `User` can create many `AdministratorProfile` records for municipal administrators.
+- One `User` can create many `AuditLog` records.
+- The current schema does not have a separate `ComplaintStatusHistory` table. Complaint status is stored directly in `complaints.status`.
+
 ## Complaint Status Flow
 
 ```
