@@ -111,9 +111,13 @@
                   </div>
                 </transition>
 
+                <div v-if="complaintTerminal && isAssignmentActive" class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  This complaint was marked <span class="font-semibold">{{ complaint.status?.replaceAll('_', ' ') }}</span> by an administrator. No further action is needed on this task.
+                </div>
+
                 <!-- Accept -->
                 <button
-                  v-if="assignment.status === 'assigned'"
+                  v-if="assignment.status === 'assigned' && !complaintTerminal"
                   class="btn-primary w-full py-2.5 text-sm"
                   :disabled="actionLoading"
                   @click="handleAccept"
@@ -122,7 +126,7 @@
                 </button>
 
                 <!-- Start work -->
-                <div v-if="assignment.status === 'accepted'" class="space-y-2">
+                <div v-if="assignment.status === 'accepted' && !complaintTerminal" class="space-y-2">
                   <label class="form-label" for="progress-notes">Notes (optional)</label>
                   <textarea id="progress-notes" v-model.trim="notes" rows="3" class="form-input" placeholder="Materials ordered, work scheduled..."></textarea>
                   <button class="btn-primary w-full py-2.5 text-sm" :disabled="actionLoading" @click="handleStartProgress">
@@ -131,7 +135,7 @@
                 </div>
 
                 <!-- Complete -->
-                <div v-if="['accepted', 'in_progress'].includes(assignment.status)" class="space-y-3 border-t border-slate-100 pt-3">
+                <div v-if="['accepted', 'in_progress'].includes(assignment.status) && !complaintTerminal" class="space-y-3 border-t border-slate-100 pt-3">
                   <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Mark as complete</p>
                   <input
                     ref="evidenceInputRef"
@@ -157,7 +161,7 @@
                 </div>
 
                 <!-- Reject -->
-                <div v-if="['assigned', 'accepted', 'in_progress'].includes(assignment.status)" class="space-y-2 border-t border-slate-100 pt-3">
+                <div v-if="['assigned', 'accepted', 'in_progress'].includes(assignment.status) && !complaintTerminal" class="space-y-2 border-t border-slate-100 pt-3">
                   <label class="form-label" for="reject-notes">Reason to reject (optional)</label>
                   <textarea id="reject-notes" v-model.trim="rejectNotes" rows="2" class="form-input" placeholder="Outside service area, duplicate task..."></textarea>
                   <button class="btn-danger w-full py-2.5 text-sm" :disabled="actionLoading" @click="handleReject">
@@ -207,6 +211,20 @@ const evidenceUrl = ref('')
 const isUploadingEvidence = ref(false)
 
 const complaint = computed(() => assignment.value?.complaint || {})
+
+// The complaint can move to a terminal state independently of the assignment
+// (e.g. an administrator rejects or closes it) while this assignment is still
+// `assigned`/`accepted`/`in_progress`. Once that happens, no further field
+// worker action makes sense — the backend rejects it too (see
+// FieldWorkerService._ensure_complaint_actionable).
+const complaintTerminal = computed(() => {
+  const status = complaint.value?.status
+  return ['rejected', 'cancelled', 'resolved', 'closed'].includes(status)
+})
+
+const isAssignmentActive = computed(() => (
+  ['assigned', 'accepted', 'in_progress'].includes(assignment.value?.status)
+))
 
 const statusSteps = [
   { key: 'assigned', label: 'Assigned', description: 'Task assigned to you by the administrator.' },

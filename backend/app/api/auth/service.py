@@ -11,6 +11,7 @@ from app.extensions import db
 from app.models.city_pincode import CityPincode
 from app.models.role import Role
 from app.models.user import User
+from app.services.system_settings_service import SystemSettingsService
 
 
 class AuthService:
@@ -81,6 +82,11 @@ class AuthService:
 
         if not user.is_active:
             raise ValueError("Your account has been deactivated. Contact support.")
+
+        if not user.is_administrator and SystemSettingsService.is_maintenance_mode():
+            raise ValueError(
+                "The platform is currently under maintenance. Please try again later."
+            )
 
         additional_claims = {
             "role": user.role.name,

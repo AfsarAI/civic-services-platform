@@ -1,5 +1,7 @@
 # Sprint Planning Meeting Notes
 
+> Last reviewed: 2026-07-21
+
 This folder contains Sprint Planning meeting notes and artefacts.
 
 ## Sprint Schedule
@@ -31,7 +33,7 @@ Each Sprint Planning session file should be named `sprint-N-planning.md` and inc
 
 | Story ID | User Story | Story Points | Assigned To |
 |---|---|---|---|
-| CSP-XX | As a ... I want to ... | N | @rollno |
+| TPS-XX | As a ... I want to ... | N | @rollno |
 
 ## Capacity
 

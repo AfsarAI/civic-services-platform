@@ -64,8 +64,7 @@
             <option value="in_progress">In Progress</option>
             <option value="resolved">Resolved</option>
             <option value="closed">Closed</option>
-            <option value="rejected">Rejected</option>
-          </select>
+            <option value="rejected">Rejected</option>          <option value="cancelled">Cancelled</option>          </select>
           <select v-model="categoryFilter" class="form-input w-36 text-sm" @change="loadComplaints(1)">
             <option value="">All Categories</option>
             <option value="pothole">Pothole</option>
@@ -103,10 +102,19 @@
                 </td>
                 <td class="py-3 px-4 text-xs capitalize">{{ c.priority }}</td>
                 <td class="py-3 px-4 text-xs">
-                  <span :class="statusBadgeClass(c.status)">{{ c.status?.replaceAll('_', ' ') }}</span>
+                  <span :class="statusBadgeClass(c)">{{ statusLabel(c) }}</span>
+                  <span v-if="isAwaitingVerification(c)" class="mt-1 block text-[11px] font-normal normal-case text-purple-600">
+                    Marked as fixed, pending verification.
+                  </span>
                 </td>
                 <td class="py-3 px-4 text-xs text-slate-500">{{ formatDate(c.created_at) }}</td>
-                <td class="py-3 px-4 text-right">
+                <td class="py-3 px-4 text-right space-x-3 whitespace-nowrap">
+                  <RouterLink
+                    :to="{ name: 'admin-complaint-details', params: { id: c.id } }"
+                    class="text-xs font-bold text-slate-600 hover:text-slate-800"
+                  >
+                    View
+                  </RouterLink>
                   <button
                     v-if="['pending', 'assigned'].includes(c.status)"
                     class="text-xs font-bold text-primary-600 hover:text-primary-700"
@@ -254,8 +262,9 @@ function formatDate(value) {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function statusBadgeClass(status) {
-  switch (status?.toLowerCase()) {
+function statusBadgeClass(complaint) {
+  if (isAwaitingVerification(complaint)) return 'badge-verify'
+  switch (complaint.status?.toLowerCase()) {
     case 'pending':
       return 'badge-pending'
     case 'assigned':
@@ -268,9 +277,22 @@ function statusBadgeClass(status) {
       return 'badge-closed'
     case 'rejected':
       return 'badge-rejected'
+    case 'cancelled':
+      return 'badge-cancelled'
     default:
       return 'inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700'
   }
+}
+
+// A complaint's own `status` stays `in_progress` until an administrator verifies
+// and resolves it, even after the field worker's assignment reaches `completed`.
+function isAwaitingVerification(complaint) {
+  return complaint.status === 'in_progress' && complaint.assignment_status === 'completed'
+}
+
+function statusLabel(complaint) {
+  if (isAwaitingVerification(complaint)) return 'Pending Verification'
+  return complaint.status?.replaceAll('_', ' ')
 }
 
 onMounted(() => {

@@ -1,5 +1,7 @@
 # Sprint Review Meeting Notes
 
+> Last reviewed: 2026-07-21
+
 This folder contains Sprint Review (Demo) meeting notes.
 
 ## Template
@@ -22,7 +24,7 @@ Each Sprint Review file should be named `sprint-N-review.md` and include:
 
 | Feature | Demonstrated By | Stakeholder Feedback |
 |---|---|---|
-| | | |
+| TPS-XX | | |
 
 ## Accepted Stories
 
@@ -34,7 +36,7 @@ Each Sprint Review file should be named `sprint-N-review.md` and include:
 
 | Story ID | Title | Reason | Carry Over? |
 |---|---|---|---|
-| | | | |
+| TPS-XX | | | |
 
 ## Stakeholder Feedback
 

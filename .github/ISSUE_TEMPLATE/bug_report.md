@@ -40,7 +40,7 @@ If applicable, add screenshots or paste error logs here.
 
 ## Jira Ticket
 
-Link to the related Jira issue: [CSP-XXX](https://jira.example.com/browse/CSP-XXX)
+Link to the related Jira issue: [TPS-XXX](https://iitmscrum.atlassian.net/browse/TPS-XXX)
 
 ## Additional Context
 

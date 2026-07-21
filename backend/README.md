@@ -1,5 +1,7 @@
 # Backend — Civic Services Platform
 
+> Last reviewed: 2026-07-21
+
 Flask REST API for the Civic Services Platform.
 
 ## Quick Start
@@ -70,7 +72,7 @@ backend/
 │   ├── services/           # Business logic
 │   ├── repositories/       # Data access layer
 │   ├── extensions/         # Flask extensions (db, migrate, jwt, ma)
-│   ├── commands.py         # Flask CLI commands (flask seed)
+│   ├── commands.py         # Flask CLI commands (flask seed, flask import-pincodes)
 │   ├── config/             # App config helpers
 │   └── utils/              # Shared decorators (validate_body, require_role)
 ├── migrations/             # Alembic migrations

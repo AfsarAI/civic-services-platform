@@ -208,8 +208,8 @@ class CitizenComplaintResource(Resource):
         """Cancel a pending complaint (TPS-75)."""
         citizen_id = int(get_jwt_identity())
         try:
-            _svc.cancel_complaint(complaint_id, citizen_id)
-            return success_response(None, "Complaint cancelled successfully.")
+            data = _svc.cancel_complaint(complaint_id, citizen_id)
+            return success_response(data, "Complaint cancelled successfully.")
         except ValueError as exc:
             code = 404 if "not found" in str(exc).lower() else 400
             return error_response(str(exc), status_code=code)

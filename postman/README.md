@@ -1,5 +1,7 @@
 # Postman Collection — Civic Services Platform
 
+> Last reviewed: 2026-07-21
+
 This folder contains the Postman API collection for testing the Civic Services Platform REST API.
 
 ## Import
@@ -33,3 +35,4 @@ Set the following **Collection Variables** in Postman:
 | Field Worker | View tasks, update progress |
 | Reports | Statistics and analytics |
 | Notifications | View and manage notifications |
+| Locations | Pincode and city lookup endpoints |

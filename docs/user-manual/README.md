@@ -1,5 +1,7 @@
 # User Manual
 
+> Last reviewed: 2026-07-21
+
 This folder contains end-user documentation for the Civic Services Platform.
 
 ## Roles
@@ -46,15 +48,17 @@ The platform still uses one administrator login flow, but there are now two admi
 
 ```
 pending  →  assigned  →  in_progress  →  resolved  →  closed
-   ↑ citizen submits   ↑ admin assigns  ↑ FW updates   ↑ FW completes  ↑ admin verifies & closes
+   ↘ cancelled (citizen can cancel only while pending)
+   ↘ rejected (administrator can reject before terminal closure)
 ```
 
 - Citizen can **edit** or **cancel** only while status = `pending`
-- Field worker moves status: `assigned` → `in_progress` → `resolved` (with evidence upload)
-- Administrator verifies resolved complaints and moves to `closed`
-- Administrator can `reject` a complaint at any stage
+- Field worker accepts work and updates assignment progress, then marks repair complete with optional evidence upload
+- Complaint status remains `in_progress` after worker completion until an administrator verifies it
+- Administrator verifies and moves complaint to `resolved`, then finally to `closed`
+- Administrator can reject only non-terminal complaints (`pending`, `assigned`, `in_progress`)
 
-## TODO
+## User Manual Backlog
 
 - [ ] Add step-by-step user guides with screenshots
 - [ ] Add FAQ section

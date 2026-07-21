@@ -54,6 +54,16 @@ const adminService = {
     const response = await api.put(`/admin/field-workers/${userId}`, payload)
     return response.data
   },
+
+  async getSystemSettings() {
+    const response = await api.get('/admin/settings')
+    return response.data
+  },
+
+  async updateSystemSettings(payload) {
+    const response = await api.put('/admin/settings', payload)
+    return response.data
+  },
 }
 
 export default adminService

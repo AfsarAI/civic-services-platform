@@ -1,5 +1,7 @@
 # Contributing to Civic Services Platform
 
+> Last reviewed: 2026-07-21
+
 Thank you for contributing! This document outlines the contribution guidelines for this Scrum project.
 
 ---
@@ -29,9 +31,9 @@ feature/<rollno>-<jiraid>-story-title
 
 **Examples:**
 ```
-feature/21f1001234-CSP-12-authentication
-feature/21f1001234-CSP-15-report-pothole
-feature/21f1001234-CSP-20-citizen-dashboard
+feature/21f1001234-TPS-12-authentication
+feature/21f1001234-TPS-15-report-pothole
+feature/21f1001234-TPS-20-citizen-dashboard
 ```
 
 ---

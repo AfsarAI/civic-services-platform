@@ -5,15 +5,18 @@ Administrator service — business logic for admin-facing operations.
 from datetime import datetime, timezone
 from flask import current_app
 
+from app.api.notifications.service import NotificationService
 from app.extensions import db
 from app.models.administrator_profile import AdministratorProfile
 from app.models.city import City
 from app.models.complaint import Complaint
 from app.models.complaint_assignment import ComplaintAssignment
+from app.models.notification import Notification
 from app.models.role import Role
 from app.models.user import User
 from app.repositories import AdministratorRepository
 from app.services.audit_log_service import AuditLogService
+from app.services.system_settings_service import SystemSettingsService
 
 
 class AdminService:
@@ -21,6 +24,7 @@ class AdminService:
 
     def __init__(self):
         self.repository = AdministratorRepository()
+        self.notifications = NotificationService()
 
     # ── Complaints ────────────────────────────────────────────────────────
 
@@ -80,21 +84,137 @@ class AdminService:
         return {"complaint": self._serialize_complaint(complaint, full=True)}
 
     def update_complaint(self, complaint_id: int, data: dict, city_id: int = None) -> dict:
-        """Update a complaint's status and/or priority."""
+        """Update a complaint's status and/or priority.
+
+        Manual status changes by an administrator follow a restricted
+        workflow (TPS-82/83/84):
+        - ``in_progress`` \u2192 ``resolved`` (verifying the field worker's repair)
+        - ``resolved`` \u2192 ``closed`` (final closure after verification)
+        - ``pending``/``assigned``/``in_progress`` \u2192 ``rejected`` (any time before closure)
+
+        The citizen is notified whenever the status actually changes.
+        """
         complaint = Complaint.query.get(complaint_id)
         if not complaint or (city_id is not None and complaint.city_id != city_id):
             raise ValueError("Complaint not found.")
 
-        if "status" in data:
-            complaint.status = data["status"]
-            if data["status"] == Complaint.STATUS_RESOLVED and not complaint.resolved_at:
+        status_changed = False
+        if "status" in data and data["status"] != complaint.status:
+            new_status = data["status"]
+            allowed_from = self._ADMIN_STATUS_TRANSITIONS.get(new_status)
+            if allowed_from is not None and complaint.status not in allowed_from:
+                raise ValueError(
+                    f"Cannot move complaint from '{complaint.status}' to '{new_status}'."
+                )
+            complaint.status = new_status
+            if new_status == Complaint.STATUS_RESOLVED and not complaint.resolved_at:
                 complaint.resolved_at = datetime.now(timezone.utc)
+            status_changed = True
 
         if "priority" in data:
             complaint.priority = data["priority"]
 
         db.session.commit()
+
+        if status_changed:
+            self._notify_citizen_status_change(complaint)
+            self._notify_worker_status_change(complaint)
+
         return {"complaint": self._serialize_complaint(complaint, full=True)}
+
+    # Statuses an administrator may manually move a complaint *to*, and the
+    # statuses it is allowed to come *from*. Any status not listed here
+    # (e.g. re-setting the same status) has no restriction.
+    _ADMIN_STATUS_TRANSITIONS = {
+        Complaint.STATUS_RESOLVED: (Complaint.STATUS_IN_PROGRESS,),
+        Complaint.STATUS_CLOSED: (Complaint.STATUS_RESOLVED,),
+        Complaint.STATUS_REJECTED: (
+            Complaint.STATUS_PENDING,
+            Complaint.STATUS_ASSIGNED,
+            Complaint.STATUS_IN_PROGRESS,
+        ),
+    }
+
+    def _notify_citizen_status_change(self, complaint: Complaint) -> None:
+        """Notify the citizen who filed the complaint about a status change.
+
+        Skipped entirely when the system administrator has turned automatic
+        status-change notifications off via system settings.
+        """
+        if not SystemSettingsService.notifications_enabled():
+            return
+
+        status_messages = {
+            Complaint.STATUS_RESOLVED: (
+                "Complaint resolved",
+                f"Your complaint '{complaint.title}' has been marked as resolved. "
+                "Please share your feedback.",
+                Notification.TYPE_COMPLAINT_RESOLVED,
+            ),
+            Complaint.STATUS_CLOSED: (
+                "Complaint closed",
+                f"Your complaint '{complaint.title}' has been verified and closed.",
+                Notification.TYPE_STATUS_UPDATE,
+            ),
+            Complaint.STATUS_REJECTED: (
+                "Complaint rejected",
+                f"Your complaint '{complaint.title}' was rejected by the administrator.",
+                Notification.TYPE_STATUS_UPDATE,
+            ),
+        }
+        entry = status_messages.get(complaint.status)
+        if not entry:
+            return
+        title, message, notif_type = entry
+        self.notifications.send_notification(
+            user_id=complaint.citizen_id,
+            title=title,
+            message=message,
+            notification_type=notif_type,
+            related_complaint_id=complaint.id,
+        )
+
+    def _notify_worker_status_change(self, complaint: Complaint) -> None:
+        """Notify the field worker last assigned to this complaint when an
+        administrator rejects or closes it, so an actively-working worker
+        knows to stop, and a completed worker gets closure confirmation.
+
+        Skipped for ``resolved`` (the worker already knows — they're the ones
+        who triggered the completion that led to it) and gated on the same
+        system setting as citizen notifications.
+        """
+        if not SystemSettingsService.notifications_enabled():
+            return
+
+        latest_assignment = complaint.assignments.order_by(
+            ComplaintAssignment.assigned_at.desc()
+        ).first()
+        if not latest_assignment:
+            return
+
+        status_messages = {
+            Complaint.STATUS_REJECTED: (
+                "Complaint rejected — stop work",
+                f"The complaint '{complaint.title}' was rejected by an administrator. "
+                "No further action is needed on this task.",
+            ),
+            Complaint.STATUS_CLOSED: (
+                "Complaint closed",
+                f"The complaint '{complaint.title}' has been verified and closed. "
+                "Thank you for completing this repair.",
+            ),
+        }
+        entry = status_messages.get(complaint.status)
+        if not entry:
+            return
+        title, message = entry
+        self.notifications.send_notification(
+            user_id=latest_assignment.worker_id,
+            title=title,
+            message=message,
+            notification_type=Notification.TYPE_STATUS_UPDATE,
+            related_complaint_id=complaint.id,
+        )
 
     def assign_complaint(
         self, complaint_id: int, admin_id: int, data: dict, city_id: int = None
@@ -141,6 +261,22 @@ class AdminService:
         db.session.add(assignment)
         complaint.status = Complaint.STATUS_ASSIGNED
         db.session.commit()
+
+        if SystemSettingsService.notifications_enabled():
+            self.notifications.send_notification(
+                user_id=worker.id,
+                title="New task assigned",
+                message=f"You have been assigned a new complaint: '{complaint.title}'.",
+                notification_type=Notification.TYPE_COMPLAINT_ASSIGNED,
+                related_complaint_id=complaint.id,
+            )
+            self.notifications.send_notification(
+                user_id=complaint.citizen_id,
+                title="Complaint assigned",
+                message=f"Your complaint '{complaint.title}' has been assigned to a field worker.",
+                notification_type=Notification.TYPE_STATUS_UPDATE,
+                related_complaint_id=complaint.id,
+            )
 
         return {
             "assignment": self._serialize_assignment(assignment),
@@ -458,6 +594,18 @@ class AdminService:
         )
         return {"user": self._serialize_user(user)}
 
+    # ── System settings (TPS-99) ──────────────────────────────────────────
+
+    def get_system_settings(self) -> dict:
+        """Return the current platform-wide system settings."""
+        setting = SystemSettingsService.get_settings()
+        return {"settings": SystemSettingsService.serialize(setting)}
+
+    def update_system_settings(self, data: dict, admin_id: int) -> dict:
+        """Update platform-wide system settings and record an audit-log entry."""
+        setting = SystemSettingsService.update_settings(data, admin_id)
+        return {"settings": SystemSettingsService.serialize(setting)}
+
     # ── Dashboard ─────────────────────────────────────────────────────────
 
     def get_dashboard_summary(self, admin_user: User) -> dict:
@@ -601,6 +749,9 @@ class AdminService:
 
     @staticmethod
     def _serialize_complaint(complaint: Complaint, full: bool = False) -> dict:
+        latest_assignment = complaint.assignments.order_by(
+            ComplaintAssignment.assigned_at.desc()
+        ).first()
         data = {
             "id": complaint.id,
             "title": complaint.title,
@@ -621,6 +772,13 @@ class AdminService:
             ),
             "created_at": complaint.created_at.isoformat(),
             "updated_at": complaint.updated_at.isoformat(),
+            # Lets the dashboard/list flag "field worker finished, awaiting your
+            # verification" even though `status` itself stays `in_progress`.
+            "assignment_status": latest_assignment.status if latest_assignment else None,
+            "repair_completed_at": (
+                latest_assignment.completed_at.isoformat()
+                if latest_assignment and latest_assignment.completed_at else None
+            ),
         }
         if full:
             data["citizen"] = (
@@ -668,9 +826,11 @@ class AdminService:
             "id": assignment.id,
             "complaint_id": assignment.complaint_id,
             "worker_id": assignment.worker_id,
+            "worker_name": assignment.worker.full_name if assignment.worker else None,
             "assigned_by_id": assignment.assigned_by_id,
             "status": assignment.status,
             "notes": assignment.notes,
+            "evidence_url": assignment.evidence_url,
             "assigned_at": assignment.assigned_at.isoformat(),
             "accepted_at": (
                 assignment.accepted_at.isoformat() if assignment.accepted_at else None

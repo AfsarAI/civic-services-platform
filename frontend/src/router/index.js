@@ -56,6 +56,12 @@ const router = createRouter({
           component: () => import('@/pages/Profile.vue'),
           meta: { requiresAuth: true },
         },
+        {
+          path: 'notifications',
+          name: 'notifications',
+          component: () => import('@/pages/Notifications.vue'),
+          meta: { requiresAuth: true },
+        },
 
         // ── Citizen ────────────────────────────────────────────────────
         {
@@ -99,9 +105,21 @@ const router = createRouter({
               meta: { requiresAuth: true, role: 'administrator' },
             },
             {
+              path: 'complaints/:id',
+              name: 'admin-complaint-details',
+              component: () => import('@/pages/administrator/AdminComplaintDetails.vue'),
+              meta: { requiresAuth: true, role: 'administrator' },
+            },
+            {
               path: 'reports',
               name: 'admin-reports',
               component: () => import('@/pages/administrator/Reports.vue'),
+              meta: { requiresAuth: true, role: 'administrator', adminLevel: 'system' },
+            },
+            {
+              path: 'settings',
+              name: 'admin-settings',
+              component: () => import('@/pages/administrator/SystemSettings.vue'),
               meta: { requiresAuth: true, role: 'administrator', adminLevel: 'system' },
             },
             {

@@ -1,5 +1,7 @@
 # GitHub Copilot Instructions — MAY2026-Team-005
 
+> Last reviewed: 2026-07-21
+
 This file is read automatically by GitHub Copilot in VS Code.
 Every team member's Copilot will use these instructions as project context.
 
@@ -24,7 +26,7 @@ Course: Software Engineering | IITM Online BS Degree | Team: MAY2026-Team-005
 
 ## Roles (exactly 3 — no others)
 - `citizen` — submits and tracks complaints
-- `field_worker` — accepts and resolves assigned complaints
+- `field_worker` — accepts assignments, updates repair progress, and marks work complete
 - `administrator` — manages everything: complaints, users, assignments, reports
 
 ### Administrator hierarchy (subtype, NOT a 4th role)
@@ -168,8 +170,9 @@ except ValueError as exc:
 ```
 pending → assigned → in_progress → resolved → closed
       ↘ rejected   (admin can reject at any point)
+      ↶ cancelled  (citizen can cancel while still pending)
 ```
-Constants: `STATUS_PENDING`, `STATUS_ASSIGNED`, `STATUS_IN_PROGRESS`, `STATUS_RESOLVED`, `STATUS_CLOSED`, `STATUS_REJECTED`
+Constants: `STATUS_PENDING`, `STATUS_ASSIGNED`, `STATUS_IN_PROGRESS`, `STATUS_RESOLVED`, `STATUS_CLOSED`, `STATUS_REJECTED`, `STATUS_CANCELLED`
 `VALID_STATUSES` list available on the model.
 
 ### Complaint categories
@@ -183,11 +186,14 @@ Constants: `STATUS_PENDING`, `STATUS_ASSIGNED`, `STATUS_IN_PROGRESS`, `STATUS_RE
 
 ### Key business rules
 - Citizen can edit/cancel only while `status == pending`
+- Cancelling a complaint (TPS-75) is a **soft cancel**: `DELETE /citizen/complaints/<id>` sets `status = cancelled` and preserves the row (never physically deletes it) — cancelled complaints stay visible in citizen history but are permanently ineligible for assignment (`assign_complaint` only accepts `pending`/`assigned`)
 - Citizen feedback only when `status in (resolved, closed)`; one feedback per complaint (unique FK)
 - Field worker accept: sets `accepted_at`; complaint → `in_progress`
-- Field worker reject: complaint → `pending` (back to admin for reassignment)
-- Field worker complete: sets `completed_at`; complaint stays `in_progress` (admin resolves)
+- Field worker reject: complaint → `pending` (back to admin for reassignment); also notifies the assigning administrator ("Assignment rejected — reassignment needed"), not just the citizen — see gotcha #25
+- Field worker complete: sets `completed_at`; complaint stays `in_progress` (admin resolves). Notifies the assigning administrator ("Repair marked complete — verification needed") so there is always a signal to go verify — see gotcha #24.
 - Admin resolving: set `resolved_at = datetime.now(timezone.utc)`
+- Admin rejecting/closing a complaint that has an active field worker assignment notifies that worker too (`AdminService._notify_worker_status_change`) — see gotcha #25
+- Field worker endpoints (`accept_assignment`/`update_progress`/`complete_assignment`) all call `FieldWorkerService._ensure_complaint_actionable()` first, which raises a 400 if the complaint has already moved to `rejected`/`cancelled`/`resolved`/`closed` (e.g. an admin rejected it while the worker was still mid-repair) — see gotcha #25
 - Admin cannot deactivate their own account
 
 ### Schemas — which to use where
@@ -222,8 +228,11 @@ Constants: `STATUS_PENDING`, `STATUS_ASSIGNED`, `STATUS_IN_PROGRESS`, `STATUS_RE
 - `POST /field-workers` `GET /field-workers/<id>` `PUT /field-workers/<id>` `DELETE /field-workers/<id>` — `require_municipal_admin` only (system admins cannot manage field workers)
 - `GET /users` `GET /users/<id>` `PUT /users/<id>`
 - `GET /dashboard`
+- `GET /settings` `PUT /settings` — `require_system_admin` only (platform-wide configuration, TPS-99)
 
 **City scoping (municipal administrators only):** `GET/PUT /complaints`, `POST /complaints/<id>/assign`, and `GET /field-workers` are automatically filtered to the acting municipal administrator's own `city_id` (via `admin_user.admin_city_id`). System administrators are unscoped and see/act across all cities. A municipal administrator requesting a complaint or field worker outside their city gets 404 (not 403, to avoid leaking existence). Assigning a complaint additionally validates the field worker's `city_id` matches.
+
+**Complaint status transitions (admin-driven, TPS-81/82/83/84):** `PUT /admin/complaints/<id>` enforces a restricted workflow beyond simple field assignment — `in_progress→resolved`, `resolved→closed`, and `(pending|assigned|in_progress)→rejected` are the only manually-settable transitions (`AdminService._ADMIN_STATUS_TRANSITIONS`); anything else raises `ValueError` → 400. Priority can be changed independently of status at any time. Every real status change fires a citizen notification via `AdminService._notify_citizen_status_change`.
 
 ### Field Worker `/api/v1/fieldworker` — `require_field_worker`
 - `GET /assignments` `GET /assignments/<id>`
@@ -238,6 +247,8 @@ Constants: `STATUS_PENDING`, `STATUS_ASSIGNED`, `STATUS_IN_PROGRESS`, `STATUS_RE
 
 ### Notifications `/api/v1/notifications` — any authenticated user
 - `GET /` `GET /<id>` `PATCH /<id>/read` `PATCH /read-all` `GET /unread-count`
+- **Actually wired to real events** (not just a passive read API): `NotificationService.send_notification()` is called from `AdminService` (assignment → worker + citizen, resolved/closed/rejected → citizen) and `FieldWorkerService` (accept → citizen "work started", reject → citizen "returned for reassignment"). All of these are gated on `SystemSettingsService.notifications_enabled()` — flip `notify_on_status_change` off in system settings and none of them fire.
+- Frontend: `Navbar.vue` has a real bell dropdown (unread badge, polls every 30s, click-outside-to-close, mark-as-read/mark-all-read) plus a full `/notifications` page (`Notifications.vue`), not a placeholder.
 
 ### Locations `/api/v1/locations` — public, no JWT required
 - `GET /pincode/<pincode>` — resolve 6-digit pincode → city option(s); response has `match_count` (0/1/N) so UI can block/auto-select/prompt
@@ -250,6 +261,12 @@ Constants: `STATUS_PENDING`, `STATUS_ASSIGNED`, `STATUS_IN_PROGRESS`, `STATUS_RE
 ### Admin — Municipal Administrator management (System Admin only, `require_system_admin`)
 - Register/list/manage Municipal Administrators (frontend: `/admin/municipal-administrators`, router meta `adminLevel: 'system'`)
 - Writes an audit-log entry via `AuditLogService.record_action(...)` on create/update/disable
+
+### System Settings (System Admin only, TPS-99)
+- Singleton `SystemSetting` row (`app/models/system_setting.py`), lazily created with defaults by `SystemSettingsService.get_settings()` — never insert a second row.
+- `PUT /admin/settings` writes an audit-log entry (`action="system_settings_updated"`) via the same `AuditLogService` pattern as municipal-admin/field-worker management.
+- Two settings have **real, immediate runtime effects** (not just stored config): `maintenance_mode` blocks non-administrator logins in `AuthService.login()` (administrators can always log in); `notify_on_status_change` gates every automatic notification send in `AdminService`/`FieldWorkerService`.
+- Frontend: `/admin/settings` (`SystemSettings.vue`), sidebar link visible only to system admins.
 
 ---
 
@@ -315,3 +332,10 @@ npm run dev               # http://localhost:5173
 16. **Field workers are created only by municipal administrators** (`require_municipal_admin`), never by system administrators and never via self-registration — `POST /admin/field-workers` always derives `city_id` from the creating administrator's own `admin_city_id`, it is never accepted from the request body
 17. **`AdministratorDashboard.vue`'s complaint table and `FieldWorkers.vue` management page are fully implemented** (not placeholders) — both respect the city-scoping rules above automatically because the backend does the filtering; the frontend never needs to pass a `city_id` filter itself
 18. **`Profile.vue` is shared by all 3 roles** (not per-role pages) — tabs for "Profile Details" (name/phone/avatar, username & email read-only) and "Change Password"; avatar upload follows the same upload-then-reference pattern as citizen/field-worker photos (`instance/uploads/avatars/` via `secure_filename` + `uuid4`)
+19. **`Navbar.vue` renders the uploaded avatar** (falls back to first-initial only when `authStore.user.avatar_url` is empty) — if you ever see the header show only an initial after an avatar upload, check that the component reads `avatar_url` (not just `fullName`) and resolves relative URLs against `VITE_API_BASE_URL` like `Profile.vue` does
+20. **Field workers never get a pincode/city picker on creation, by design** — `POST /admin/field-workers` is `require_municipal_admin`-only, and a municipal admin is permanently bound to exactly one city (DB constraint), so `city_id` is silently set to `acting_admin.admin_city_id` server-side. Don't add a city/pincode field to the field-worker create form — that would contradict the whole point of city scoping. Correctness is enforced independently at assignment time (`assign_complaint` rejects a worker whose `city_id` doesn't match the complaint's `city_id`).
+21. **`AdminComplaintDetails.vue`** (`/admin/complaints/:id`) is the admin's monitor/verify/close/reject/prioritize screen — status-transition rules live server-side in `AdminService._ADMIN_STATUS_TRANSITIONS`, the frontend just shows/hides buttons based on current status and surfaces the server's error message on an invalid transition
+22. **Flask-RESTX `@ns.expect(...)` Swagger models with `enum=[...]` auto-validate the payload before your route/schema even runs** (because `RESTX_VALIDATE = True`) — an invalid enum value on a field declared with `enum=` in the `ns.model(...)` returns a **400** ("Input payload validation failed") straight from Flask-RESTX, not the expected 422 from the Marshmallow schema. Don't assume every validation failure is 422 — check whether the Swagger model also declares `enum=`/a strict type for that field
+23. **System settings is a true singleton** — `SystemSettingsService.get_settings()` always fetches (or lazily creates) the *first* row; never call `SystemSetting(...)` / insert a second row anywhere else
+24. **`Complaint.status` and `ComplaintAssignment.status` are two intentionally separate fields, not a sync bug** — a complaint legitimately stays `in_progress` even after the field worker's own assignment reaches `completed`, because an administrator must still verify and manually transition the complaint to `resolved` (`AdminService._ADMIN_STATUS_TRANSITIONS`). Citizen feedback stays gated on `complaint.status in (resolved, closed)`, unaffected by assignment status. To make this legible instead of confusing: (a) `FieldWorkerService.complete_assignment()` notifies `assignment.assigned_by_id` ("Repair marked complete — verification needed") so an admin is prompted to act — previously this method sent zero notifications, unlike accept/reject; (b) both `CitizenService._serialize()` and `AdminService._serialize_complaint()` expose `assignment_status` and `repair_completed_at` (derived from the complaint's most recent `ComplaintAssignment`, ordered by `assigned_at desc`) purely for UI purposes — `ComplaintDetails.vue`/`TrackComplaint.vue` (citizen) and `AdministratorDashboard.vue`/`AdminComplaintDetails.vue` (admin, badge class `.badge-verify`) all show an "Awaiting/Pending Verification" badge/banner instead of bare "In Progress" when `status == in_progress` and `assignment_status == completed`. If you add new complaint views for any role, check for this combination too rather than assuming `status` alone tells the full story.
+25. **Cross-role notifications on rejection/completion were incomplete until a full lifecycle audit** — the admin↔worker↔citizen notification graph now covers every real transition: assign (worker + citizen), worker accept (citizen), worker reject (citizen **and** the assigning admin via `assignment.assigned_by_id`, so they know to reassign), worker complete (assigning admin, verification prompt), admin resolve (citizen), admin close/reject (citizen **and** the most-recently-assigned worker via `AdminService._notify_worker_status_change`, using `complaint.assignments.order_by(assigned_at.desc()).first()`). Also: `FieldWorkerService.get_assignments()`/`get_dashboard_summary()` must serialize with `full=True` — the frontend (`FieldWorkerDashboard.vue`, `AssignmentDetails.vue`) reads `assignment.complaint.title`/`priority`/`status` and silently falls back to `Complaint #<id>` if the nested `complaint` key is missing, which it was for a long time in the list/dashboard endpoints (only `get_assignment()` single-item passed `full=True`). Finally, `FieldWorkerService._ensure_complaint_actionable()` blocks `accept_assignment`/`update_progress`/`complete_assignment` (400 error) once `complaint.status` has independently moved to `rejected`/`cancelled`/`resolved`/`closed` (e.g. admin rejected while the worker was still mid-repair) — the frontend mirrors this with a `complaintTerminal` computed in `AssignmentDetails.vue` / `isComplaintTerminal()` in `FieldWorkerDashboard.vue` that hides the action buttons and shows an explanatory banner instead of letting the worker hit a confusing 400.

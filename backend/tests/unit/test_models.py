@@ -72,4 +72,5 @@ class TestComplaintModel:
     def test_valid_statuses_list(self):
         assert "pending" in Complaint.VALID_STATUSES
         assert "resolved" in Complaint.VALID_STATUSES
-        assert len(Complaint.VALID_STATUSES) == 6
+        assert "cancelled" in Complaint.VALID_STATUSES
+        assert len(Complaint.VALID_STATUSES) == 7

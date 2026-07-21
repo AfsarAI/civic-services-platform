@@ -1,5 +1,7 @@
 # API Documentation
 
+> Last reviewed: 2026-07-21
+
 This folder contains API documentation for the Civic Services Platform REST API.
 
 ## Base URL
@@ -62,6 +64,13 @@ System administrators (`admin_level=system`) are unscoped and see every city. Re
 
 System administrators cannot create, edit, or deactivate field workers — these endpoints require `admin_level=municipal` (`require_municipal_admin`).
 
+## System Settings (System Administrator only)
+
+- `GET /api/v1/admin/settings` / `PUT /api/v1/admin/settings` — singleton platform configuration: `site_name`, `support_email`, `maintenance_mode`, `notify_on_status_change`, `default_complaint_priority`.
+- `maintenance_mode` takes effect immediately on the next login attempt (blocks citizen/field worker logins with a clear message; administrators are unaffected).
+- `notify_on_status_change` takes effect immediately on the next assignment/accept/reject/resolve/close action (suppresses all automatic notification sends when `false`).
+- Every update writes an audit-log entry (`action="system_settings_updated"`).
+
 ## Self-Service Profile (all authenticated roles)
 
 - `PUT /api/v1/auth/me` — update own `first_name`, `last_name`, `phone`. Username, email, and role are never editable here.
@@ -122,7 +131,7 @@ All responses follow this envelope structure:
 | `422` | Unprocessable Entity — Marshmallow validation failed (field-level errors in `errors` key) |
 | `500` | Internal Server Error |
 
-## TODO
+## Documentation Backlog
 
 - [ ] Export Swagger JSON to this folder
 - [ ] Add endpoint-level request/response examples

@@ -1,5 +1,7 @@
 # Testing Documentation
 
+> Last reviewed: 2026-07-21
+
 This folder contains test plans, test cases, and testing reports for the Civic Services Platform.
 
 ## Test Strategy
@@ -35,7 +37,7 @@ pytest tests/integration/ -v
 
 Minimum acceptable coverage: **80%**
 
-## TPS-110 Coverage
+## Admin Hierarchy Coverage
 
 Current automated coverage for Municipal Administrator registration includes:
 - successful System Administrator registration of a Municipal Administrator
@@ -64,6 +66,24 @@ Current automated coverage for Municipal Administrator registration includes:
 - assigning a complaint to a field worker from a different city is rejected
 - municipal dashboard summary reflects only that city's complaint/field-worker data
 
+## Admin Complaint Workflow + Notifications Coverage
+
+`tests/integration/test_admin_complaint_workflow_api.py` covers:
+- priority can be changed independently of status
+- invalid status jumps (e.g. pending → resolved, pending → closed) are rejected with 400
+- full lifecycle: assign → accept → resolve → close, asserting a notification fires at each step
+- rejecting a complaint notifies the citizen
+
+## System Settings Coverage
+
+`tests/integration/test_system_settings_api.py` covers:
+- non-system-admins get 403 on both GET and PUT
+- default settings are returned/created lazily
+- updates persist and write an audit-log entry
+- invalid `default_complaint_priority` / `support_email` are rejected
+- `maintenance_mode` blocks non-administrator logins but not administrator logins
+- `notify_on_status_change=false` suppresses notification creation for a status change
+
 ## Test File Naming
 
 | Type | Pattern |
@@ -71,7 +91,7 @@ Current automated coverage for Municipal Administrator registration includes:
 | Unit test | `test_<module>.py` |
 | Integration test | `test_<endpoint>_api.py` |
 
-## TODO
+## Testing Docs Backlog
 
 - [ ] Add test plan document
 - [ ] Add test case matrix

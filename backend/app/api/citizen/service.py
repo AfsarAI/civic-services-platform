@@ -6,6 +6,7 @@ from app.extensions import db
 from app.models.city import City
 from app.models.city_pincode import CityPincode
 from app.models.complaint import Complaint
+from app.models.complaint_assignment import ComplaintAssignment
 from app.models.feedback import Feedback
 from app.models.user import User
 
@@ -127,8 +128,12 @@ class CitizenService:
 
     # ── Cancel complaint ──────────────────────────────────────────────────
 
-    def cancel_complaint(self, complaint_id: int, citizen_id: int) -> None:
-        """Cancel (delete) a pending complaint.
+    def cancel_complaint(self, complaint_id: int, citizen_id: int) -> dict:
+        """Cancel a pending complaint (TPS-75).
+
+        The complaint record is preserved with status ``cancelled`` (not
+        deleted) so it remains visible in the citizen's history but is
+        never considered for assignment or repair again.
 
         Raises:
             ValueError: If not found, not owned, or already assigned/in-progress.
@@ -141,8 +146,9 @@ class CitizenService:
                 f"Current status: '{complaint.status}'."
             )
 
-        db.session.delete(complaint)
+        complaint.status = Complaint.STATUS_CANCELLED
         db.session.commit()
+        return {"complaint": self._serialize(complaint)}
 
     # ── Submit feedback ───────────────────────────────────────────────────
 
@@ -221,6 +227,9 @@ class CitizenService:
     @staticmethod
     def _serialize(complaint: Complaint) -> dict:
         """Safe public representation of a Complaint."""
+        latest_assignment = (
+            complaint.assignments.order_by(ComplaintAssignment.assigned_at.desc()).first()
+        )
         return {
             "id": complaint.id,
             "title": complaint.title,
@@ -244,6 +253,14 @@ class CitizenService:
             "feedback": (
                 CitizenService._serialize_feedback(complaint.feedback)
                 if complaint.feedback else None
+            ),
+            # Lets the citizen UI distinguish "repair work still ongoing" from
+            # "field worker finished, awaiting administrator verification" even
+            # though the complaint itself stays `in_progress` until resolved.
+            "assignment_status": latest_assignment.status if latest_assignment else None,
+            "repair_completed_at": (
+                latest_assignment.completed_at.isoformat()
+                if latest_assignment and latest_assignment.completed_at else None
             ),
         }
 
