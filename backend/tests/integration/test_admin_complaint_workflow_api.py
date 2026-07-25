@@ -5,10 +5,13 @@ TPS-84 Close Complaint) and the notification events fired alongside it
 (TPS-91..94, TPS-76, TPS-93).
 """
 
+from datetime import datetime, timedelta, timezone
+
 from app.extensions import db
 from app.models.administrator_profile import AdministratorProfile
 from app.models.city import City
 from app.models.complaint import Complaint
+from app.models.complaint_assignment import ComplaintAssignment
 from app.models.role import Role
 from app.models.user import User
 
@@ -123,6 +126,54 @@ class TestAdminComplaintWorkflow:
         assert response.status_code == 200
         assert payload["data"]["complaint"]["priority"] == "urgent"
         assert payload["data"]["complaint"]["status"] == "pending"
+
+    def test_admin_monitors_assignment_progress_and_overdue_deadlines(
+        self, app, client
+    ):
+        self._ensure_system_admin("wf-monitor-admin@example.com")
+        admin_token = self._login(client, "wf-monitor-admin@example.com")
+        citizen_auth = self._register_and_login_citizen(
+            client, "wf-monitor-citizen@example.com"
+        )
+        complaint_id = self._submit_complaint(
+            client,
+            citizen_auth["access_token"],
+            citizen_auth["user"]["city_id"],
+        )
+        worker_id = self._create_field_worker(app, "wf-monitor-worker@example.com")
+        expected = datetime.now(timezone.utc) - timedelta(hours=2)
+
+        assign_response = client.post(
+            f"/api/v1/admin/complaints/{complaint_id}/assign",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={
+                "worker_id": worker_id,
+                "expected_completion_at": expected.isoformat(),
+            },
+        )
+        assert assign_response.status_code == 201
+        created_assignment = assign_response.get_json()["data"]["assignment"]
+        assert created_assignment["expected_completion_at"] is not None
+        assert created_assignment["updated_at"] is not None
+
+        response = client.get(
+            "/api/v1/admin/assignments?overdue=true",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert response.status_code == 200
+        items = response.get_json()["data"]["items"]
+        monitored = next(
+            item for item in items if item["complaint"]["id"] == complaint_id
+        )
+        assert monitored["complaint"]["priority"] == "medium"
+        assert monitored["complaint"]["status"] == Complaint.STATUS_ASSIGNED
+        assert monitored["worker_id"] == worker_id
+        assert monitored["worker_name"] == "Field Worker"
+        assert monitored["status"] == ComplaintAssignment.STATUS_ASSIGNED
+        assert monitored["assigned_at"] is not None
+        assert monitored["expected_completion_at"] is not None
+        assert monitored["updated_at"] is not None
+        assert monitored["is_overdue"] is True
 
     def test_cannot_resolve_pending_complaint_directly(self, app, client):
         self._ensure_system_admin("wf-sysadmin2@example.com")

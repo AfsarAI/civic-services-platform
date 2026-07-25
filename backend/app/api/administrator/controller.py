@@ -51,6 +51,9 @@ _complaint_update = ns.model("AdminComplaintUpdate", {
 
 _assign_body = ns.model("AssignComplaint", {
     "worker_id": fields.Integer(required=True, example=3),
+    "expected_completion_at": fields.DateTime(
+        example="2026-08-01T17:00:00+00:00"
+    ),
     "notes": fields.String(example="Urgent - please inspect by end of day."),
 })
 
@@ -150,6 +153,42 @@ class AdminComplaintListResource(Resource):
                 result["items"], result["total"],
                 result["page"], result["per_page"],
                 "Complaints retrieved.",
+            )
+        except ValueError as exc:
+            return error_response(str(exc), status_code=400)
+
+
+@ns.route("/assignments")
+class AdminAssignmentListResource(Resource):
+
+    @ns.response(200, "Paginated assigned complaint monitoring data", _envelope)
+    @ns.response(401, "Unauthorised")
+    @ns.response(403, "Forbidden")
+    @jwt_required()
+    @require_admin
+    def get(self):
+        """Monitor assigned complaints and field-worker repair progress."""
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 20, type=int)
+        status = request.args.get("status")
+        overdue_arg = request.args.get("overdue")
+        overdue = None
+        if overdue_arg is not None:
+            overdue = overdue_arg.lower() == "true"
+        city_id = _scoped_city_id(_current_admin_user())
+
+        try:
+            result = _svc.get_assignment_monitor(
+                page=page,
+                per_page=per_page,
+                status=status,
+                overdue=overdue,
+                city_id=city_id,
+            )
+            return paginated_response(
+                result["items"], result["total"],
+                result["page"], result["per_page"],
+                "Assignment progress retrieved.",
             )
         except ValueError as exc:
             return error_response(str(exc), status_code=400)

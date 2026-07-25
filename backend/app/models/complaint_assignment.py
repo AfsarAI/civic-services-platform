@@ -25,6 +25,7 @@ class ComplaintAssignment(db.Model):
     notes = db.Column(db.Text, nullable=True)
     evidence_url = db.Column(db.String(500), nullable=True)
     assigned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    expected_completion_at = db.Column(db.DateTime, nullable=True)
     accepted_at = db.Column(db.DateTime, nullable=True)
     completed_at = db.Column(db.DateTime, nullable=True)
     updated_at = db.Column(
