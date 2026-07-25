@@ -18,8 +18,12 @@ from app.api.administrator.schema import (
     MunicipalAdminUpdateSchema,
     SystemSettingUpdateSchema,
     UserUpdateSchema,
+    VerificationDecisionSchema,
 )
-from app.api.administrator.service import AdminService
+from app.api.administrator.service import (
+    AdminService,
+    VerificationConflictError,
+)
 from app.models.user import User
 from app.utils.decorators import (
     validate_body,
@@ -55,6 +59,16 @@ _assign_body = ns.model("AssignComplaint", {
         example="2026-08-01T17:00:00+00:00"
     ),
     "notes": fields.String(example="Urgent - please inspect by end of day."),
+})
+
+_verification_body = ns.model("RepairVerification", {
+    "decision": fields.String(
+        required=True,
+        enum=["approved", "rework_requested"],
+    ),
+    "remarks": fields.String(
+        example="Please repair the remaining damaged section.",
+    ),
 })
 
 _user_update = ns.model("AdminUserUpdate", {
@@ -223,6 +237,40 @@ class AdminComplaintResource(Resource):
         try:
             data = _svc.update_complaint(complaint_id, body, city_id)
             return success_response(data, "Complaint updated successfully.")
+        except ValueError as exc:
+            code = 404 if "not found" in str(exc).lower() else 400
+            return error_response(str(exc), status_code=code)
+
+
+@ns.route("/complaints/<int:complaint_id>/verify")
+@ns.param("complaint_id", "Complaint ID")
+class AdminComplaintVerificationResource(Resource):
+
+    @ns.expect(_verification_body)
+    @ns.response(200, "Repair verification recorded", _envelope)
+    @ns.response(400, "Business rule violation", _envelope)
+    @ns.response(409, "Repair completion already verified", _envelope)
+    @ns.response(422, "Validation error", _envelope)
+    @jwt_required()
+    @require_admin
+    @validate_body(VerificationDecisionSchema)
+    def post(self, body, complaint_id):
+        """Approve completed repair work or request rework."""
+        admin_id = int(get_jwt_identity())
+        city_id = _scoped_city_id(_current_admin_user())
+        try:
+            data = _svc.verify_repair(
+                complaint_id,
+                admin_id,
+                body,
+                city_id,
+            )
+            return success_response(
+                data,
+                "Repair verification recorded successfully.",
+            )
+        except VerificationConflictError as exc:
+            return error_response(str(exc), status_code=409)
         except ValueError as exc:
             code = 404 if "not found" in str(exc).lower() else 400
             return error_response(str(exc), status_code=code)

@@ -7,6 +7,7 @@ from marshmallow import ValidationError
 from app.schemas.user_schema import UserCreateSchema, MunicipalAdminCreateSchema
 from app.schemas.complaint_schema import ComplaintCreateSchema
 from app.schemas.feedback_schema import FeedbackCreateSchema
+from app.schemas.verification_schema import VerificationDecisionSchema
 
 
 class TestUserCreateSchema:
@@ -69,6 +70,20 @@ class TestFeedbackCreateSchema:
         schema = FeedbackCreateSchema()
         result = schema.load({"rating": 5, "comment": "Great service!"})
         assert result["rating"] == 5
+
+
+class TestVerificationDecisionSchema:
+    def test_valid_decisions_pass(self):
+        schema = VerificationDecisionSchema()
+        result = schema.load({
+            "decision": "rework_requested",
+            "remarks": "Repair the unfinished edge.",
+        })
+        assert result["decision"] == "rework_requested"
+
+    def test_invalid_decision_raises(self):
+        with pytest.raises(ValidationError):
+            VerificationDecisionSchema().load({"decision": "rejected"})
 
 
 class TestMunicipalAdminCreateSchema:

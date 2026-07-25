@@ -38,6 +38,11 @@ class ComplaintAssignment(db.Model):
     complaint = db.relationship("Complaint", back_populates="assignments")
     worker = db.relationship("User", foreign_keys=[worker_id], back_populates="assignments")
     assigned_by = db.relationship("User", foreign_keys=[assigned_by_id])
+    verifications = db.relationship(
+        "ComplaintVerification",
+        back_populates="assignment",
+        lazy="dynamic",
+    )
 
     def __repr__(self) -> str:
         return f"<Assignment complaint={self.complaint_id} worker={self.worker_id}>"
