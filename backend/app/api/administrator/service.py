@@ -4,6 +4,7 @@ Administrator service — business logic for admin-facing operations.
 
 from datetime import datetime, timezone
 from flask import current_app
+from sqlalchemy import and_, not_
 
 from app.api.notifications.service import NotificationService
 from app.extensions import db
@@ -82,6 +83,68 @@ class AdminService:
         if not complaint or (city_id is not None and complaint.city_id != city_id):
             raise ValueError("Complaint not found.")
         return {"complaint": self._serialize_complaint(complaint, full=True)}
+
+    def get_assignment_monitor(
+        self,
+        page: int = 1,
+        per_page: int = 20,
+        status: str = None,
+        overdue: bool = None,
+        city_id: int = None,
+    ) -> dict:
+        """Return latest assignment progress for administrator monitoring."""
+        valid_statuses = (
+            ComplaintAssignment.STATUS_ASSIGNED,
+            ComplaintAssignment.STATUS_ACCEPTED,
+            ComplaintAssignment.STATUS_IN_PROGRESS,
+            ComplaintAssignment.STATUS_COMPLETED,
+            ComplaintAssignment.STATUS_REJECTED,
+        )
+        if status and status not in valid_statuses:
+            raise ValueError(f"Invalid assignment status '{status}'.")
+
+        per_page = min(max(per_page, 1), 100)
+        query = ComplaintAssignment.query.join(Complaint)
+        if city_id is not None:
+            query = query.filter(Complaint.city_id == city_id)
+        if status:
+            query = query.filter(ComplaintAssignment.status == status)
+
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        overdue_filter = and_(
+            ComplaintAssignment.expected_completion_at.isnot(None),
+            ComplaintAssignment.expected_completion_at < now,
+            ComplaintAssignment.status.notin_(
+                (
+                    ComplaintAssignment.STATUS_COMPLETED,
+                    ComplaintAssignment.STATUS_REJECTED,
+                )
+            ),
+            Complaint.status.notin_(
+                (
+                    Complaint.STATUS_RESOLVED,
+                    Complaint.STATUS_CLOSED,
+                    Complaint.STATUS_REJECTED,
+                    Complaint.STATUS_CANCELLED,
+                )
+            ),
+        )
+        if overdue is True:
+            query = query.filter(overdue_filter)
+        elif overdue is False:
+            query = query.filter(not_(overdue_filter))
+
+        query = query.order_by(ComplaintAssignment.assigned_at.desc())
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        return {
+            "items": [
+                self._serialize_monitor_assignment(assignment)
+                for assignment in pagination.items
+            ],
+            "total": pagination.total,
+            "page": pagination.page,
+            "per_page": pagination.per_page,
+        }
 
     def update_complaint(self, complaint_id: int, data: dict, city_id: int = None) -> dict:
         """Update a complaint's status and/or priority.
@@ -256,6 +319,7 @@ class AdminService:
             worker_id=data["worker_id"],
             assigned_by_id=admin_id,
             status=ComplaintAssignment.STATUS_ASSIGNED,
+            expected_completion_at=data.get("expected_completion_at"),
             notes=data.get("notes"),
         )
         db.session.add(assignment)
@@ -832,6 +896,14 @@ class AdminService:
             "notes": assignment.notes,
             "evidence_url": assignment.evidence_url,
             "assigned_at": assignment.assigned_at.isoformat(),
+            "expected_completion_at": (
+                assignment.expected_completion_at.isoformat()
+                if assignment.expected_completion_at
+                else None
+            ),
+            "updated_at": (
+                assignment.updated_at.isoformat() if assignment.updated_at else None
+            ),
             "accepted_at": (
                 assignment.accepted_at.isoformat() if assignment.accepted_at else None
             ),
@@ -839,6 +911,41 @@ class AdminService:
                 assignment.completed_at.isoformat() if assignment.completed_at else None
             ),
         }
+
+    @staticmethod
+    def _serialize_monitor_assignment(assignment: ComplaintAssignment) -> dict:
+        data = AdminService._serialize_assignment(assignment)
+        complaint = assignment.complaint
+        expected = assignment.expected_completion_at
+        if expected and expected.tzinfo is None:
+            expected = expected.replace(tzinfo=timezone.utc)
+        is_finished = (
+            assignment.status in (
+                ComplaintAssignment.STATUS_COMPLETED,
+                ComplaintAssignment.STATUS_REJECTED,
+            )
+            or complaint.status in (
+                Complaint.STATUS_RESOLVED,
+                Complaint.STATUS_CLOSED,
+                Complaint.STATUS_REJECTED,
+                Complaint.STATUS_CANCELLED,
+            )
+        )
+        data.update({
+            "is_overdue": bool(
+                expected
+                and expected < datetime.now(timezone.utc)
+                and not is_finished
+            ),
+            "complaint": {
+                "id": complaint.id,
+                "title": complaint.title,
+                "status": complaint.status,
+                "priority": complaint.priority,
+                "city_name": complaint.city.name if complaint.city else None,
+            },
+        })
+        return data
 
     @staticmethod
     def _serialize_feedback(feedback) -> dict:

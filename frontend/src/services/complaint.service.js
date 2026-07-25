@@ -117,6 +117,11 @@ const complaintService = {
     const response = await api.post(`/admin/complaints/${complaintId}/assign`, assignData)
     return response.data
   },
+
+  async getAssignmentMonitor(params = {}) {
+    const response = await api.get('/admin/assignments', { params })
+    return response.data
+  },
 }
 
 export default complaintService

@@ -83,6 +83,8 @@
                       </span>
                     </div>
                     <p class="mt-1 text-xs text-slate-500">Assigned {{ formatDate(a.assigned_at) }}</p>
+                    <p class="mt-1 text-xs text-slate-500">Expected completion: {{ formatDate(a.expected_completion_at) }}</p>
+                    <p class="mt-1 text-xs text-slate-500">Last progress update: {{ formatDate(a.updated_at) }}</p>
                     <p v-if="a.notes" class="mt-1 text-xs text-slate-600">Notes: {{ a.notes }}</p>
                     <img v-if="a.evidence_url" :src="mediaUrl(a.evidence_url)" alt="Repair evidence" class="mt-2 max-h-48 w-full rounded-lg object-cover" />
                   </li>
@@ -149,6 +151,13 @@
                     <option value="">Select a field worker</option>
                     <option v-for="w in activeFieldWorkers" :key="w.id" :value="w.id">{{ w.full_name }}</option>
                   </select>
+                  <label class="form-label" for="expected-completion">Expected completion</label>
+                  <input
+                    id="expected-completion"
+                    v-model="expectedCompletionAt"
+                    type="datetime-local"
+                    class="form-input"
+                  />
                   <button class="btn-primary w-full py-2 text-sm" :disabled="!assignWorkerId || actionLoading" @click="handleAssign">
                     Assign complaint
                   </button>
@@ -225,6 +234,7 @@ const priorityForm = ref('medium')
 
 const activeFieldWorkers = ref([])
 const assignWorkerId = ref('')
+const expectedCompletionAt = ref('')
 
 // The complaint's own `status` intentionally stays `in_progress` even after the
 // field worker's assignment reaches `completed` — an administrator must still
@@ -383,8 +393,14 @@ async function handleAssign() {
   resetActionAlerts()
   actionLoading.value = true
   try {
-    await complaintService.assignComplaint(complaint.value.id, { worker_id: Number(assignWorkerId.value) })
+    await complaintService.assignComplaint(complaint.value.id, {
+      worker_id: Number(assignWorkerId.value),
+      expected_completion_at: expectedCompletionAt.value
+        ? new Date(expectedCompletionAt.value).toISOString()
+        : null,
+    })
     assignWorkerId.value = ''
+    expectedCompletionAt.value = ''
     actionMessage.value = 'Complaint assigned successfully.'
     await loadComplaint()
   } catch (err) {

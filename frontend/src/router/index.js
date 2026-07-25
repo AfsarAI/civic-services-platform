@@ -105,6 +105,12 @@ const router = createRouter({
               meta: { requiresAuth: true, role: 'administrator' },
             },
             {
+              path: 'assignments',
+              name: 'admin-assignment-monitor',
+              component: () => import('@/pages/administrator/AssignmentMonitor.vue'),
+              meta: { requiresAuth: true, role: 'administrator' },
+            },
+            {
               path: 'complaints/:id',
               name: 'admin-complaint-details',
               component: () => import('@/pages/administrator/AdminComplaintDetails.vue'),

@@ -328,6 +328,14 @@ class FieldWorkerService:
             "notes": assignment.notes,
             "evidence_url": assignment.evidence_url,
             "assigned_at": assignment.assigned_at.isoformat(),
+            "expected_completion_at": (
+                assignment.expected_completion_at.isoformat()
+                if assignment.expected_completion_at else None
+            ),
+            "updated_at": (
+                assignment.updated_at.isoformat()
+                if assignment.updated_at else None
+            ),
             "accepted_at": (
                 assignment.accepted_at.isoformat()
                 if assignment.accepted_at else None
