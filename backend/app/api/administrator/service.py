@@ -184,6 +184,7 @@ class AdminService:
                 complaint.resolved_at = datetime.now(timezone.utc)
             status_changed = True
 
+        # Update priority level to adjust complaint triage and urgency.
         if "priority" in data:
             complaint.priority = data["priority"]
 
