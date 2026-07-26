@@ -82,6 +82,7 @@ class FieldWorkerService:
         Raises:
             ValueError: Business rule violations.
         """
+        # Process field worker acceptance of assigned complaint task.
         assignment = self._get_owned(assignment_id, worker_id)
         self._ensure_complaint_actionable(assignment.complaint)
 
