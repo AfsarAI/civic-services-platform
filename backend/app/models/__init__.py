@@ -9,6 +9,7 @@ from app.models.city_pincode import CityPincode
 from app.models.administrator_profile import AdministratorProfile
 from app.models.complaint import Complaint
 from app.models.complaint_assignment import ComplaintAssignment
+from app.models.complaint_verification import ComplaintVerification
 from app.models.notification import Notification
 from app.models.feedback import Feedback
 from app.models.audit_log import AuditLog
@@ -22,6 +23,7 @@ __all__ = [
     "AdministratorProfile",
     "Complaint",
     "ComplaintAssignment",
+    "ComplaintVerification",
     "Notification",
     "Feedback",
     "AuditLog",

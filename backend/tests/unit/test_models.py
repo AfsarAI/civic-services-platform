@@ -8,6 +8,7 @@ from app.models.city import City
 from app.models.role import Role
 from app.models.user import User
 from app.models.complaint import Complaint
+from app.models.complaint_verification import ComplaintVerification
 
 
 class TestRoleModel:
@@ -74,3 +75,12 @@ class TestComplaintModel:
         assert "resolved" in Complaint.VALID_STATUSES
         assert "cancelled" in Complaint.VALID_STATUSES
         assert len(Complaint.VALID_STATUSES) == 7
+
+
+class TestComplaintVerificationModel:
+    def test_decision_constants_defined(self):
+        assert ComplaintVerification.DECISION_APPROVED == "approved"
+        assert (
+            ComplaintVerification.DECISION_REWORK_REQUESTED
+            == "rework_requested"
+        )

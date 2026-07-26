@@ -109,12 +109,27 @@ const complaintService = {
   },
 
   /**
+   * Approve completed repair work or request rework (admin).
+   * @param {number} id
+   * @param {{ decision: 'approved'|'rework_requested', remarks?: string }} data
+   */
+  async verifyRepair(id, data) {
+    const response = await api.post(`/admin/complaints/${id}/verify`, data)
+    return response.data
+  },
+
+  /**
    * Assign a complaint to a field worker (admin).
    * @param {number} complaintId
    * @param {Object} assignData
    */
   async assignComplaint(complaintId, assignData) {
     const response = await api.post(`/admin/complaints/${complaintId}/assign`, assignData)
+    return response.data
+  },
+
+  async getAssignmentMonitor(params = {}) {
+    const response = await api.get('/admin/assignments', { params })
     return response.data
   },
 }

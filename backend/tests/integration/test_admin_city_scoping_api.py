@@ -346,6 +346,66 @@ class TestAdminCityScoping:
         assert response.status_code == 201
         assert response.get_json()["data"]["complaint"]["status"] == "assigned"
 
+    def test_municipal_admin_cannot_verify_other_city_repair(
+        self, app, client
+    ):
+        ctx = self._setup_two_cities(app, client, "verify")
+        lucknow_token = self._login(client, "lucknow-admin@example.com")
+        kanpur_token = self._login(client, "kanpur-admin@example.com")
+
+        worker_response = client.post(
+            "/api/v1/admin/field-workers",
+            headers={"Authorization": f"Bearer {kanpur_token}"},
+            json={
+                "username": "kanpur_verify_worker",
+                "email": "kanpur.verify.worker@example.com",
+                "password": "Worker@123",
+                "confirm_password": "Worker@123",
+                "first_name": "Verify",
+                "last_name": "Worker",
+            },
+        )
+        worker_id = worker_response.get_json()["data"]["user"]["id"]
+        assignment_id = client.post(
+            (
+                "/api/v1/admin/complaints/"
+                f"{ctx['kanpur_complaint_id']}/assign"
+            ),
+            headers={"Authorization": f"Bearer {kanpur_token}"},
+            json={"worker_id": worker_id},
+        ).get_json()["data"]["assignment"]["id"]
+        worker_token = self._login(
+            client,
+            "kanpur.verify.worker@example.com",
+            "Worker@123",
+        )
+        client.post(
+            f"/api/v1/fieldworker/assignments/{assignment_id}/accept",
+            headers={"Authorization": f"Bearer {worker_token}"},
+        )
+        client.post(
+            f"/api/v1/fieldworker/assignments/{assignment_id}/complete",
+            headers={"Authorization": f"Bearer {worker_token}"},
+            json={},
+        )
+
+        for payload in (
+            {"decision": "approved"},
+            {
+                "decision": "rework_requested",
+                "remarks": "Redo this repair.",
+            },
+        ):
+            response = client.post(
+                (
+                    "/api/v1/admin/complaints/"
+                    f"{ctx['kanpur_complaint_id']}/verify"
+                ),
+                headers={"Authorization": f"Bearer {lucknow_token}"},
+                json=payload,
+            )
+            assert response.status_code == 404
+
     def test_municipal_dashboard_reflects_city_scoped_data(self, app, client):
         ctx = self._setup_two_cities(app, client, "k")
         lucknow_token = self._login(client, "lucknow-admin@example.com")

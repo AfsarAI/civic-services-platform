@@ -82,6 +82,7 @@ class FieldWorkerService:
         Raises:
             ValueError: Business rule violations.
         """
+        # Process field worker acceptance of assigned complaint task.
         assignment = self._get_owned(assignment_id, worker_id)
         self._ensure_complaint_actionable(assignment.complaint)
 
@@ -130,6 +131,7 @@ class FieldWorkerService:
             ValueError: Business rule violations.
         """
         assignment = self._get_owned(assignment_id, worker_id)
+        # Process progress status updates and field notes for assigned repair tasks.
         self._ensure_complaint_actionable(assignment.complaint)
         new_status = data["status"]
 
@@ -200,6 +202,7 @@ class FieldWorkerService:
             ValueError: Business rule violations.
         """
         assignment = self._get_owned(assignment_id, worker_id)
+        # Record completion of repair work assignment and attach optional evidence.
         self._ensure_complaint_actionable(assignment.complaint)
 
         if assignment.status not in (
@@ -328,6 +331,14 @@ class FieldWorkerService:
             "notes": assignment.notes,
             "evidence_url": assignment.evidence_url,
             "assigned_at": assignment.assigned_at.isoformat(),
+            "expected_completion_at": (
+                assignment.expected_completion_at.isoformat()
+                if assignment.expected_completion_at else None
+            ),
+            "updated_at": (
+                assignment.updated_at.isoformat()
+                if assignment.updated_at else None
+            ),
             "accepted_at": (
                 assignment.accepted_at.isoformat()
                 if assignment.accepted_at else None

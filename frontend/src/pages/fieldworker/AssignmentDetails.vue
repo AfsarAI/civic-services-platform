@@ -27,6 +27,9 @@
               <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Assignment #{{ assignment.id }}</p>
               <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{{ complaint.title }}</h1>
               <p class="mt-2 text-sm text-slate-500">Assigned on {{ formatDate(assignment.assigned_at) }}</p>
+              <p v-if="assignment.expected_completion_at" class="mt-1 text-sm font-medium text-slate-600">
+                Expected completion: {{ formatDate(assignment.expected_completion_at) }}
+              </p>
             </div>
 
             <div class="flex flex-wrap gap-2">

@@ -25,6 +25,7 @@ class ComplaintAssignment(db.Model):
     notes = db.Column(db.Text, nullable=True)
     evidence_url = db.Column(db.String(500), nullable=True)
     assigned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    expected_completion_at = db.Column(db.DateTime, nullable=True)
     accepted_at = db.Column(db.DateTime, nullable=True)
     completed_at = db.Column(db.DateTime, nullable=True)
     updated_at = db.Column(
@@ -37,6 +38,11 @@ class ComplaintAssignment(db.Model):
     complaint = db.relationship("Complaint", back_populates="assignments")
     worker = db.relationship("User", foreign_keys=[worker_id], back_populates="assignments")
     assigned_by = db.relationship("User", foreign_keys=[assigned_by_id])
+    verifications = db.relationship(
+        "ComplaintVerification",
+        back_populates="assignment",
+        lazy="dynamic",
+    )
 
     def __repr__(self) -> str:
         return f"<Assignment complaint={self.complaint_id} worker={self.worker_id}>"

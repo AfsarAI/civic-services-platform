@@ -133,6 +133,12 @@
                         {{ w.full_name }}{{ w.city_name ? ` (${w.city_name})` : '' }}
                       </option>
                     </select>
+                    <input
+                      v-model="expectedCompletionAt"
+                      type="datetime-local"
+                      class="form-input w-56 text-sm"
+                      aria-label="Expected completion date"
+                    />
                     <button class="btn-primary px-4 py-2 text-xs" :disabled="!assignWorkerId || isAssigning" @click="handleAssign(c)">
                       {{ isAssigning ? 'Assigning...' : 'Confirm assignment' }}
                     </button>
@@ -181,6 +187,7 @@ const pagination = ref({ page: 1, per_page: 10, total: 0, pages: 0 })
 const activeFieldWorkers = ref([])
 const assigningId = ref(null)
 const assignWorkerId = ref('')
+const expectedCompletionAt = ref('')
 const isAssigning = ref(false)
 
 const stats = computed(() => {
@@ -232,10 +239,12 @@ function toggleAssignRow(complaint) {
   if (assigningId.value === complaint.id) {
     assigningId.value = null
     assignWorkerId.value = ''
+    expectedCompletionAt.value = ''
     return
   }
   assigningId.value = complaint.id
   assignWorkerId.value = ''
+  expectedCompletionAt.value = ''
   loadActiveFieldWorkers()
 }
 
@@ -244,9 +253,15 @@ async function handleAssign(complaint) {
   isAssigning.value = true
   error.value = ''
   try {
-    await complaintService.assignComplaint(complaint.id, { worker_id: Number(assignWorkerId.value) })
+    await complaintService.assignComplaint(complaint.id, {
+      worker_id: Number(assignWorkerId.value),
+      expected_completion_at: expectedCompletionAt.value
+        ? new Date(expectedCompletionAt.value).toISOString()
+        : null,
+    })
     assigningId.value = null
     assignWorkerId.value = ''
+    expectedCompletionAt.value = ''
     await loadComplaints(pagination.value.page || 1)
   } catch (err) {
     error.value = err?.response?.data?.message || 'Could not assign this complaint.'
@@ -310,4 +325,3 @@ onMounted(() => {
   opacity: 0;
 }
 </style>
-
