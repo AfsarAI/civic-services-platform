@@ -63,6 +63,11 @@ class Complaint(db.Model):
     citizen = db.relationship("User", foreign_keys=[citizen_id], back_populates="complaints")
     city = db.relationship("City", back_populates="complaint_records")
     assignments = db.relationship("ComplaintAssignment", back_populates="complaint", lazy="dynamic")
+    verifications = db.relationship(
+        "ComplaintVerification",
+        back_populates="complaint",
+        lazy="dynamic",
+    )
     feedback = db.relationship("Feedback", back_populates="complaint", uselist=False)
 
     def __repr__(self) -> str:

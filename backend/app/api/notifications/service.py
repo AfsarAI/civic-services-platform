@@ -97,11 +97,15 @@ class NotificationService:
         message: str,
         notification_type: str = Notification.TYPE_GENERAL,
         related_complaint_id: int = None,
+        commit: bool = True,
     ) -> dict:
         """Create and persist a notification for a user.
 
         Called internally by other services after state-changing events
         (e.g. complaint submitted, status updated).
+
+        ``commit=False`` stages and flushes the notification in the caller's
+        transaction. Existing callers retain the original commit behavior.
 
         Returns the serialised notification dict.
         """
@@ -113,7 +117,10 @@ class NotificationService:
             related_complaint_id=related_complaint_id,
         )
         db.session.add(notification)
-        db.session.commit()
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()
         return self._serialize(notification)
 
     # ── Helpers ───────────────────────────────────────────────────────────

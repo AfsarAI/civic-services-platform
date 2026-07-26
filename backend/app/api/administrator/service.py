@@ -5,6 +5,7 @@ Administrator service — business logic for admin-facing operations.
 from datetime import datetime, timezone
 from flask import current_app
 from sqlalchemy import and_, not_
+from sqlalchemy.exc import IntegrityError
 
 from app.api.notifications.service import NotificationService
 from app.extensions import db
@@ -12,12 +13,17 @@ from app.models.administrator_profile import AdministratorProfile
 from app.models.city import City
 from app.models.complaint import Complaint
 from app.models.complaint_assignment import ComplaintAssignment
+from app.models.complaint_verification import ComplaintVerification
 from app.models.notification import Notification
 from app.models.role import Role
 from app.models.user import User
 from app.repositories import AdministratorRepository
 from app.services.audit_log_service import AuditLogService
 from app.services.system_settings_service import SystemSettingsService
+
+
+class VerificationConflictError(ValueError):
+    """Raised when a repair completion has already been verified."""
 
 
 class AdminService:
@@ -169,6 +175,10 @@ class AdminService:
                 raise ValueError(
                     f"Cannot move complaint from '{complaint.status}' to '{new_status}'."
                 )
+            if new_status == Complaint.STATUS_RESOLVED:
+                raise ValueError(
+                    "Completed repairs must be approved through repair verification."
+                )
             complaint.status = new_status
             if new_status == Complaint.STATUS_RESOLVED and not complaint.resolved_at:
                 complaint.resolved_at = datetime.now(timezone.utc)
@@ -185,6 +195,130 @@ class AdminService:
 
         return {"complaint": self._serialize_complaint(complaint, full=True)}
 
+    def verify_repair(
+        self,
+        complaint_id: int,
+        administrator_id: int,
+        data: dict,
+        city_id: int = None,
+    ) -> dict:
+        """Approve completed work or request rework from the assigned worker."""
+        complaint = Complaint.query.get(complaint_id)
+        if not complaint or (city_id is not None and complaint.city_id != city_id):
+            raise ValueError("Complaint not found.")
+
+        assignment = complaint.assignments.order_by(
+            ComplaintAssignment.assigned_at.desc()
+        ).first()
+        if (
+            complaint.status != Complaint.STATUS_IN_PROGRESS
+            or not assignment
+            or assignment.status != ComplaintAssignment.STATUS_COMPLETED
+            or not assignment.completed_at
+        ):
+            raise ValueError(
+                "Only completed repair work awaiting verification can be reviewed."
+            )
+
+        decision = data["decision"]
+        remarks = (data.get("remarks") or "").strip()
+        if (
+            decision == ComplaintVerification.DECISION_REWORK_REQUESTED
+            and not remarks
+        ):
+            raise ValueError(
+                "Administrator remarks are required when requesting rework."
+            )
+
+        # Resolve the optional setting before staging transaction state because
+        # the singleton settings helper may lazily create and commit its row.
+        notify_citizen = (
+            decision == ComplaintVerification.DECISION_APPROVED
+            and SystemSettingsService.notifications_enabled()
+        )
+
+        try:
+            verification = ComplaintVerification(
+                complaint_id=complaint.id,
+                assignment_id=assignment.id,
+                administrator_id=administrator_id,
+                decision=decision,
+                remarks=remarks or None,
+                repair_completed_at=assignment.completed_at,
+            )
+            db.session.add(verification)
+
+            if decision == ComplaintVerification.DECISION_APPROVED:
+                complaint.status = Complaint.STATUS_RESOLVED
+                complaint.resolved_at = datetime.now(timezone.utc)
+            else:
+                assignment.status = ComplaintAssignment.STATUS_IN_PROGRESS
+
+            AuditLogService.record_action(
+                user_id=administrator_id,
+                action=f"repair_verification_{decision}",
+                resource_type="complaint",
+                resource_id=complaint.id,
+                details={
+                    "assignment_id": assignment.id,
+                    "decision": decision,
+                    "remarks": remarks or None,
+                },
+            )
+
+            if notify_citizen:
+                self._notify_citizen_status_change(
+                    complaint,
+                    commit=False,
+                    notifications_enabled=True,
+                )
+            elif decision == ComplaintVerification.DECISION_REWORK_REQUESTED:
+                # Rework is an operational task notification and is mandatory,
+                # independent of the optional automatic-status setting.
+                self.notifications.send_notification(
+                    user_id=assignment.worker_id,
+                    title="Repair rework requested",
+                    message=(
+                        f"Rework was requested for complaint '{complaint.title}'. "
+                        f"Administrator remarks: {remarks}"
+                    ),
+                    notification_type=Notification.TYPE_STATUS_UPDATE,
+                    related_complaint_id=complaint.id,
+                    commit=False,
+                )
+
+            db.session.commit()
+        except IntegrityError as exc:
+            db.session.rollback()
+            if self._is_verification_conflict(exc):
+                raise VerificationConflictError(
+                    "This repair completion has already been verified."
+                ) from exc
+            raise
+        except Exception:
+            db.session.rollback()
+            raise
+
+        return {
+            "verification": self._serialize_verification(verification),
+            "complaint": self._serialize_complaint(complaint, full=True),
+        }
+
+    @staticmethod
+    def _is_verification_conflict(exc: IntegrityError) -> bool:
+        constraint_name = getattr(
+            getattr(exc.orig, "diag", None),
+            "constraint_name",
+            None,
+        )
+        if constraint_name == "uq_verification_assignment_completion":
+            return True
+        message = str(exc.orig).lower()
+        return (
+            "complaint_verifications.assignment_id" in message
+            and "complaint_verifications.repair_completed_at" in message
+        )
+
     # Statuses an administrator may manually move a complaint *to*, and the
     # statuses it is allowed to come *from*. Any status not listed here
     # (e.g. re-setting the same status) has no restriction.
@@ -198,13 +332,24 @@ class AdminService:
         ),
     }
 
-    def _notify_citizen_status_change(self, complaint: Complaint) -> None:
+    def _notify_citizen_status_change(
+        self,
+        complaint: Complaint,
+        *,
+        commit: bool = True,
+        notifications_enabled: bool = None,
+    ) -> None:
         """Notify the citizen who filed the complaint about a status change.
 
         Skipped entirely when the system administrator has turned automatic
         status-change notifications off via system settings.
         """
-        if not SystemSettingsService.notifications_enabled():
+        enabled = (
+            SystemSettingsService.notifications_enabled()
+            if notifications_enabled is None
+            else notifications_enabled
+        )
+        if not enabled:
             return
 
         status_messages = {
@@ -235,6 +380,7 @@ class AdminService:
             message=message,
             notification_type=notif_type,
             related_complaint_id=complaint.id,
+            commit=commit,
         )
 
     def _notify_worker_status_change(self, complaint: Complaint) -> None:
@@ -816,6 +962,9 @@ class AdminService:
         latest_assignment = complaint.assignments.order_by(
             ComplaintAssignment.assigned_at.desc()
         ).first()
+        latest_verification = complaint.verifications.order_by(
+            ComplaintVerification.created_at.desc()
+        ).first()
         data = {
             "id": complaint.id,
             "title": complaint.title,
@@ -843,6 +992,17 @@ class AdminService:
                 latest_assignment.completed_at.isoformat()
                 if latest_assignment and latest_assignment.completed_at else None
             ),
+            "verification_status": (
+                latest_verification.decision
+                if latest_verification
+                else (
+                    "pending"
+                    if latest_assignment
+                    and latest_assignment.status
+                    == ComplaintAssignment.STATUS_COMPLETED
+                    else "not_started"
+                )
+            ),
         }
         if full:
             data["citizen"] = (
@@ -859,6 +1019,12 @@ class AdminService:
                 AdminService._serialize_feedback(complaint.feedback)
                 if complaint.feedback else None
             )
+            data["verification_history"] = [
+                AdminService._serialize_verification(verification)
+                for verification in complaint.verifications.order_by(
+                    ComplaintVerification.created_at.desc()
+                )
+            ]
         return data
 
     @staticmethod
@@ -954,4 +1120,25 @@ class AdminService:
             "rating": feedback.rating,
             "comment": feedback.comment,
             "created_at": feedback.created_at.isoformat(),
+        }
+
+    @staticmethod
+    def _serialize_verification(
+        verification: ComplaintVerification,
+    ) -> dict:
+        return {
+            "id": verification.id,
+            "complaint_id": verification.complaint_id,
+            "assignment_id": verification.assignment_id,
+            "administrator_id": verification.administrator_id,
+            "administrator_name": (
+                verification.administrator.full_name
+                if verification.administrator else None
+            ),
+            "decision": verification.decision,
+            "remarks": verification.remarks,
+            "repair_completed_at": (
+                verification.repair_completed_at.isoformat()
+            ),
+            "created_at": verification.created_at.isoformat(),
         }

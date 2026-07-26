@@ -6,13 +6,21 @@ TPS-84 Close Complaint) and the notification events fired alongside it
 """
 
 from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
 
+import pytest
+
+from app.api.administrator.service import AdminService
 from app.extensions import db
 from app.models.administrator_profile import AdministratorProfile
+from app.models.audit_log import AuditLog
 from app.models.city import City
 from app.models.complaint import Complaint
 from app.models.complaint_assignment import ComplaintAssignment
+from app.models.complaint_verification import ComplaintVerification
+from app.models.notification import Notification
 from app.models.role import Role
+from app.models.system_setting import SystemSetting
 from app.models.user import User
 
 
@@ -234,11 +242,18 @@ class TestAdminComplaintWorkflow:
         ).get_json()["data"]["items"]
         assert any("started" in n["message"].lower() for n in citizen_notifs)
 
-        # Admin resolves (in_progress -> resolved)
-        resolve_response = client.put(
-            f"/api/v1/admin/complaints/{complaint_id}",
+        complete_response = client.post(
+            f"/api/v1/fieldworker/assignments/{assignment_id}/complete",
+            headers={"Authorization": f"Bearer {worker_token}"},
+            json={},
+        )
+        assert complete_response.status_code == 200
+
+        # Admin approves completed repair -> resolved
+        resolve_response = client.post(
+            f"/api/v1/admin/complaints/{complaint_id}/verify",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"status": "resolved"},
+            json={"decision": "approved", "remarks": "Repair verified."},
         )
         assert resolve_response.status_code == 200
         assert resolve_response.get_json()["data"]["complaint"]["resolved_at"] is not None
@@ -323,6 +338,253 @@ class TestAdminComplaintWorkflow:
             "/api/v1/notifications/", headers={"Authorization": f"Bearer {admin_token}"}
         ).get_json()["data"]["items"]
         assert any("verif" in n["title"].lower() for n in admin_notifs)
+
+    def test_rework_is_recorded_notified_and_can_later_be_approved(
+        self, app, client
+    ):
+        admin = self._ensure_system_admin("wf-rework-admin@example.com")
+        admin_token = self._login(client, "wf-rework-admin@example.com")
+        citizen_auth = self._register_and_login_citizen(
+            client, "wf-rework-citizen@example.com"
+        )
+        complaint_id = self._submit_complaint(
+            client,
+            citizen_auth["access_token"],
+            citizen_auth["user"]["city_id"],
+        )
+        worker_id = self._create_field_worker(app, "wf-rework-worker@example.com")
+        worker_token = self._login(
+            client,
+            "wf-rework-worker@example.com",
+            "Password123!",
+        )
+
+        assignment = client.post(
+            f"/api/v1/admin/complaints/{complaint_id}/assign",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"worker_id": worker_id},
+        ).get_json()["data"]["assignment"]
+        assignment_id = assignment["id"]
+        client.post(
+            f"/api/v1/fieldworker/assignments/{assignment_id}/accept",
+            headers={"Authorization": f"Bearer {worker_token}"},
+        )
+        client.put(
+            f"/api/v1/fieldworker/assignments/{assignment_id}",
+            headers={"Authorization": f"Bearer {worker_token}"},
+            json={
+                "status": "in_progress",
+                "notes": "Replaced the damaged road surface.",
+            },
+        )
+        client.post(
+            f"/api/v1/fieldworker/assignments/{assignment_id}/complete",
+            headers={"Authorization": f"Bearer {worker_token}"},
+            json={
+                "evidence_url": (
+                    "/api/v1/fieldworker/assignments/media/repair-one.jpg"
+                )
+            },
+        )
+
+        missing_remarks = client.post(
+            f"/api/v1/admin/complaints/{complaint_id}/verify",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"decision": "rework_requested"},
+        )
+        assert missing_remarks.status_code == 400
+
+        with app.app_context():
+            setting = SystemSetting.query.first()
+            setting.notify_on_status_change = False
+            db.session.commit()
+
+        rework_response = client.post(
+            f"/api/v1/admin/complaints/{complaint_id}/verify",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={
+                "decision": "rework_requested",
+                "remarks": "The edge is unfinished; seal the remaining gap.",
+            },
+        )
+        assert rework_response.status_code == 200
+        rework_data = rework_response.get_json()["data"]
+        assert rework_data["complaint"]["status"] == Complaint.STATUS_IN_PROGRESS
+        assert (
+            rework_data["complaint"]["assignment_status"]
+            == ComplaintAssignment.STATUS_IN_PROGRESS
+        )
+        assert rework_data["verification"]["decision"] == "rework_requested"
+        assert rework_data["verification"]["complaint_id"] == complaint_id
+        assert rework_data["verification"]["assignment_id"] == assignment_id
+        assert rework_data["verification"]["administrator_id"] == admin.id
+        first_completion = rework_data["verification"]["repair_completed_at"]
+
+        worker_notifications = client.get(
+            "/api/v1/notifications/",
+            headers={"Authorization": f"Bearer {worker_token}"},
+        ).get_json()["data"]["items"]
+        assert any(
+            "remaining gap" in notification["message"]
+            for notification in worker_notifications
+        )
+
+        client.post(
+            f"/api/v1/fieldworker/assignments/{assignment_id}/complete",
+            headers={"Authorization": f"Bearer {worker_token}"},
+            json={
+                "evidence_url": (
+                    "/api/v1/fieldworker/assignments/media/repair-two.jpg"
+                )
+            },
+        )
+        approval_response = client.post(
+            f"/api/v1/admin/complaints/{complaint_id}/verify",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"decision": "approved", "remarks": "Rework verified."},
+        )
+        assert approval_response.status_code == 200
+        complaint = approval_response.get_json()["data"]["complaint"]
+        assert complaint["status"] == Complaint.STATUS_RESOLVED
+        assert complaint["verification_status"] == "approved"
+        second_completion = approval_response.get_json()["data"][
+            "verification"
+        ]["repair_completed_at"]
+        assert second_completion != first_completion
+        assert [
+            item["decision"] for item in complaint["verification_history"]
+        ] == ["approved", "rework_requested"]
+
+        with app.app_context():
+            decisions = ComplaintVerification.query.filter_by(
+                complaint_id=complaint_id
+            ).all()
+            assert len(decisions) == 2
+
+            setting = SystemSetting.query.first()
+            setting.notify_on_status_change = True
+            db.session.commit()
+
+    def test_notification_failure_rolls_back_rework_verification(
+        self, app, client
+    ):
+        admin = self._ensure_system_admin("wf-rollback-admin@example.com")
+        admin_token = self._login(client, "wf-rollback-admin@example.com")
+        citizen_auth = self._register_and_login_citizen(
+            client, "wf-rollback-citizen@example.com"
+        )
+        complaint_id = self._submit_complaint(
+            client,
+            citizen_auth["access_token"],
+            citizen_auth["user"]["city_id"],
+        )
+        worker_id = self._create_field_worker(
+            app, "wf-rollback-worker@example.com"
+        )
+        worker_token = self._login(
+            client,
+            "wf-rollback-worker@example.com",
+            "Password123!",
+        )
+        assignment_id = client.post(
+            f"/api/v1/admin/complaints/{complaint_id}/assign",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"worker_id": worker_id},
+        ).get_json()["data"]["assignment"]["id"]
+        client.post(
+            f"/api/v1/fieldworker/assignments/{assignment_id}/accept",
+            headers={"Authorization": f"Bearer {worker_token}"},
+        )
+        client.post(
+            f"/api/v1/fieldworker/assignments/{assignment_id}/complete",
+            headers={"Authorization": f"Bearer {worker_token}"},
+            json={},
+        )
+
+        with app.app_context():
+            service = AdminService()
+            with patch.object(
+                service.notifications,
+                "send_notification",
+                side_effect=RuntimeError("notification insert failed"),
+            ):
+                with pytest.raises(RuntimeError, match="notification insert failed"):
+                    service.verify_repair(
+                        complaint_id,
+                        admin.id,
+                        {
+                            "decision": "rework_requested",
+                            "remarks": "Redo the incomplete repair.",
+                        },
+                    )
+
+            complaint = db.session.get(Complaint, complaint_id)
+            assignment = db.session.get(
+                ComplaintAssignment,
+                assignment_id,
+            )
+            assert complaint.status == Complaint.STATUS_IN_PROGRESS
+            assert assignment.status == ComplaintAssignment.STATUS_COMPLETED
+            assert ComplaintVerification.query.filter_by(
+                complaint_id=complaint_id
+            ).count() == 0
+            assert Notification.query.filter(
+                Notification.user_id == worker_id,
+                Notification.title == "Repair rework requested",
+            ).count() == 0
+            assert AuditLog.query.filter_by(
+                action="repair_verification_rework_requested",
+                resource_id=complaint_id,
+            ).count() == 0
+
+            assignment = db.session.get(
+                ComplaintAssignment,
+                assignment_id,
+            )
+            winner = ComplaintVerification(
+                complaint_id=complaint_id,
+                assignment_id=assignment_id,
+                administrator_id=admin.id,
+                decision=ComplaintVerification.DECISION_APPROVED,
+                remarks="Concurrent winner.",
+                repair_completed_at=assignment.completed_at,
+            )
+            db.session.add(winner)
+            db.session.commit()
+
+        conflict_response = client.post(
+            f"/api/v1/admin/complaints/{complaint_id}/verify",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={
+                "decision": "rework_requested",
+                "remarks": "Concurrent losing decision.",
+            },
+        )
+        assert conflict_response.status_code == 409
+        assert "already been verified" in conflict_response.get_json()[
+            "message"
+        ].lower()
+
+        with app.app_context():
+            complaint = db.session.get(Complaint, complaint_id)
+            assignment = db.session.get(
+                ComplaintAssignment,
+                assignment_id,
+            )
+            assert complaint.status == Complaint.STATUS_IN_PROGRESS
+            assert assignment.status == ComplaintAssignment.STATUS_COMPLETED
+            assert ComplaintVerification.query.filter_by(
+                assignment_id=assignment_id,
+                repair_completed_at=assignment.completed_at,
+            ).count() == 1
+            assert Notification.query.filter(
+                Notification.user_id == worker_id,
+                Notification.title == "Repair rework requested",
+            ).count() == 0
+            assert AuditLog.query.filter_by(
+                action="repair_verification_rework_requested",
+                resource_id=complaint_id,
+            ).count() == 0
 
     def test_cannot_close_resolved_complaint_twice_removed_status(self, app, client):
         """Cannot jump straight from pending to closed."""

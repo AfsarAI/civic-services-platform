@@ -19,6 +19,7 @@ from app.schemas.user_schema import (
     FieldWorkerUpdateSchema,
 )
 from app.schemas.system_setting_schema import SystemSettingUpdateSchema
+from app.schemas.verification_schema import VerificationDecisionSchema
 
 __all__ = [
     "ComplaintSchema",
@@ -34,4 +35,5 @@ __all__ = [
     "FieldWorkerCreateSchema",
     "FieldWorkerUpdateSchema",
     "SystemSettingUpdateSchema",
+    "VerificationDecisionSchema",
 ]

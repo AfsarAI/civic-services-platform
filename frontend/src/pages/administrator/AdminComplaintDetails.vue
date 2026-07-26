@@ -42,7 +42,7 @@
           <div v-if="awaitingVerification" class="rounded-2xl border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-800">
             <span class="font-semibold">Marked as fixed, pending verification.</span>
             The field worker completed this repair<template v-if="complaint.repair_completed_at"> on {{ formatDate(complaint.repair_completed_at) }}</template>.
-            Review the assignment evidence below, then use "Mark as Resolved" once verified.
+            Review the completion evidence and field-worker remarks below before making a decision.
           </div>
 
           <div v-if="complaint.image_url" class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
@@ -84,11 +84,45 @@
                     </div>
                     <p class="mt-1 text-xs text-slate-500">Assigned {{ formatDate(a.assigned_at) }}</p>
                     <p class="mt-1 text-xs text-slate-500">Expected completion: {{ formatDate(a.expected_completion_at) }}</p>
+                    <p v-if="a.completed_at" class="mt-1 text-xs font-medium text-slate-600">
+                      Repair completed: {{ formatDate(a.completed_at) }}
+                    </p>
                     <p class="mt-1 text-xs text-slate-500">Last progress update: {{ formatDate(a.updated_at) }}</p>
                     <p v-if="a.notes" class="mt-1 text-xs text-slate-600">Notes: {{ a.notes }}</p>
                     <img v-if="a.evidence_url" :src="mediaUrl(a.evidence_url)" alt="Repair evidence" class="mt-2 max-h-48 w-full rounded-lg object-cover" />
                   </li>
                 </ul>
+              </div>
+
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Verification History</p>
+                  <span class="rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize" :class="verificationBadgeClass(complaint.verification_status)">
+                    {{ complaint.verification_status?.replaceAll('_', ' ') || 'pending' }}
+                  </span>
+                </div>
+                <p v-if="!complaint.verification_history?.length" class="mt-2 text-sm text-slate-500">
+                  No verification decisions recorded.
+                </p>
+                <ol v-else class="mt-3 space-y-3">
+                  <li v-for="verification in complaint.verification_history" :key="verification.id" class="rounded-xl border border-slate-200 bg-white p-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <span class="text-sm font-semibold capitalize" :class="verification.decision === 'approved' ? 'text-emerald-700' : 'text-amber-700'">
+                        {{ verification.decision.replaceAll('_', ' ') }}
+                      </span>
+                      <span class="text-xs text-slate-500">{{ formatDate(verification.created_at) }}</span>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500">
+                      Complaint #{{ verification.complaint_id }} · Assignment #{{ verification.assignment_id }}
+                    </p>
+                    <p class="mt-1 text-xs text-slate-500">
+                      Administrator: {{ verification.administrator_name || `#${verification.administrator_id}` }}
+                    </p>
+                    <p v-if="verification.remarks" class="mt-2 text-sm text-slate-700">
+                      {{ verification.remarks }}
+                    </p>
+                  </li>
+                </ol>
               </div>
 
               <div v-if="complaint.feedback" class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
@@ -163,17 +197,36 @@
                   </button>
                 </div>
 
-                <!-- Resolve (in_progress -> resolved) -->
-                <div v-if="complaint.status === 'in_progress'" class="space-y-1">
-                  <p v-if="awaitingVerification" class="text-xs font-medium text-purple-700">
-                    Field worker marked this complete — verify before resolving.
+                <!-- Verify completed repair (TPS-83) -->
+                <div v-if="awaitingVerification" class="space-y-2 border-t border-slate-100 pt-3">
+                  <p class="text-xs font-medium text-purple-700">
+                    Field worker marked this repair complete. Record your verification decision.
                   </p>
+                  <label class="form-label" for="verification-remarks">
+                    Administrator remarks
+                    <span class="font-normal text-slate-400">(required for rework)</span>
+                  </label>
+                  <textarea
+                    id="verification-remarks"
+                    v-model="verificationRemarks"
+                    rows="3"
+                    maxlength="2000"
+                    class="form-input"
+                    placeholder="Add verification notes or explain the required rework"
+                  ></textarea>
                   <button
                     class="btn-primary w-full py-2.5 text-sm"
                     :disabled="actionLoading"
-                    @click="handleStatusChange('resolved')"
+                    @click="handleVerification('approved')"
                   >
-                    Mark as Resolved
+                    Approve Repair
+                  </button>
+                  <button
+                    class="btn-secondary w-full py-2.5 text-sm"
+                    :disabled="actionLoading || !verificationRemarks.trim()"
+                    @click="handleVerification('rework_requested')"
+                  >
+                    Request Rework
                   </button>
                 </div>
 
@@ -184,7 +237,7 @@
                   :disabled="actionLoading"
                   @click="handleStatusChange('closed')"
                 >
-                  Verify &amp; Close Complaint
+                  Close Complaint
                 </button>
 
                 <!-- Reject (any pre-terminal status) -->
@@ -235,6 +288,7 @@ const priorityForm = ref('medium')
 const activeFieldWorkers = ref([])
 const assignWorkerId = ref('')
 const expectedCompletionAt = ref('')
+const verificationRemarks = ref('')
 
 // The complaint's own `status` intentionally stays `in_progress` even after the
 // field worker's assignment reaches `completed` — an administrator must still
@@ -311,6 +365,12 @@ function assignmentBadgeClass(status) {
   return 'bg-amber-100 text-amber-700'
 }
 
+function verificationBadgeClass(status) {
+  if (status === 'approved') return 'bg-emerald-100 text-emerald-700'
+  if (status === 'rework_requested') return 'bg-amber-100 text-amber-700'
+  return 'bg-purple-100 text-purple-700'
+}
+
 function formatDate(value) {
   if (!value) return '—'
   const date = new Date(value)
@@ -383,6 +443,27 @@ async function handleStatusChange(status) {
     actionMessage.value = `Complaint status updated to ${status.replaceAll('_', ' ')}.`
   } catch (err) {
     actionError.value = err?.response?.data?.message || 'Could not update complaint status.'
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function handleVerification(decision) {
+  if (decision === 'rework_requested' && !verificationRemarks.value.trim()) return
+  resetActionAlerts()
+  actionLoading.value = true
+  try {
+    const response = await complaintService.verifyRepair(complaint.value.id, {
+      decision,
+      remarks: verificationRemarks.value.trim() || undefined,
+    })
+    complaint.value = response?.data?.complaint || complaint.value
+    verificationRemarks.value = ''
+    actionMessage.value = decision === 'approved'
+      ? 'Repair approved and complaint marked as resolved.'
+      : 'Rework requested and field worker notified.'
+  } catch (err) {
+    actionError.value = err?.response?.data?.message || 'Could not record the verification decision.'
   } finally {
     actionLoading.value = false
   }
