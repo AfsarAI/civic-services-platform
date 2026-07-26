@@ -447,6 +447,7 @@ class AdminService:
                 f"Current status: '{complaint.status}'."
             )
 
+        # Verify field worker eligibility and city scoping before creating complaint assignment.
         worker = User.query.get(data["worker_id"])
         if not worker:
             raise ValueError("Field worker not found.")
