@@ -163,6 +163,7 @@ class CitizenService:
         Raises:
             ValueError: Business rule violations.
         """
+        # Ensure complaint is resolved or closed before accepting feedback and rating.
         complaint = self._get_owned(complaint_id, citizen_id)
 
         if complaint.status not in (
