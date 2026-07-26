@@ -131,6 +131,7 @@ class FieldWorkerService:
             ValueError: Business rule violations.
         """
         assignment = self._get_owned(assignment_id, worker_id)
+        # Process progress status updates and field notes for assigned repair tasks.
         self._ensure_complaint_actionable(assignment.complaint)
         new_status = data["status"]
 
