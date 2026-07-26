@@ -201,6 +201,7 @@ class FieldWorkerService:
             ValueError: Business rule violations.
         """
         assignment = self._get_owned(assignment_id, worker_id)
+        # Record completion of repair work assignment and attach optional evidence.
         self._ensure_complaint_actionable(assignment.complaint)
 
         if assignment.status not in (
