@@ -15,7 +15,7 @@ const fieldWorkerService = {
   },
 
   /**
-   * Get dashboard summary (counts by status and recent assignments).
+   * Get dashboard summary(counts by status and recent assignments).
    */
   async getDashboardSummary() {
     const response = await api.get('/fieldworker/dashboard')
@@ -51,7 +51,7 @@ const fieldWorkerService = {
   },
 
   /**
-   * Mark an assignment as completed, optionally attaching evidence_url.
+   * Mark an assignment as completed and also optionally attaching evidence_url.
    * @param {number} id
    * @param {Object} data - { evidence_url }
    */
