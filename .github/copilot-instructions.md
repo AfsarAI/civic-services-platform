@@ -241,13 +241,17 @@ Constants: `STATUS_PENDING`, `STATUS_ASSIGNED`, `STATUS_IN_PROGRESS`, `STATUS_RE
 - `GET /dashboard`
 - `complaint_assignments.evidence_url` (nullable) stores optional repair-completion photo, set via `POST /assignments/<id>/complete` body `{"evidence_url": "..."}` after uploading with the media endpoint above — mirrors the citizen `image_url` upload-then-reference pattern
 
-### Reports `/api/v1/reports` — `require_admin`
-- `GET /complaints/summary` `GET /complaints/by-status` `GET /complaints/by-category`
+### Reports `/api/v1/reports` — `require_admin` (both system and municipal administrators)
+- `GET /complaints/summary` `GET /complaints/by-status` `GET /complaints/by-category` `GET /complaints/by-priority` `GET /complaints/by-location`
 - `GET /complaints/trends?period=daily|weekly|monthly` `GET /workers/performance`
+- **City-scoped like `/admin/complaints`**: municipal administrators are automatically restricted to their own city (`ReportsController._scoped_city_id(_current_admin_user())`, same pattern as `AdministratorController`), system administrators are unscoped. This was NOT true before a TPS-85/96/97/98 audit — every report endpoint was `require_system_admin`-only and 403'd municipal administrators outright; don't reintroduce that regression.
+- All endpoints accept optional `date_from`/`date_to` (`YYYY-MM-DD`, inclusive, 400 on malformed dates) query params; the by-category/by-priority/by-location/summary endpoints also accept `status` (400 on an invalid value). `ReportsService._filtered_query()` is the single place all of these are applied — extend it rather than duplicating filter logic per-method.
+- Frontend: `Reports.vue` (`/admin/reports`, sidebar visible to both admin levels, no longer gated by `adminLevel: 'system'` in the router) has a filter bar (date range + status), by-status/by-category/by-priority/by-location panels, a trends chart, worker performance table, and a client-side "Export CSV" button (`csvField()` guards against CSV/formula injection on user-controlled strings like worker names).
 
 ### Notifications `/api/v1/notifications` — any authenticated user
 - `GET /` `GET /<id>` `PATCH /<id>/read` `PATCH /read-all` `GET /unread-count`
-- **Actually wired to real events** (not just a passive read API): `NotificationService.send_notification()` is called from `AdminService` (assignment → worker + citizen, resolved/closed/rejected → citizen) and `FieldWorkerService` (accept → citizen "work started", reject → citizen "returned for reassignment"). All of these are gated on `SystemSettingsService.notifications_enabled()` — flip `notify_on_status_change` off in system settings and none of them fire.
+- **Actually wired to real events** (not just a passive read API): `NotificationService.send_notification()` is called from `CitizenService` (submit → the citizen themselves, `TYPE_COMPLAINT_SUBMITTED`), `AdminService` (assignment → worker + citizen, resolved/closed/rejected → citizen, plus reject/close → the last-assigned worker), and `FieldWorkerService` (accept → citizen "work started", reject → citizen + assigning admin, complete → assigning admin "verification needed" + citizen "repair work completed"). All of these are gated on `SystemSettingsService.notifications_enabled()` — flip `notify_on_status_change` off in system settings and none of them fire.
+- **Every citizen-facing (and most worker/admin-facing) message embeds the complaint ID as `#<id>`** directly in the message text (e.g. "Your complaint #42 'X' has been assigned...") — this is a deliberate TPS-91 AC3 requirement ("Notifications display the Complaint ID and updated status"), not incidental. If you add a new notification call, follow the same `f"...complaint #{complaint.id}..."` pattern rather than omitting the ID. `related_complaint_id` is also stored structurally and rendered as a small "Complaint #<id>" badge in both `Navbar.vue`'s dropdown and `Notifications.vue`.
 - Frontend: `Navbar.vue` has a real bell dropdown (unread badge, polls every 30s, click-outside-to-close, mark-as-read/mark-all-read) plus a full `/notifications` page (`Notifications.vue`), not a placeholder.
 
 ### Locations `/api/v1/locations` — public, no JWT required
@@ -265,7 +269,7 @@ Constants: `STATUS_PENDING`, `STATUS_ASSIGNED`, `STATUS_IN_PROGRESS`, `STATUS_RE
 ### System Settings (System Admin only, TPS-99)
 - Singleton `SystemSetting` row (`app/models/system_setting.py`), lazily created with defaults by `SystemSettingsService.get_settings()` — never insert a second row.
 - `PUT /admin/settings` writes an audit-log entry (`action="system_settings_updated"`) via the same `AuditLogService` pattern as municipal-admin/field-worker management.
-- Two settings have **real, immediate runtime effects** (not just stored config): `maintenance_mode` blocks non-administrator logins in `AuthService.login()` (administrators can always log in); `notify_on_status_change` gates every automatic notification send in `AdminService`/`FieldWorkerService`.
+- Three settings have **real, immediate runtime effects** (not just stored config): `maintenance_mode` blocks non-administrator logins in `AuthService.login()` (administrators can always log in); `notify_on_status_change` gates every automatic notification send in `AdminService`/`FieldWorkerService`; `default_complaint_priority` is applied by `CitizenService.submit_complaint()` whenever a citizen submits a complaint without an explicit `priority` (`ComplaintCreateSchema.priority` has no hardcoded default anymore — it's optional and falls through to the configured system setting, not a literal `"medium"`).
 - Frontend: `/admin/settings` (`SystemSettings.vue`), sidebar link visible only to system admins.
 
 ---

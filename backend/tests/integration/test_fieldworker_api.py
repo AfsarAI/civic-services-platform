@@ -197,9 +197,18 @@ class TestFieldWorkerEndpoints:
             notification = Notification.query.filter_by(
                 user_id=assignment.assigned_by_id,
                 related_complaint_id=complaint_id,
-            ).order_by(Notification.id.desc()).first()
+            ).filter(Notification.title.ilike("%verif%")).order_by(Notification.id.desc()).first()
             assert notification is not None
             assert "verif" in notification.title.lower()
+
+            # The citizen is also notified directly that repair work is done
+            # (TPS-91..94 lifecycle notifications), separately from the admin's
+            # verification prompt above.
+            citizen_notification = Notification.query.filter_by(
+                user_id=complaint.citizen_id,
+                related_complaint_id=complaint_id,
+            ).filter(Notification.title.ilike("%completed%")).first()
+            assert citizen_notification is not None
 
         # Citizen-facing complaint view surfaces the completed assignment status
         # so the UI can show "awaiting verification" instead of bare "in progress".

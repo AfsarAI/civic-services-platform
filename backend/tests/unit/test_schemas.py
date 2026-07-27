@@ -49,7 +49,10 @@ class TestComplaintCreateSchema:
         }
         result = schema.load(data)
         assert result["category"] == "pothole"
-        assert result["priority"] == "medium"
+        # Priority is intentionally left out when not provided — the service
+        # layer applies the configured `default_complaint_priority` system
+        # setting (TPS-99), not a hardcoded schema default.
+        assert "priority" not in result
 
     def test_invalid_category_raises(self):
         schema = ComplaintCreateSchema()

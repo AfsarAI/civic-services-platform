@@ -2,17 +2,23 @@
 Citizen service — business logic for citizen-facing operations.
 """
 
+from app.api.notifications.service import NotificationService
 from app.extensions import db
 from app.models.city import City
 from app.models.city_pincode import CityPincode
 from app.models.complaint import Complaint
 from app.models.complaint_assignment import ComplaintAssignment
 from app.models.feedback import Feedback
+from app.models.notification import Notification
 from app.models.user import User
+from app.services.system_settings_service import SystemSettingsService
 
 
 class CitizenService:
     """Handles complaint submission, tracking, editing, and feedback."""
+
+    def __init__(self):
+        self.notifications = NotificationService()
 
     # ── List complaints ───────────────────────────────────────────────────
 
@@ -75,7 +81,7 @@ class CitizenService:
             title=data["title"],
             description=data["description"],
             category=Complaint.CATEGORY_POTHOLE,
-            priority=data.get("priority", "medium"),
+            priority=data.get("priority") or SystemSettingsService.get_settings().default_complaint_priority,
             latitude=data.get("latitude"),
             longitude=data.get("longitude"),
             address=data.get("address"),
@@ -86,7 +92,17 @@ class CitizenService:
         )
         db.session.add(complaint)
         db.session.commit()
-
+        if SystemSettingsService.notifications_enabled():
+            self.notifications.send_notification(
+                user_id=citizen_id,
+                title="Complaint submitted",
+                message=(
+                    f"Your complaint #{complaint.id} '{complaint.title}' has been submitted "
+                    "successfully and is pending review."
+                ),
+                notification_type=Notification.TYPE_COMPLAINT_SUBMITTED,
+                related_complaint_id=complaint.id,
+            )
         return {"complaint": self._serialize(complaint)}
 
     # ── Get one complaint ─────────────────────────────────────────────────

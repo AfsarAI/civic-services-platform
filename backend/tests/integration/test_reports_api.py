@@ -1,0 +1,245 @@
+"""
+Integration tests for the reports/analytics namespace (TPS-85/96/97/98).
+
+Covers:
+- Both administrator subtypes can access reports; municipal administrators
+  are automatically scoped to their own city, system administrators are not.
+- Non-administrators are forbidden.
+- Date-range and status filters.
+- The by-priority and by-location breakdowns.
+"""
+
+from app.extensions import db
+from app.models.administrator_profile import AdministratorProfile
+from app.models.city import City
+from app.models.role import Role
+from app.models.user import User
+
+
+class TestReportsEndpoints:
+    """Integration tests for /api/v1/reports endpoints."""
+
+    @staticmethod
+    def _ensure_city(name: str) -> City:
+        city = City.query.filter_by(name=name).first()
+        if not city:
+            city = City(name=name, is_active=True)
+            db.session.add(city)
+            db.session.commit()
+        return city
+
+    @classmethod
+    def _ensure_admin(cls, email: str, admin_level: str, city_name: str = None) -> User:
+        role = Role.query.filter_by(name=Role.ADMINISTRATOR).first()
+        user = User.query.filter_by(email=email).first()
+        if user:
+            return user
+
+        city = cls._ensure_city(city_name) if city_name else None
+
+        user = User(
+            username=email.split("@")[0],
+            email=email,
+            first_name="Admin",
+            last_name=admin_level.title(),
+            role_id=role.id,
+            is_active=True,
+        )
+        user.set_password("Admin@123456")
+        db.session.add(user)
+        db.session.flush()
+        db.session.add(
+            AdministratorProfile(
+                user_id=user.id,
+                admin_level=admin_level,
+                city_id=city.id if city else None,
+                created_by_id=None,
+            )
+        )
+        db.session.commit()
+        return user
+
+    @staticmethod
+    def _login(client, email: str, password: str = "Admin@123456") -> str:
+        response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+        assert response.status_code == 200
+        return response.get_json()["data"]["access_token"]
+
+    @staticmethod
+    def _register_and_login_citizen(client, email: str):
+        register_response = client.post(
+            "/api/v1/auth/register",
+            json={
+                "username": email.split("@")[0],
+                "email": email,
+                "password": "Password123!",
+                "first_name": "Citizen",
+                "last_name": "Tester",
+                "pincode": "226001",
+            },
+        )
+        assert register_response.status_code == 201
+        login_response = client.post(
+            "/api/v1/auth/login", json={"email": email, "password": "Password123!"}
+        )
+        assert login_response.status_code == 200
+        return login_response.get_json()["data"]
+
+    @classmethod
+    def _submit_complaint(cls, client, citizen_token: str, city_id: int, priority: str = "high") -> int:
+        response = client.post(
+            "/api/v1/citizen/complaints",
+            headers={"Authorization": f"Bearer {citizen_token}"},
+            json={
+                "title": "Deep pothole requiring urgent repair",
+                "description": "Large pothole causing traffic issues near the junction.",
+                "category": "pothole",
+                "priority": priority,
+                "city_id": city_id,
+                "image_url": "/api/v1/citizen/complaints/media/test-photo.jpg",
+            },
+        )
+        assert response.status_code == 201
+        return response.get_json()["data"]["complaint"]["id"]
+
+    REPORT_ENDPOINTS = [
+        "/api/v1/reports/complaints/summary",
+        "/api/v1/reports/complaints/by-status",
+        "/api/v1/reports/complaints/by-category",
+        "/api/v1/reports/complaints/by-priority",
+        "/api/v1/reports/complaints/by-location",
+        "/api/v1/reports/complaints/trends",
+        "/api/v1/reports/workers/performance",
+    ]
+
+    def test_non_admin_cannot_access_any_report_endpoint(self, app, client):
+        citizen_auth = self._register_and_login_citizen(client, "reports-citizen@example.com")
+        citizen_token = citizen_auth["access_token"]
+        for endpoint in self.REPORT_ENDPOINTS:
+            response = client.get(endpoint, headers={"Authorization": f"Bearer {citizen_token}"})
+            assert response.status_code == 403, endpoint
+
+    def test_system_admin_can_access_all_report_endpoints(self, app, client):
+        self._ensure_admin("reports-sysadmin@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "reports-sysadmin@example.com")
+        for endpoint in self.REPORT_ENDPOINTS:
+            response = client.get(endpoint, headers={"Authorization": f"Bearer {token}"})
+            assert response.status_code == 200, endpoint
+
+    def test_municipal_admin_can_access_reports_scoped_to_own_city(self, app, client):
+        """Municipal administrators must NOT get 403 on reports, and must only
+        see their own city's data (the user's explicit ask for this story)."""
+        city_a = self._ensure_city("ReportsCityA")
+        city_b = self._ensure_city("ReportsCityB")
+        self._ensure_admin("reports-muni-a@example.com", AdministratorProfile.MUNICIPAL, "ReportsCityA")
+        muni_token = self._login(client, "reports-muni-a@example.com")
+
+        citizen_auth = self._register_and_login_citizen(client, "reports-citizen-a@example.com")
+        self._submit_complaint(client, citizen_auth["access_token"], city_a.id)
+
+        other_citizen_auth = self._register_and_login_citizen(client, "reports-citizen-b@example.com")
+        self._submit_complaint(client, other_citizen_auth["access_token"], city_b.id)
+
+        summary_response = client.get(
+            "/api/v1/reports/complaints/summary", headers={"Authorization": f"Bearer {muni_token}"}
+        )
+        assert summary_response.status_code == 200
+        # Only city A's single complaint should be counted, not city B's.
+        assert summary_response.get_json()["data"]["total"] == 1
+
+        location_response = client.get(
+            "/api/v1/reports/complaints/by-location", headers={"Authorization": f"Bearer {muni_token}"}
+        )
+        assert location_response.status_code == 200
+        location_breakdown = location_response.get_json()["data"]["breakdown"]
+        assert all(row["city_name"] == "ReportsCityA" for row in location_breakdown)
+
+    def test_system_admin_sees_all_cities_unscoped(self, app, client):
+        city_a = self._ensure_city("ReportsCityC")
+        city_b = self._ensure_city("ReportsCityD")
+        self._ensure_admin("reports-sysadmin2@example.com", AdministratorProfile.SYSTEM)
+        sys_token = self._login(client, "reports-sysadmin2@example.com")
+
+        citizen_a = self._register_and_login_citizen(client, "reports-citizen-c@example.com")
+        self._submit_complaint(client, citizen_a["access_token"], city_a.id)
+        citizen_b = self._register_and_login_citizen(client, "reports-citizen-d@example.com")
+        self._submit_complaint(client, citizen_b["access_token"], city_b.id)
+
+        response = client.get(
+            "/api/v1/reports/complaints/by-location", headers={"Authorization": f"Bearer {sys_token}"}
+        )
+        assert response.status_code == 200
+        cities_seen = {row["city_name"] for row in response.get_json()["data"]["breakdown"]}
+        assert "ReportsCityC" in cities_seen
+        assert "ReportsCityD" in cities_seen
+
+    def test_status_filter_narrows_by_category_breakdown(self, app, client):
+        self._ensure_admin("reports-sysadmin3@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "reports-sysadmin3@example.com")
+        city = self._ensure_city("ReportsCityE")
+        citizen_auth = self._register_and_login_citizen(client, "reports-citizen-e@example.com")
+        self._submit_complaint(client, citizen_auth["access_token"], city.id)
+
+        response = client.get(
+            "/api/v1/reports/complaints/by-category",
+            headers={"Authorization": f"Bearer {token}"},
+            query_string={"status": "pending"},
+        )
+        assert response.status_code == 200
+        assert response.get_json()["data"]["total"] >= 1
+
+        response_none = client.get(
+            "/api/v1/reports/complaints/by-category",
+            headers={"Authorization": f"Bearer {token}"},
+            query_string={"status": "closed"},
+        )
+        assert response_none.status_code == 200
+
+    def test_invalid_status_filter_returns_400(self, app, client):
+        self._ensure_admin("reports-sysadmin4@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "reports-sysadmin4@example.com")
+        response = client.get(
+            "/api/v1/reports/complaints/summary",
+            headers={"Authorization": f"Bearer {token}"},
+            query_string={"status": "not-a-status"},
+        )
+        assert response.status_code == 400
+
+    def test_date_range_filter_excludes_out_of_range_complaints(self, app, client):
+        self._ensure_admin("reports-sysadmin5@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "reports-sysadmin5@example.com")
+        city = self._ensure_city("ReportsCityF")
+        citizen_auth = self._register_and_login_citizen(client, "reports-citizen-f@example.com")
+        self._submit_complaint(client, citizen_auth["access_token"], city.id)
+
+        # A date range entirely in the future should exclude today's complaint.
+        response = client.get(
+            "/api/v1/reports/complaints/summary",
+            headers={"Authorization": f"Bearer {token}"},
+            query_string={"date_from": "2999-01-01", "date_to": "2999-01-31"},
+        )
+        assert response.status_code == 200
+        assert response.get_json()["data"]["total"] == 0
+
+    def test_invalid_date_format_returns_400(self, app, client):
+        self._ensure_admin("reports-sysadmin6@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "reports-sysadmin6@example.com")
+        response = client.get(
+            "/api/v1/reports/complaints/summary",
+            headers={"Authorization": f"Bearer {token}"},
+            query_string={"date_from": "not-a-date"},
+        )
+        assert response.status_code == 400
+
+    def test_summary_includes_priority_breakdown(self, app, client):
+        self._ensure_admin("reports-sysadmin7@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "reports-sysadmin7@example.com")
+        city = self._ensure_city("ReportsCityG")
+        citizen_auth = self._register_and_login_citizen(client, "reports-citizen-g@example.com")
+        self._submit_complaint(client, citizen_auth["access_token"], city.id, priority="urgent")
+
+        response = client.get(
+            "/api/v1/reports/complaints/summary", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+        assert response.get_json()["data"]["by_priority"].get("urgent", 0) >= 1

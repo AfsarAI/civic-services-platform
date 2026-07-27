@@ -1,11 +1,46 @@
 <template>
   <div class="space-y-6">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-900 mb-2">Reports &amp; Analytics</h1>
-      <p class="text-gray-500 text-sm">Platform-wide analytics available only to the System Administrator.</p>
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-1">Reports &amp; Analytics</h1>
+        <p class="text-gray-500 text-sm">{{ scopeDescription }}</p>
+      </div>
+      <button type="button" class="btn-secondary px-4 py-2 text-sm shrink-0" @click="exportCsv">
+        Export CSV
+      </button>
     </div>
 
     <div v-if="error" class="card border-red-200 bg-red-50 text-red-700 p-4 text-sm">{{ error }}</div>
+
+    <!-- Filters -->
+    <div class="card">
+      <h2 class="font-semibold text-gray-900 mb-3 text-sm">Filters</h2>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
+        <div>
+          <label class="form-label text-xs" for="date_from">From</label>
+          <input id="date_from" v-model="filters.date_from" type="date" class="form-input text-sm" />
+        </div>
+        <div>
+          <label class="form-label text-xs" for="date_to">To</label>
+          <input id="date_to" v-model="filters.date_to" type="date" class="form-input text-sm" />
+        </div>
+        <div>
+          <label class="form-label text-xs" for="status">Status</label>
+          <select id="status" v-model="filters.status" class="form-input text-sm">
+            <option value="">All Statuses</option>
+            <option v-for="s in statusOptions" :key="s" :value="s">{{ s.replaceAll('_', ' ') }}</option>
+          </select>
+        </div>
+        <div class="flex items-end gap-2">
+          <button type="button" class="btn-primary flex-1 py-2 text-sm" :disabled="loading" @click="applyFilters">
+            Apply
+          </button>
+          <button type="button" class="btn-secondary flex-1 py-2 text-sm" :disabled="loading" @click="resetFilters">
+            Reset
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Summary cards -->
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -45,6 +80,40 @@
             </div>
             <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
               <div class="h-full rounded-full bg-emerald-500" :style="{ width: `${row.percentage}%` }"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- By priority -->
+      <div class="card">
+        <h2 class="font-semibold text-gray-900 mb-4">Complaints by Priority</h2>
+        <p v-if="!byPriority.length" class="text-gray-400 text-sm italic text-center py-8">No data yet.</p>
+        <div v-else class="space-y-3">
+          <div v-for="row in byPriority" :key="row.priority">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-medium capitalize text-gray-700">{{ row.priority }}</span>
+              <span class="text-gray-500">{{ row.count }} ({{ row.percentage }}%)</span>
+            </div>
+            <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div class="h-full rounded-full bg-amber-500" :style="{ width: `${row.percentage}%` }"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- By location -->
+      <div class="card">
+        <h2 class="font-semibold text-gray-900 mb-4">Complaints by Location</h2>
+        <p v-if="!byLocation.length" class="text-gray-400 text-sm italic text-center py-8">No data yet.</p>
+        <div v-else class="space-y-3">
+          <div v-for="row in byLocation" :key="row.city_id ?? 'unassigned'">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-medium text-gray-700">{{ row.city_name }}</span>
+              <span class="text-gray-500">{{ row.count }} ({{ row.percentage }}%)</span>
+            </div>
+            <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div class="h-full rounded-full bg-sky-500" :style="{ width: `${row.percentage}%` }"></div>
             </div>
           </div>
         </div>
@@ -116,16 +185,39 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import reportsService from '@/services/reports.service'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
 
 const error = ref('')
+const loading = ref(false)
 const summary = ref({})
 const byStatus = ref([])
 const byCategory = ref([])
+const byPriority = ref([])
+const byLocation = ref([])
 const trends = ref([])
 const trendPeriod = ref('daily')
 const workerPerformance = ref([])
+
+const filters = reactive({ date_from: '', date_to: '', status: '' })
+const statusOptions = ['pending', 'assigned', 'in_progress', 'resolved', 'closed', 'rejected', 'cancelled']
+
+const scopeDescription = computed(() => {
+  if (authStore.isSystemAdmin) return 'Platform-wide analytics across all cities.'
+  if (authStore.isMunicipalAdmin) return `Analytics scoped to ${authStore.cityName || 'your city'}.`
+  return 'Complaint and repair-activity analytics.'
+})
+
+const activeFilters = computed(() => {
+  const applied = {}
+  if (filters.date_from) applied.date_from = filters.date_from
+  if (filters.date_to) applied.date_to = filters.date_to
+  if (filters.status) applied.status = filters.status
+  return applied
+})
 
 const summaryCards = computed(() => [
   { label: 'Total Complaints', value: summary.value.total ?? 0, color: 'text-gray-800' },
@@ -142,7 +234,7 @@ function trendBarHeight(count) {
 
 async function loadSummary() {
   try {
-    const response = await reportsService.getSummary()
+    const response = await reportsService.getSummary(activeFilters.value)
     summary.value = response?.data || {}
   } catch (err) {
     error.value = err?.response?.data?.message || 'Could not load report summary.'
@@ -151,7 +243,7 @@ async function loadSummary() {
 
 async function loadByStatus() {
   try {
-    const response = await reportsService.getByStatus()
+    const response = await reportsService.getByStatus(activeFilters.value)
     byStatus.value = response?.data?.breakdown || []
   } catch {
     byStatus.value = []
@@ -160,16 +252,34 @@ async function loadByStatus() {
 
 async function loadByCategory() {
   try {
-    const response = await reportsService.getByCategory()
+    const response = await reportsService.getByCategory(activeFilters.value)
     byCategory.value = response?.data?.breakdown || []
   } catch {
     byCategory.value = []
   }
 }
 
+async function loadByPriority() {
+  try {
+    const response = await reportsService.getByPriority(activeFilters.value)
+    byPriority.value = response?.data?.breakdown || []
+  } catch {
+    byPriority.value = []
+  }
+}
+
+async function loadByLocation() {
+  try {
+    const response = await reportsService.getByLocation(activeFilters.value)
+    byLocation.value = response?.data?.breakdown || []
+  } catch {
+    byLocation.value = []
+  }
+}
+
 async function loadTrends() {
   try {
-    const response = await reportsService.getTrends(trendPeriod.value)
+    const response = await reportsService.getTrends(trendPeriod.value, activeFilters.value)
     trends.value = response?.data?.data || []
   } catch {
     trends.value = []
@@ -178,19 +288,119 @@ async function loadTrends() {
 
 async function loadWorkerPerformance() {
   try {
-    const response = await reportsService.getWorkerPerformance()
+    const response = await reportsService.getWorkerPerformance(activeFilters.value)
     workerPerformance.value = response?.data?.workers || []
   } catch {
     workerPerformance.value = []
   }
 }
 
+async function loadAll() {
+  loading.value = true
+  error.value = ''
+  await Promise.all([
+    loadSummary(),
+    loadByStatus(),
+    loadByCategory(),
+    loadByPriority(),
+    loadByLocation(),
+    loadTrends(),
+    loadWorkerPerformance(),
+  ])
+  loading.value = false
+}
+
+function applyFilters() {
+  loadAll()
+}
+
+function resetFilters() {
+  filters.date_from = ''
+  filters.date_to = ''
+  filters.status = ''
+  loadAll()
+}
+
+// Guards against CSV/formula injection (OWASP): quote fields containing
+// delimiters, and neutralise leading =, +, -, @ which spreadsheet apps treat
+// as the start of a formula.
+function csvField(value) {
+  let str = String(value ?? '')
+  if (/^[=+\-@]/.test(str)) str = `'${str}`
+  if (/[",\n]/.test(str)) str = `"${str.replace(/"/g, '""')}"`
+  return str
+}
+
+function csvRow(fields) {
+  return fields.map(csvField).join(',')
+}
+
+function exportCsv() {
+  const lines = []
+  lines.push('Civic Services Platform — Complaint Report')
+  lines.push(csvRow(['Generated', new Date().toISOString()]))
+  if (activeFilters.value.date_from || activeFilters.value.date_to) {
+    lines.push(csvRow(['Date range', `${filters.date_from || 'any'} to ${filters.date_to || 'any'}`]))
+  }
+  if (activeFilters.value.status) {
+    lines.push(csvRow(['Status filter', filters.status]))
+  }
+  lines.push('')
+
+  lines.push('Summary')
+  lines.push(csvRow(['Total Complaints', summary.value.total ?? 0]))
+  lines.push(csvRow(['Open', summary.value.open ?? 0]))
+  lines.push(csvRow(['Resolved', summary.value.resolved ?? 0]))
+  lines.push(csvRow(['Resolution Rate (%)', summary.value.resolution_rate ?? 0]))
+  lines.push(csvRow(['Avg. Resolution (hrs)', summary.value.avg_resolution_hours ?? '']))
+  lines.push('')
+
+  lines.push('Complaints by Status')
+  lines.push(csvRow(['Status', 'Count', 'Percentage']))
+  byStatus.value.forEach((row) => lines.push(csvRow([row.status, row.count, row.percentage])))
+  lines.push('')
+
+  lines.push('Complaints by Category')
+  lines.push(csvRow(['Category', 'Count', 'Percentage']))
+  byCategory.value.forEach((row) => lines.push(csvRow([row.category, row.count, row.percentage])))
+  lines.push('')
+
+  lines.push('Complaints by Priority')
+  lines.push(csvRow(['Priority', 'Count', 'Percentage']))
+  byPriority.value.forEach((row) => lines.push(csvRow([row.priority, row.count, row.percentage])))
+  lines.push('')
+
+  lines.push('Complaints by Location')
+  lines.push(csvRow(['City', 'Count', 'Percentage']))
+  byLocation.value.forEach((row) => lines.push(csvRow([row.city_name, row.count, row.percentage])))
+  lines.push('')
+
+  lines.push('Field Worker Performance')
+  lines.push(csvRow(['Worker', 'Total Assignments', 'Completed', 'Completion Rate (%)', 'Avg. Time (hrs)', 'Active']))
+  workerPerformance.value.forEach((w) => lines.push(csvRow([
+    w.name,
+    w.total_assignments,
+    w.by_status?.completed || 0,
+    w.completion_rate,
+    w.avg_completion_hours ?? '',
+    w.is_active ? 'Yes' : 'No',
+  ])))
+
+  const csvContent = lines.join('\r\n')
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  const stamp = new Date().toISOString().slice(0, 10)
+  link.href = url
+  link.setAttribute('download', `complaint-report-${stamp}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
 onMounted(() => {
-  loadSummary()
-  loadByStatus()
-  loadByCategory()
-  loadTrends()
-  loadWorkerPerformance()
+  loadAll()
 })
 </script>
 
