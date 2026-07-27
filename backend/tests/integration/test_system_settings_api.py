@@ -138,6 +138,48 @@ class TestSystemSettingsEndpoints:
         )
         assert response.status_code == 422
 
+    def test_default_complaint_priority_applies_to_new_complaints(self, app, client):
+        """`default_complaint_priority` (TPS-99, AC3) must take effect immediately:
+        a complaint submitted without an explicit priority picks up whatever the
+        system admin has configured, not a hardcoded 'medium'."""
+        admin_token = self._login(client, self._ensure_system_admin("settings-admin5@example.com").email)
+        update_response = client.put(
+            "/api/v1/admin/settings",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"default_complaint_priority": "urgent"},
+        )
+        assert update_response.status_code == 200
+        assert update_response.get_json()["data"]["settings"]["default_complaint_priority"] == "urgent"
+
+        citizen_token = self._register_and_login_citizen(client, "settings-citizen-priority@example.com")
+        complaint_response = client.post(
+            "/api/v1/citizen/complaints",
+            headers={"Authorization": f"Bearer {citizen_token}"},
+            json={
+                "title": "Deep pothole near school gate",
+                "description": "Large pothole causing daily traffic issues near the school.",
+                "category": "pothole",
+                "image_url": "/api/v1/citizen/complaints/media/test-photo.jpg",
+            },
+        )
+        assert complaint_response.status_code == 201
+        assert complaint_response.get_json()["data"]["complaint"]["priority"] == "urgent"
+
+        # An explicit priority from the citizen still overrides the configured default.
+        override_response = client.post(
+            "/api/v1/citizen/complaints",
+            headers={"Authorization": f"Bearer {citizen_token}"},
+            json={
+                "title": "Minor crack on sidewalk",
+                "description": "Small crack, not urgent but worth noting for repair.",
+                "category": "pothole",
+                "priority": "low",
+                "image_url": "/api/v1/citizen/complaints/media/test-photo2.jpg",
+            },
+        )
+        assert override_response.status_code == 201
+        assert override_response.get_json()["data"]["complaint"]["priority"] == "low"
+
     def test_maintenance_mode_blocks_non_admin_login_but_not_admin(self, app, client):
         self._ensure_system_admin("settings-admin5@example.com")
         admin_token = self._login(client, "settings-admin5@example.com")

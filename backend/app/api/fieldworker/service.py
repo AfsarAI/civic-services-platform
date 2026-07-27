@@ -106,7 +106,7 @@ class FieldWorkerService:
             self.notifications.send_notification(
                 user_id=complaint.citizen_id,
                 title="Repair work started",
-                message=f"Work has started on your complaint '{complaint.title}'.",
+                message=f"Work has started on your complaint #{complaint.id} '{complaint.title}'.",
                 notification_type=Notification.TYPE_STATUS_UPDATE,
                 related_complaint_id=complaint.id,
             )
@@ -164,7 +164,7 @@ class FieldWorkerService:
                 user_id=complaint.citizen_id,
                 title="Complaint reassignment pending",
                 message=(
-                    f"Your complaint '{complaint.title}' was returned for reassignment "
+                    f"Your complaint #{complaint.id} '{complaint.title}' was returned for reassignment "
                     "to another field worker."
                 ),
                 notification_type=Notification.TYPE_STATUS_UPDATE,
@@ -175,8 +175,8 @@ class FieldWorkerService:
                     user_id=assignment.assigned_by_id,
                     title="Assignment rejected — reassignment needed",
                     message=(
-                        f"The field worker rejected the task for '{complaint.title}'. "
-                        "Please assign it to another field worker."
+                        f"The field worker rejected the task for complaint #{complaint.id} "
+                        f"'{complaint.title}'. Please assign it to another field worker."
                     ),
                     notification_type=Notification.TYPE_STATUS_UPDATE,
                     related_complaint_id=complaint.id,
@@ -233,8 +233,18 @@ class FieldWorkerService:
                 user_id=assignment.assigned_by_id,
                 title="Repair marked complete — verification needed",
                 message=(
-                    f"The field worker has marked '{complaint.title}' as complete. "
-                    "Please review and verify before resolving the complaint."
+                    f"The field worker has marked complaint #{complaint.id} '{complaint.title}' as "
+                    "complete. Please review and verify before resolving the complaint."
+                ),
+                notification_type=Notification.TYPE_STATUS_UPDATE,
+                related_complaint_id=complaint.id,
+            )
+            self.notifications.send_notification(
+                user_id=complaint.citizen_id,
+                title="Repair work completed",
+                message=(
+                    f"Repair work for your complaint #{complaint.id} '{complaint.title}' has been "
+                    "completed by the field worker and is awaiting administrator verification."
                 ),
                 notification_type=Notification.TYPE_STATUS_UPDATE,
                 related_complaint_id=complaint.id,

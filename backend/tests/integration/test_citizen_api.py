@@ -70,6 +70,47 @@ class TestCitizenEndpoints:
         assert payload["data"]["complaint"]["city_id"] == city_id
         assert payload["data"]["complaint"]["pincode"] is None
 
+    def test_submit_complaint_notifies_citizen_with_complaint_id_and_status(self, client):
+        """TPS-91 AC1/AC3/AC5: submitting a complaint immediately notifies the
+        citizen who filed it, and the notification names the complaint's ID."""
+        auth_data = self._register_and_login(client, "notify-on-submit@example.com")
+        token = auth_data["access_token"]
+        city_id = auth_data["user"]["city_id"]
+
+        response = client.post(
+            "/api/v1/citizen/complaints",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "title": "Pothole outside community hall",
+                "description": "Wide pothole forming after last week's rain.",
+                "category": "pothole",
+                "city_id": city_id,
+                "image_url": "/api/v1/citizen/complaints/media/test-photo.jpg",
+            },
+        )
+        assert response.status_code == 201
+        complaint_id = response.get_json()["data"]["complaint"]["id"]
+
+        notifs_response = client.get(
+            "/api/v1/notifications/", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert notifs_response.status_code == 200
+        notifs = notifs_response.get_json()["data"]["items"]
+        submitted_notif = next(
+            (n for n in notifs if n["notification_type"] == "complaint_submitted"), None
+        )
+        assert submitted_notif is not None
+        assert submitted_notif["related_complaint_id"] == complaint_id
+        assert f"#{complaint_id}" in submitted_notif["message"]
+
+        # A second, unrelated citizen must never see this notification (AC5).
+        other_auth = self._register_and_login(client, "notify-on-submit-other@example.com")
+        other_notifs = client.get(
+            "/api/v1/notifications/",
+            headers={"Authorization": f"Bearer {other_auth['access_token']}"},
+        ).get_json()["data"]["items"]
+        assert all(n["related_complaint_id"] != complaint_id for n in other_notifs)
+
     def test_upload_photo_endpoint_stores_image_and_returns_url(self, app, client):
         with app.app_context():
             auth_data = self._register_and_login(client, "photo-upload-citizen@example.com")
