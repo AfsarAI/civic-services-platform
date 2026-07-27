@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - system-admin-only municipal administrator management endpoints
 - JWT and `/auth/me` metadata for `admin_level`, `city_id`, and `city_name`
 - Full field worker portal: `FieldWorkerDashboard.vue` (stats + filterable/paginated assignment list) and `AssignmentDetails.vue` (accept, start progress, reject, complete with optional photo evidence), matching citizen/administrator dashboard look and feel
-- `complaint_assignments.evidence_url` column plus `POST /fieldworker/assignments/media` upload and serve endpoints for repair-completion photo evidence (TPS-89/TPS-90)
+- `complaint_assignments.evidence_url` column plus `POST /fieldworker/assignments/media` upload and serve endpoints for repair-completion photo evidence (TPS-89)
 - City-scoped administrator hierarchy: municipal administrators now only see/act on complaints and field workers within their own city; system administrators remain unscoped
 - Field worker management endpoints (`POST/GET/PUT/DELETE /admin/field-workers[/<id>]`), restricted to municipal administrators — system administrators cannot create field workers
 - Real (non-placeholder) municipal-administrator dashboard summary (city-scoped complaint/worker counts) and administrator complaint table with working status/category filters and an inline assign-to-field-worker action
@@ -44,6 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Feedback UI upgrade (TPS-77): `ComplaintDetails.vue` feedback form replaced with a clickable 1-5 star rating widget, an explicit success/error message, and a "Submitted on" timestamp on the confirmation card; `TrackComplaint.vue`'s dead-end "Add feedback" stub (which just displayed a static message with no way to actually submit) now links directly to the working feedback form. New standalone test file `test_citizen_feedback_api.py` covering all 6 acceptance criteria end to end
 - Citizen status-change notifications (TPS-91) completed end to end: notification now sent on complaint submission (previously missing entirely) and on repair completion (previously only the administrator was notified); every citizen/worker/admin-facing notification message now embeds the Complaint ID (`#<id>`), and both the navbar bell dropdown and the `/notifications` page render an explicit "Complaint #<id>" badge
 - Reports (TPS-85/96/97/98) opened up to municipal administrators, scoped to their own city, instead of system-administrator-only; added `date_from`/`date_to` and `status` query-param filters across all report endpoints; added new "Complaints by Priority" and "Complaints by Location" breakdowns; `Reports.vue` gained a filter bar and a client-side "Export CSV" button. New `test_reports_api.py` test file (previously no report test coverage existed)
+
+- Field worker dashboard (TPS-86) gained search (by title/street/complaint ID), a priority filter alongside the existing status filter, and sort controls (by assignment date or priority, ascending/descending); the assignment table now also shows Reported Date, Location, Road/Street Name, and Expected Completion Date, all previously missing from the UI despite the backend already having the data
+- New Work History page (TPS-90) at `/fieldworker/history`: a dedicated, searchable/filterable/sortable view of all past and current assignments (separate from the action-oriented Dashboard), showing Completion Date and Repair Remarks columns; reuses the existing assignments API with no backend changes required
 
 ### Changed
 - `flask seed` now creates a default System Administrator profile

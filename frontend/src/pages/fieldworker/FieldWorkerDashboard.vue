@@ -73,18 +73,48 @@
 
     <!-- Assigned Tasks -->
     <div class="card space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h3 class="text-base font-bold text-slate-900 tracking-tight">
-          Assigned Complaints
-        </h3>
-        <select v-model="statusFilter" class="form-input w-full sm:w-44 text-sm" @change="onFilterChange">
-          <option value="">All Statuses</option>
-          <option value="assigned">Assigned</option>
-          <option value="accepted">Accepted</option>
-          <option value="in_progress">In Progress</option>
-          <option value="completed">Completed</option>
-          <option value="rejected">Rejected</option>
-        </select>
+      <div class="flex flex-col gap-3">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h3 class="text-base font-bold text-slate-900 tracking-tight">
+            Assigned Complaints
+          </h3>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search by title, street, or complaint ID..."
+            class="form-input w-full sm:w-64 text-sm"
+            @input="onSearchInput"
+          />
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <select v-model="statusFilter" class="form-input w-full sm:w-40 text-sm" @change="onFilterChange">
+            <option value="">All Statuses</option>
+            <option value="assigned">Assigned</option>
+            <option value="accepted">Accepted</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <select v-model="priorityFilter" class="form-input w-full sm:w-36 text-sm" @change="onFilterChange">
+            <option value="">All Priorities</option>
+            <option value="urgent">Urgent</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <select v-model="sortBy" class="form-input w-full sm:w-44 text-sm" @change="onFilterChange">
+            <option value="assigned_at">Sort: Assignment Date</option>
+            <option value="priority">Sort: Priority</option>
+          </select>
+          <button
+            type="button"
+            class="btn-secondary px-3 py-2 text-xs"
+            :title="sortOrder === 'desc' ? 'Descending' : 'Ascending'"
+            @click="toggleSortOrder"
+          >
+            {{ sortOrder === 'desc' ? '↓ Desc' : '↑ Asc' }}
+          </button>
+        </div>
       </div>
 
       <!-- Loading State -->
@@ -103,7 +133,7 @@
         </div>
         <p class="text-slate-500 text-sm font-medium">No assignments found</p>
         <p class="text-slate-400 text-xs mt-1">
-          {{ statusFilter ? 'Try a different status filter.' : 'New tasks assigned to you will appear here.' }}
+          {{ (statusFilter || priorityFilter || searchQuery) ? 'Try different search or filter criteria.' : 'New tasks assigned to you will appear here.' }}
         </p>
       </div>
 
@@ -113,9 +143,11 @@
           <thead>
             <tr class="text-slate-400 text-xs font-semibold uppercase tracking-wider">
               <th class="py-3 px-4">Complaint</th>
+              <th class="py-3 px-4">Location</th>
               <th class="py-3 px-4">Priority</th>
               <th class="py-3 px-4">Status</th>
-              <th class="py-3 px-4">Assigned</th>
+              <th class="py-3 px-4">Reported / Assigned</th>
+              <th class="py-3 px-4">Expected Completion</th>
               <th class="py-3 px-4 text-right">Action</th>
             </tr>
           </thead>
@@ -128,6 +160,10 @@
                   Complaint {{ a.complaint?.status?.replaceAll('_', ' ') }} by admin — no action needed
                 </span>
               </td>
+              <td class="py-3 px-4 text-xs text-slate-600">
+                <span class="block font-medium text-slate-800">{{ a.complaint?.city_name || '—' }}</span>
+                <span class="block text-slate-400 mt-0.5">{{ a.complaint?.address || 'No street name provided' }}</span>
+              </td>
               <td class="py-3 px-4 text-xs">
                 <span :class="priorityClass(a.complaint?.priority)">{{ a.complaint?.priority || '-' }}</span>
               </td>
@@ -135,7 +171,11 @@
                 <span :class="statusBadgeClass(a.status)">{{ a.status?.replaceAll('_', ' ') }}</span>
               </td>
               <td class="py-3 px-4 text-xs text-slate-500">
-                {{ formatDate(a.assigned_at) }}
+                <span class="block">Reported: {{ formatDate(a.complaint?.created_at) }}</span>
+                <span class="block mt-0.5 text-slate-400">Assigned: {{ formatDate(a.assigned_at) }}</span>
+              </td>
+              <td class="py-3 px-4 text-xs text-slate-500">
+                {{ a.expected_completion_at ? formatDate(a.expected_completion_at) : '—' }}
               </td>
               <td class="py-3 px-4 text-right">
                 <RouterLink
@@ -200,7 +240,12 @@ const stats = ref({
 
 const assignments = ref([])
 const statusFilter = ref('')
+const priorityFilter = ref('')
+const searchQuery = ref('')
+const sortBy = ref('assigned_at')
+const sortOrder = ref('desc')
 const pagination = ref({ page: 1, per_page: 10, total: 0, pages: 0 })
+let searchDebounceTimer = null
 
 const statsData = computed(() => [
   {
@@ -260,8 +305,15 @@ async function fetchAssignments(page = 1) {
   loadingList.value = true
   error.value = null
   try {
-    const params = { page, per_page: pagination.value.per_page }
+    const params = {
+      page,
+      per_page: pagination.value.per_page,
+      sort_by: sortBy.value,
+      sort_order: sortOrder.value,
+    }
     if (statusFilter.value) params.status = statusFilter.value
+    if (priorityFilter.value) params.priority = priorityFilter.value
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
 
     const res = await fieldWorkerService.getAssignments(params)
     if (res?.success && res?.data) {
@@ -278,6 +330,18 @@ async function fetchAssignments(page = 1) {
 }
 
 function onFilterChange() {
+  fetchAssignments(1)
+}
+
+function onSearchInput() {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    fetchAssignments(1)
+  }, 350)
+}
+
+function toggleSortOrder() {
+  sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
   fetchAssignments(1)
 }
 

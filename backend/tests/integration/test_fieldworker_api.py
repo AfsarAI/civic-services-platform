@@ -274,3 +274,126 @@ class TestFieldWorkerEndpoints:
         data = response.get_json()["data"]
         assert data["total_assignments"] >= 1
         assert "by_status" in data
+
+    @classmethod
+    def _create_assignment_with(
+        cls, app, client, worker_id: int, *, title: str, priority: str, address: str,
+    ) -> tuple[int, int]:
+        """Create a complaint with custom title/priority/address and assign it."""
+        citizen_email = f"citizen-{worker_id}-{abs(hash(title))}@example.com"
+        citizen_auth = cls._register_and_login_citizen(client, citizen_email)
+        citizen_token = citizen_auth["access_token"]
+
+        complaint_response = client.post(
+            "/api/v1/citizen/complaints",
+            headers={"Authorization": f"Bearer {citizen_token}"},
+            json={
+                "title": title,
+                "description": "Sufficiently long description for validation purposes.",
+                "category": "pothole",
+                "priority": priority,
+                "address": address,
+                "city_id": citizen_auth["user"]["city_id"],
+                "image_url": "/api/v1/citizen/complaints/media/test-photo.jpg",
+            },
+        )
+        assert complaint_response.status_code == 201
+        complaint_id = complaint_response.get_json()["data"]["complaint"]["id"]
+
+        with app.app_context():
+            citizen = User.query.filter_by(email=citizen_email).first()
+            assignment = ComplaintAssignment(
+                complaint_id=complaint_id,
+                worker_id=worker_id,
+                assigned_by_id=citizen.id,
+                status=ComplaintAssignment.STATUS_ASSIGNED,
+            )
+            complaint = Complaint.query.get(complaint_id)
+            complaint.status = Complaint.STATUS_ASSIGNED
+            _db.session.add(assignment)
+            _db.session.commit()
+            return assignment.id, complaint_id
+
+    def test_list_supports_search_filter_and_sort(self, app, client):
+        """TPS-86 AC3/AC4/AC5: field workers can search, filter by priority,
+        and sort their assigned complaints."""
+        worker_id = self._create_field_worker(app, "fw-search@example.com")
+        worker_token = self._login(client, "fw-search@example.com")
+
+        self._create_assignment_with(
+            app, client, worker_id,
+            title="Deep pothole on MG Road", priority="low", address="MG Road",
+        )
+        self._create_assignment_with(
+            app, client, worker_id,
+            title="Broken drainage near market", priority="urgent", address="Market Street",
+        )
+        self._create_assignment_with(
+            app, client, worker_id,
+            title="Cracked pavement by school", priority="high", address="School Lane",
+        )
+
+        headers = {"Authorization": f"Bearer {worker_token}"}
+
+        # Search by title substring.
+        search_response = client.get(
+            "/api/v1/fieldworker/assignments",
+            headers=headers,
+            query_string={"search": "drainage"},
+        )
+        assert search_response.status_code == 200
+        search_items = search_response.get_json()["data"]["items"]
+        assert len(search_items) == 1
+        assert "drainage" in search_items[0]["complaint"]["title"].lower()
+
+        # Search by street/address substring.
+        addr_response = client.get(
+            "/api/v1/fieldworker/assignments",
+            headers=headers,
+            query_string={"search": "School Lane"},
+        )
+        assert addr_response.status_code == 200
+        assert len(addr_response.get_json()["data"]["items"]) == 1
+
+        # Filter by priority.
+        priority_response = client.get(
+            "/api/v1/fieldworker/assignments",
+            headers=headers,
+            query_string={"priority": "urgent"},
+        )
+        assert priority_response.status_code == 200
+        priority_items = priority_response.get_json()["data"]["items"]
+        assert len(priority_items) == 1
+        assert priority_items[0]["complaint"]["priority"] == "urgent"
+
+        # Sort by priority descending (urgent first).
+        sorted_response = client.get(
+            "/api/v1/fieldworker/assignments",
+            headers=headers,
+            query_string={"sort_by": "priority", "sort_order": "desc", "per_page": 10},
+        )
+        assert sorted_response.status_code == 200
+        sorted_items = sorted_response.get_json()["data"]["items"]
+        priorities = [item["complaint"]["priority"] for item in sorted_items]
+        assert priorities == ["urgent", "high", "low"]
+
+        # Sort by priority ascending (low first).
+        sorted_asc_response = client.get(
+            "/api/v1/fieldworker/assignments",
+            headers=headers,
+            query_string={"sort_by": "priority", "sort_order": "asc", "per_page": 10},
+        )
+        assert sorted_asc_response.status_code == 200
+        priorities_asc = [item["complaint"]["priority"] for item in sorted_asc_response.get_json()["data"]["items"]]
+        assert priorities_asc == ["low", "high", "urgent"]
+
+        # Invalid priority/sort_by/sort_order all return 400.
+        assert client.get(
+            "/api/v1/fieldworker/assignments", headers=headers, query_string={"priority": "critical"}
+        ).status_code == 400
+        assert client.get(
+            "/api/v1/fieldworker/assignments", headers=headers, query_string={"sort_by": "title"}
+        ).status_code == 400
+        assert client.get(
+            "/api/v1/fieldworker/assignments", headers=headers, query_string={"sort_order": "sideways"}
+        ).status_code == 400

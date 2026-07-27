@@ -67,15 +67,22 @@ class FieldWorkerAssignmentListResource(Resource):
     def get(self):
         """List all assignments for the authenticated field worker (TPS-86).
 
-        Query params: page, per_page, status.
+        Query params: page, per_page, status, priority, search, sort_by
+        (``assigned_at`` default or ``priority``), sort_order (``asc``/``desc``).
         """
         worker_id = int(get_jwt_identity())
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 20, type=int)
         status = request.args.get("status")
+        priority = request.args.get("priority")
+        search = request.args.get("search")
+        sort_by = request.args.get("sort_by", "assigned_at")
+        sort_order = request.args.get("sort_order", "desc")
 
         try:
-            result = _svc.get_assignments(worker_id, page, per_page, status)
+            result = _svc.get_assignments(
+                worker_id, page, per_page, status, priority, search, sort_by, sort_order
+            )
             return paginated_response(
                 result["items"], result["total"],
                 result["page"], result["per_page"],
