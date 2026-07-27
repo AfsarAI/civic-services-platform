@@ -4,12 +4,17 @@ Field Worker service — business logic for field-worker-facing operations.
 
 from datetime import datetime, timezone
 
+from sqlalchemy import case, or_
+
 from app.api.notifications.service import NotificationService
 from app.extensions import db
 from app.models.complaint import Complaint
 from app.models.complaint_assignment import ComplaintAssignment
 from app.models.notification import Notification
 from app.services.system_settings_service import SystemSettingsService
+
+# Ranks used to sort assignments by their complaint's priority (TPS-86 AC5).
+_PRIORITY_RANK = {"low": 1, "medium": 2, "high": 3, "urgent": 4}
 
 
 class FieldWorkerService:
@@ -26,6 +31,10 @@ class FieldWorkerService:
         page: int = 1,
         per_page: int = 20,
         status: str = None,
+        priority: str = None,
+        search: str = None,
+        sort_by: str = "assigned_at",
+        sort_order: str = "desc",
     ) -> dict:
         """Return paginated assignments for this field worker.
 
@@ -33,7 +42,12 @@ class FieldWorkerService:
             worker_id: ID of the authenticated field worker.
             page: 1-based page number.
             per_page: Page size (capped at 100).
-            status: Optional status filter.
+            status: Optional assignment status filter.
+            priority: Optional complaint priority filter (low/medium/high/urgent).
+            search: Optional free-text search across complaint title, address,
+                and complaint ID (TPS-86 AC3).
+            sort_by: ``assigned_at`` (default) or ``priority`` (TPS-86 AC5).
+            sort_order: ``asc`` or ``desc`` (default).
         """
         per_page = min(per_page, 100)
         valid_statuses = [
@@ -43,14 +57,49 @@ class FieldWorkerService:
             ComplaintAssignment.STATUS_COMPLETED,
             ComplaintAssignment.STATUS_REJECTED,
         ]
-        query = ComplaintAssignment.query.filter_by(worker_id=worker_id)
+        query = (
+            ComplaintAssignment.query
+            .filter_by(worker_id=worker_id)
+            .join(Complaint, Complaint.id == ComplaintAssignment.complaint_id)
+        )
 
         if status:
             if status not in valid_statuses:
                 raise ValueError(f"Invalid status '{status}'.")
-            query = query.filter_by(status=status)
+            query = query.filter(ComplaintAssignment.status == status)
 
-        query = query.order_by(ComplaintAssignment.assigned_at.desc())
+        if priority:
+            if priority not in _PRIORITY_RANK:
+                raise ValueError(f"Invalid priority '{priority}'.")
+            query = query.filter(Complaint.priority == priority)
+
+        if search:
+            term = search.strip()
+            if term:
+                conditions = [
+                    Complaint.title.ilike(f"%{term}%"),
+                    Complaint.address.ilike(f"%{term}%"),
+                ]
+                if term.isdigit():
+                    conditions.append(Complaint.id == int(term))
+                query = query.filter(or_(*conditions))
+
+        if sort_order not in ("asc", "desc"):
+            raise ValueError(f"Invalid sort_order '{sort_order}'.")
+
+        if sort_by == "priority":
+            rank_expr = case(
+                {value: rank for value, rank in _PRIORITY_RANK.items()},
+                value=Complaint.priority,
+                else_=0,
+            )
+            order_column = rank_expr
+        elif sort_by == "assigned_at":
+            order_column = ComplaintAssignment.assigned_at
+        else:
+            raise ValueError(f"Invalid sort_by '{sort_by}'.")
+
+        query = query.order_by(order_column.asc() if sort_order == "asc" else order_column.desc())
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
         return {

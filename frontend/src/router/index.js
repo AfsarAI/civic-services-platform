@@ -154,6 +154,12 @@ const router = createRouter({
               meta: { requiresAuth: true, role: 'field_worker' },
             },
             {
+              path: 'history',
+              name: 'fieldworker-history',
+              component: () => import('@/pages/fieldworker/WorkHistory.vue'),
+              meta: { requiresAuth: true, role: 'field_worker' },
+            },
+            {
               path: 'assignments/:id',
               name: 'fieldworker-assignment-details',
               component: () => import('@/pages/fieldworker/AssignmentDetails.vue'),
