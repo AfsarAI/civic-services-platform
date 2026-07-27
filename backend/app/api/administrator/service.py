@@ -356,18 +356,18 @@ class AdminService:
         status_messages = {
             Complaint.STATUS_RESOLVED: (
                 "Complaint resolved",
-                f"Your complaint '{complaint.title}' has been marked as resolved. "
+                f"Your complaint #{complaint.id} '{complaint.title}' has been marked as resolved. "
                 "Please share your feedback.",
                 Notification.TYPE_COMPLAINT_RESOLVED,
             ),
             Complaint.STATUS_CLOSED: (
                 "Complaint closed",
-                f"Your complaint '{complaint.title}' has been verified and closed.",
+                f"Your complaint #{complaint.id} '{complaint.title}' has been verified and closed.",
                 Notification.TYPE_STATUS_UPDATE,
             ),
             Complaint.STATUS_REJECTED: (
                 "Complaint rejected",
-                f"Your complaint '{complaint.title}' was rejected by the administrator.",
+                f"Your complaint #{complaint.id} '{complaint.title}' was rejected by the administrator.",
                 Notification.TYPE_STATUS_UPDATE,
             ),
         }
@@ -405,12 +405,12 @@ class AdminService:
         status_messages = {
             Complaint.STATUS_REJECTED: (
                 "Complaint rejected — stop work",
-                f"The complaint '{complaint.title}' was rejected by an administrator. "
+                f"The complaint #{complaint.id} '{complaint.title}' was rejected by an administrator. "
                 "No further action is needed on this task.",
             ),
             Complaint.STATUS_CLOSED: (
                 "Complaint closed",
-                f"The complaint '{complaint.title}' has been verified and closed. "
+                f"The complaint #{complaint.id} '{complaint.title}' has been verified and closed. "
                 "Thank you for completing this repair.",
             ),
         }
@@ -478,14 +478,14 @@ class AdminService:
             self.notifications.send_notification(
                 user_id=worker.id,
                 title="New task assigned",
-                message=f"You have been assigned a new complaint: '{complaint.title}'.",
+                message=f"You have been assigned a new complaint #{complaint.id}: '{complaint.title}'.",
                 notification_type=Notification.TYPE_COMPLAINT_ASSIGNED,
                 related_complaint_id=complaint.id,
             )
             self.notifications.send_notification(
                 user_id=complaint.citizen_id,
                 title="Complaint assigned",
-                message=f"Your complaint '{complaint.title}' has been assigned to a field worker.",
+                message=f"Your complaint #{complaint.id} '{complaint.title}' has been assigned to a field worker.",
                 notification_type=Notification.TYPE_STATUS_UPDATE,
                 related_complaint_id=complaint.id,
             )

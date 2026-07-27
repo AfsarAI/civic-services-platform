@@ -37,7 +37,7 @@ class ComplaintCreateSchema(Schema):
     )
     priority = fields.Str(
         validate=validate.OneOf(["low", "medium", "high", "urgent"]),
-        load_default="medium",
+        required=False,
     )
     latitude = fields.Float(allow_none=True)
     longitude = fields.Float(allow_none=True)

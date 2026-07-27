@@ -120,7 +120,7 @@ const router = createRouter({
               path: 'reports',
               name: 'admin-reports',
               component: () => import('@/pages/administrator/Reports.vue'),
-              meta: { requiresAuth: true, role: 'administrator', adminLevel: 'system' },
+              meta: { requiresAuth: true, role: 'administrator' },
             },
             {
               path: 'settings',

@@ -47,7 +47,12 @@
             <div class="min-w-0">
               <p class="text-sm font-semibold text-slate-900">{{ n.title }}</p>
               <p class="mt-1 text-sm text-slate-600">{{ n.message }}</p>
-              <p class="mt-1 text-xs text-slate-400">{{ formatDate(n.created_at) }}</p>
+              <div class="mt-1 flex items-center gap-2">
+                <span v-if="n.related_complaint_id" class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+                  Complaint #{{ n.related_complaint_id }}
+                </span>
+                <p class="text-xs text-slate-400">{{ formatDate(n.created_at) }}</p>
+              </div>
             </div>
             <span v-if="!n.is_read" class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary-500"></span>
           </button>

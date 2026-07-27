@@ -76,7 +76,12 @@
                   <span v-if="!n.is_read" class="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-primary-500"></span>
                 </div>
                 <p class="mt-1 text-xs text-gray-500 line-clamp-2">{{ n.message }}</p>
-                <p class="mt-1 text-[11px] text-gray-400">{{ formatDate(n.created_at) }}</p>
+                <div class="mt-1 flex items-center gap-2">
+                  <span v-if="n.related_complaint_id" class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                    Complaint #{{ n.related_complaint_id }}
+                  </span>
+                  <p class="text-[11px] text-gray-400">{{ formatDate(n.created_at) }}</p>
+                </div>
               </button>
             </div>
 
