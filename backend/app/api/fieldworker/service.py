@@ -230,6 +230,20 @@ class FieldWorkerService:
                     notification_type=Notification.TYPE_STATUS_UPDATE,
                     related_complaint_id=complaint.id,
                 )
+        elif new_status == "in_progress" and complaint and SystemSettingsService.notifications_enabled():
+            message = (
+                f"Repair progress has been updated on your complaint #{complaint.id} "
+                f"'{complaint.title}'."
+            )
+            if assignment.notes:
+                message += f" Latest update: {assignment.notes}"
+            self.notifications.send_notification(
+                user_id=complaint.citizen_id,
+                title="Repair progress updated",
+                message=message,
+                notification_type=Notification.TYPE_STATUS_UPDATE,
+                related_complaint_id=complaint.id,
+            )
 
         return {"assignment": self._serialize(assignment, full=True)}
 
