@@ -7,10 +7,26 @@
       administrator.
     </p>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6">
       <div v-for="stat in stats" :key="stat.label" class="card text-center">
-        <p class="text-3xl font-bold" :class="stat.color">{{ stat.value }}</p>
-        <p class="text-sm text-gray-500 mt-1">{{ stat.label }}</p>
+        <p class="text-2xl font-bold" :class="stat.color">{{ loadingDashboard ? '…' : stat.value }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ stat.label }}</p>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <h2 class="font-semibold text-gray-900 mb-4">Complaints by Status</h2>
+      <p v-if="!statusBreakdown.length" class="text-gray-400 text-sm italic text-center py-8">No data yet.</p>
+      <div v-else class="space-y-3">
+        <div v-for="row in statusBreakdown" :key="row.status">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-medium capitalize text-gray-700">{{ row.status.replaceAll('_', ' ') }}</span>
+            <span class="text-gray-500">{{ row.count }} ({{ row.percentage }}%)</span>
+          </div>
+          <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div class="h-full rounded-full bg-primary-500" :style="{ width: `${row.percentage}%` }"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -169,7 +185,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import complaintService from '@/services/complaint.service'
@@ -190,22 +206,53 @@ const assignWorkerId = ref('')
 const expectedCompletionAt = ref('')
 const isAssigning = ref(false)
 
+const dashboard = ref({})
+const loadingDashboard = ref(true)
+let pollInterval = null
+
 const stats = computed(() => {
+  const d = dashboard.value
+  const byStatus = d.by_status || {}
+  const avgResolution = d.avg_resolution_hours != null ? `${d.avg_resolution_hours}h` : '—'
+
+  const complaintStats = [
+    { label: 'Total Complaints', value: d.total_complaints ?? 0, color: 'text-gray-800' },
+    { label: 'Open', value: d.open_complaints ?? 0, color: 'text-yellow-600' },
+    { label: 'Assigned', value: byStatus.assigned ?? 0, color: 'text-sky-600' },
+    { label: 'In Progress', value: byStatus.in_progress ?? 0, color: 'text-sky-600' },
+    { label: 'Resolved', value: byStatus.resolved ?? 0, color: 'text-green-600' },
+    { label: 'Closed', value: byStatus.closed ?? 0, color: 'text-green-600' },
+    { label: 'High Priority', value: d.high_priority_complaints ?? 0, color: 'text-red-600' },
+    { label: 'Avg. Resolution', value: avgResolution, color: 'text-gray-800' },
+    { label: 'Active Field Workers', value: d.active_field_workers ?? 0, color: 'text-blue-600' },
+  ]
+
   if (authStore.isSystemAdmin) {
     return [
-      { label: 'Cities', value: 0, color: 'text-gray-800' },
-      { label: 'Municipal Admins', value: 0, color: 'text-blue-600' },
-      { label: 'Open Complaints', value: pagination.value.total, color: 'text-yellow-600' },
-      { label: 'Resolved', value: 0, color: 'text-green-600' },
+      ...complaintStats,
+      { label: 'Cities', value: d.total_cities ?? 0, color: 'text-gray-800' },
+      { label: 'Municipal Admins', value: d.municipal_admins ?? 0, color: 'text-blue-600' },
     ]
   }
 
-  return [
-    { label: 'Assigned City', value: authStore.cityName || '-', color: 'text-gray-800' },
-    { label: 'Access Scope', value: 'City', color: 'text-blue-600' },
-    { label: 'Total Complaints', value: pagination.value.total, color: 'text-yellow-600' },
-    { label: 'Account Status', value: 'Active', color: 'text-green-600' },
-  ]
+  return complaintStats
+})
+
+const statusBreakdown = computed(() => {
+  const byStatus = dashboard.value.by_status || {}
+  const total = dashboard.value.total_complaints || 0
+  const order = ['pending', 'assigned', 'in_progress', 'resolved', 'closed', 'rejected', 'cancelled']
+
+  return order
+    .filter((status) => status in byStatus)
+    .map((status) => {
+      const count = byStatus[status] || 0
+      return {
+        status,
+        count,
+        percentage: total ? Math.round((count / total) * 1000) / 10 : 0,
+      }
+    })
 })
 
 async function loadComplaints(page = 1) {
@@ -310,8 +357,26 @@ function statusLabel(complaint) {
   return complaint.status?.replaceAll('_', ' ')
 }
 
+async function loadDashboard() {
+  loadingDashboard.value = true
+  try {
+    const response = await adminService.getDashboardSummary()
+    dashboard.value = response?.data || {}
+  } catch (err) {
+    error.value = err?.response?.data?.message || 'Could not load dashboard summary.'
+  } finally {
+    loadingDashboard.value = false
+  }
+}
+
 onMounted(() => {
+  loadDashboard()
   loadComplaints(1)
+  pollInterval = window.setInterval(loadDashboard, 30000)
+})
+
+onBeforeUnmount(() => {
+  window.clearInterval(pollInterval)
 })
 </script>
 
