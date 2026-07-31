@@ -182,6 +182,8 @@ class AdminService:
             complaint.status = new_status
             if new_status == Complaint.STATUS_RESOLVED and not complaint.resolved_at:
                 complaint.resolved_at = datetime.now(timezone.utc)
+            if new_status == Complaint.STATUS_CLOSED and not complaint.closed_at:
+                complaint.closed_at = datetime.now(timezone.utc)
             status_changed = True
 
         # Update priority level to adjust complaint triage and urgency.
@@ -353,6 +355,9 @@ class AdminService:
         if not enabled:
             return
 
+        closed_at_display = (
+            complaint.closed_at.strftime("%B %d, %Y") if complaint.closed_at else "recently"
+        )
         status_messages = {
             Complaint.STATUS_RESOLVED: (
                 "Complaint resolved",
@@ -362,7 +367,8 @@ class AdminService:
             ),
             Complaint.STATUS_CLOSED: (
                 "Complaint closed",
-                f"Your complaint #{complaint.id} '{complaint.title}' has been verified and closed.",
+                f"Your complaint #{complaint.id} '{complaint.title}' was officially closed on "
+                f"{closed_at_display}. Please share your feedback on the repair.",
                 Notification.TYPE_STATUS_UPDATE,
             ),
             Complaint.STATUS_REJECTED: (
@@ -984,6 +990,9 @@ class AdminService:
             "citizen_id": complaint.citizen_id,
             "resolved_at": (
                 complaint.resolved_at.isoformat() if complaint.resolved_at else None
+            ),
+            "closed_at": (
+                complaint.closed_at.isoformat() if complaint.closed_at else None
             ),
             "created_at": complaint.created_at.isoformat(),
             "updated_at": complaint.updated_at.isoformat(),

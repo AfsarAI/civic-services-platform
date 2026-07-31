@@ -76,7 +76,12 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import notificationService from '@/services/notification.service'
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 const notifications = ref([])
 const loading = ref(true)
@@ -105,6 +110,9 @@ async function handleNotifClick(notification) {
     } catch {
       // Ignore — non-critical UI action.
     }
+  }
+  if (notification.related_complaint_id && authStore.userRole === 'citizen') {
+    router.push({ name: 'complaint-details', params: { id: notification.related_complaint_id } })
   }
 }
 
