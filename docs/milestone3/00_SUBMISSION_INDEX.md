@@ -28,7 +28,7 @@
 cd backend
 source .venv/bin/activate
 pytest tests/ -v
-# Expected: 130 passed in 22.29s
+# Expected: 182 passed in ~39s
 ```
 
 ---

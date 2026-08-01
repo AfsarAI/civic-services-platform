@@ -244,6 +244,7 @@
           }
         },
         "summary": "Get dashboard data for the current administrator subtype",
+        "description": "Query Parameters:\n    date_from (optional): Filter from date in YYYY-MM-DD format\n    date_to (optional): Filter to date in YYYY-MM-DD format",
         "operationId": "get_admin_dashboard_resource",
         "tags": [
           "admin"
@@ -251,6 +252,22 @@
       }
     },
     "/admin/field-workers": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Field workers",
+            "schema": {
+              "$ref": "#/definitions/AdminEnvelope"
+            }
+          }
+        },
+        "summary": "List field workers for the assignment dropdown and management page",
+        "description": "Municipal administrators only see field workers in their own city.\nQuery param ``is_active`` (true/false) filters by status; omit it to\nsee both active and inactive workers.",
+        "operationId": "get_admin_field_worker_list_resource",
+        "tags": [
+          "admin"
+        ]
+      },
       "post": {
         "responses": {
           "422": {
@@ -293,22 +310,6 @@
         "tags": [
           "admin"
         ]
-      },
-      "get": {
-        "responses": {
-          "200": {
-            "description": "Field workers",
-            "schema": {
-              "$ref": "#/definitions/AdminEnvelope"
-            }
-          }
-        },
-        "summary": "List field workers for the assignment dropdown and management page",
-        "description": "Municipal administrators only see field workers in their own city.\nQuery param ``is_active`` (true/false) filters by status; omit it to\nsee both active and inactive workers.",
-        "operationId": "get_admin_field_worker_list_resource",
-        "tags": [
-          "admin"
-        ]
       }
     },
     "/admin/field-workers/{user_id}": {
@@ -321,27 +322,6 @@
           "type": "integer"
         }
       ],
-      "delete": {
-        "responses": {
-          "404": {
-            "description": "Not found",
-            "schema": {
-              "$ref": "#/definitions/AdminEnvelope"
-            }
-          },
-          "200": {
-            "description": "Field worker deactivated",
-            "schema": {
-              "$ref": "#/definitions/AdminEnvelope"
-            }
-          }
-        },
-        "summary": "Deactivate a field worker in the acting administrator's city",
-        "operationId": "delete_admin_field_worker_resource",
-        "tags": [
-          "admin"
-        ]
-      },
       "get": {
         "responses": {
           "404": {
@@ -400,9 +380,45 @@
         "tags": [
           "admin"
         ]
+      },
+      "delete": {
+        "responses": {
+          "404": {
+            "description": "Not found",
+            "schema": {
+              "$ref": "#/definitions/AdminEnvelope"
+            }
+          },
+          "200": {
+            "description": "Field worker deactivated",
+            "schema": {
+              "$ref": "#/definitions/AdminEnvelope"
+            }
+          }
+        },
+        "summary": "Deactivate a field worker in the acting administrator's city",
+        "operationId": "delete_admin_field_worker_resource",
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/admin/municipal-administrators": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Paginated municipal administrators",
+            "schema": {
+              "$ref": "#/definitions/AdminEnvelope"
+            }
+          }
+        },
+        "summary": "List municipal administrators",
+        "operationId": "get_municipal_administrator_list_resource",
+        "tags": [
+          "admin"
+        ]
+      },
       "post": {
         "responses": {
           "422": {
@@ -445,21 +461,6 @@
         "tags": [
           "admin"
         ]
-      },
-      "get": {
-        "responses": {
-          "200": {
-            "description": "Paginated municipal administrators",
-            "schema": {
-              "$ref": "#/definitions/AdminEnvelope"
-            }
-          }
-        },
-        "summary": "List municipal administrators",
-        "operationId": "get_municipal_administrator_list_resource",
-        "tags": [
-          "admin"
-        ]
       }
     },
     "/admin/municipal-administrators/{user_id}": {
@@ -472,33 +473,6 @@
           "type": "integer"
         }
       ],
-      "delete": {
-        "responses": {
-          "400": {
-            "description": "Business rule violation",
-            "schema": {
-              "$ref": "#/definitions/AdminEnvelope"
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "schema": {
-              "$ref": "#/definitions/AdminEnvelope"
-            }
-          },
-          "200": {
-            "description": "Municipal administrator deactivated",
-            "schema": {
-              "$ref": "#/definitions/AdminEnvelope"
-            }
-          }
-        },
-        "summary": "Deactivate a municipal administrator",
-        "operationId": "delete_municipal_administrator_resource",
-        "tags": [
-          "admin"
-        ]
-      },
       "get": {
         "responses": {
           "404": {
@@ -559,6 +533,33 @@
             }
           }
         ],
+        "tags": [
+          "admin"
+        ]
+      },
+      "delete": {
+        "responses": {
+          "400": {
+            "description": "Business rule violation",
+            "schema": {
+              "$ref": "#/definitions/AdminEnvelope"
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "schema": {
+              "$ref": "#/definitions/AdminEnvelope"
+            }
+          },
+          "200": {
+            "description": "Municipal administrator deactivated",
+            "schema": {
+              "$ref": "#/definitions/AdminEnvelope"
+            }
+          }
+        },
+        "summary": "Deactivate a municipal administrator",
+        "operationId": "delete_municipal_administrator_resource",
         "tags": [
           "admin"
         ]
@@ -1048,33 +1049,6 @@
           "type": "integer"
         }
       ],
-      "delete": {
-        "responses": {
-          "404": {
-            "description": "Not found",
-            "schema": {
-              "$ref": "#/definitions/CitizenEnvelope"
-            }
-          },
-          "400": {
-            "description": "Cannot cancel \u2014 not pending",
-            "schema": {
-              "$ref": "#/definitions/CitizenEnvelope"
-            }
-          },
-          "200": {
-            "description": "Complaint cancelled",
-            "schema": {
-              "$ref": "#/definitions/CitizenEnvelope"
-            }
-          }
-        },
-        "summary": "Cancel a pending complaint (TPS-75)",
-        "operationId": "delete_citizen_complaint_resource",
-        "tags": [
-          "citizen"
-        ]
-      },
       "get": {
         "responses": {
           "404": {
@@ -1129,6 +1103,33 @@
             }
           }
         ],
+        "tags": [
+          "citizen"
+        ]
+      },
+      "delete": {
+        "responses": {
+          "404": {
+            "description": "Not found",
+            "schema": {
+              "$ref": "#/definitions/CitizenEnvelope"
+            }
+          },
+          "400": {
+            "description": "Cannot cancel \u2014 not pending",
+            "schema": {
+              "$ref": "#/definitions/CitizenEnvelope"
+            }
+          },
+          "200": {
+            "description": "Complaint cancelled",
+            "schema": {
+              "$ref": "#/definitions/CitizenEnvelope"
+            }
+          }
+        },
+        "summary": "Cancel a pending complaint (TPS-75)",
+        "operationId": "delete_citizen_complaint_resource",
         "tags": [
           "citizen"
         ]
@@ -1841,6 +1842,69 @@
         "summary": "Complaint submission trends over time (TPS-98)",
         "description": "Query params: ``period`` \u2014 one of ``daily`` (default), ``weekly``, ``monthly``;\n``date_from``, ``date_to`` (YYYY-MM-DD, overrides the default window); ``status``.",
         "operationId": "get_complaint_trends_report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/reports/export/csv": {
+      "get": {
+        "responses": {
+          "400": {
+            "description": "Invalid filter",
+            "schema": {
+              "$ref": "#/definitions/ReportsEnvelope"
+            }
+          },
+          "200": {
+            "description": "CSV file"
+          }
+        },
+        "summary": "Export the current filtered report data as a CSV file",
+        "description": "Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.",
+        "operationId": "get_export_csv_report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/reports/export/excel": {
+      "get": {
+        "responses": {
+          "400": {
+            "description": "Invalid filter",
+            "schema": {
+              "$ref": "#/definitions/ReportsEnvelope"
+            }
+          },
+          "200": {
+            "description": "Excel file"
+          }
+        },
+        "summary": "Export the current filtered report data as an Excel (",
+        "description": "xlsx) workbook.\n\nQuery params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.",
+        "operationId": "get_export_excel_report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/reports/export/pdf": {
+      "get": {
+        "responses": {
+          "400": {
+            "description": "Invalid filter",
+            "schema": {
+              "$ref": "#/definitions/ReportsEnvelope"
+            }
+          },
+          "200": {
+            "description": "PDF file"
+          }
+        },
+        "summary": "Export the current filtered report data as a PDF document",
+        "description": "Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.",
+        "operationId": "get_export_pdf_report",
         "tags": [
           "reports"
         ]
@@ -2568,5 +2632,5 @@
       "description": "When any error occurs on mask"
     }
   },
-  "host": "localhost"
+  "host": "localhost:5000"
 }
