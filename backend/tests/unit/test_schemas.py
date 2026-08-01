@@ -8,6 +8,8 @@ from app.schemas.user_schema import UserCreateSchema, MunicipalAdminCreateSchema
 from app.schemas.complaint_schema import ComplaintCreateSchema
 from app.schemas.feedback_schema import FeedbackCreateSchema
 from app.schemas.verification_schema import VerificationDecisionSchema
+from app.schemas.assignment_schema import AssignComplaintBodySchema, FieldWorkerProgressSchema
+from app.schemas.system_setting_schema import SystemSettingUpdateSchema
 
 
 class TestUserCreateSchema:
@@ -29,12 +31,18 @@ class TestUserCreateSchema:
     def test_invalid_email_raises(self):
         schema = UserCreateSchema()
         with pytest.raises(ValidationError):
-            schema.load({"username": "u", "email": "not-an-email", "password": "pass", "first_name": "A", "last_name": "B", "role_id": 1})
+            schema.load({
+                "username": "u", "email": "not-an-email", "password": "pass",
+                "first_name": "A", "last_name": "B", "role_id": 1,
+            })
 
     def test_short_password_raises(self):
         schema = UserCreateSchema()
         with pytest.raises(ValidationError):
-            schema.load({"username": "user1", "email": "a@b.com", "password": "short", "first_name": "A", "last_name": "B", "role_id": 1})
+            schema.load({
+                "username": "user1", "email": "a@b.com", "password": "short",
+                "first_name": "A", "last_name": "B", "role_id": 1,
+            })
 
 
 class TestComplaintCreateSchema:
@@ -174,3 +182,82 @@ class TestMunicipalAdminCreateSchema:
                 "pincode": "22",
             })
         assert "pincode" in exc.value.messages
+
+
+class TestAssignComplaintBodySchema:
+    """Unit tests for AssignComplaintBodySchema."""
+
+    def test_valid_data_passes(self):
+        schema = AssignComplaintBodySchema()
+        result = schema.load({"worker_id": 5, "notes": "Please prioritise this."})
+        assert result["worker_id"] == 5
+
+    def test_worker_id_is_required(self):
+        schema = AssignComplaintBodySchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load({"notes": "Missing worker_id."})
+        assert "worker_id" in exc.value.messages
+
+    def test_notes_too_long_raises(self):
+        schema = AssignComplaintBodySchema()
+        with pytest.raises(ValidationError):
+            schema.load({"worker_id": 5, "notes": "x" * 1001})
+
+
+class TestFieldWorkerProgressSchema:
+    """Unit tests for FieldWorkerProgressSchema."""
+
+    def test_valid_in_progress_status_passes(self):
+        schema = FieldWorkerProgressSchema()
+        result = schema.load({"status": "in_progress"})
+        assert result["status"] == "in_progress"
+
+    def test_valid_rejected_status_passes(self):
+        schema = FieldWorkerProgressSchema()
+        result = schema.load({"status": "rejected", "notes": "Cannot access site."})
+        assert result["status"] == "rejected"
+
+    def test_invalid_status_raises(self):
+        schema = FieldWorkerProgressSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load({"status": "completed"})
+        assert "status" in exc.value.messages
+
+    def test_status_is_required(self):
+        schema = FieldWorkerProgressSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load({"notes": "Missing status."})
+        assert "status" in exc.value.messages
+
+
+class TestSystemSettingUpdateSchema:
+    """Unit tests for SystemSettingUpdateSchema."""
+
+    def test_valid_partial_update_passes(self):
+        schema = SystemSettingUpdateSchema()
+        result = schema.load({"maintenance_mode": True})
+        assert result["maintenance_mode"] is True
+
+    def test_valid_full_update_passes(self):
+        schema = SystemSettingUpdateSchema()
+        result = schema.load({
+            "site_name": "My Civic Platform",
+            "support_email": "support@example.com",
+            "maintenance_mode": False,
+            "notify_on_status_change": True,
+            "default_complaint_priority": "high",
+        })
+        assert result["default_complaint_priority"] == "high"
+        assert result["support_email"] == "support@example.com"
+
+    def test_invalid_default_priority_raises(self):
+        schema = SystemSettingUpdateSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load({"default_complaint_priority": "critical"})
+        assert "default_complaint_priority" in exc.value.messages
+
+    def test_invalid_support_email_raises(self):
+        schema = SystemSettingUpdateSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load({"support_email": "not-an-email"})
+        assert "support_email" in exc.value.messages

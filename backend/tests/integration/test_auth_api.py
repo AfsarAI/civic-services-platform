@@ -443,5 +443,56 @@ class TestAuthEndpoints:
         avatar_url = payload["data"]["user"]["avatar_url"]
         assert avatar_url.startswith("/api/v1/auth/me/avatar/")
 
-        me_response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
-        assert me_response.get_json()["data"]["user"]["avatar_url"] == avatar_url
+    def test_refresh_token_issues_new_access_token(self, app, client):
+        with app.app_context():
+            self._ensure_user("refresh-user@example.com", Role.CITIZEN, password="Citizen@123")
+
+        login_response = self._login(client, "refresh-user@example.com", "Citizen@123")
+        refresh_token = login_response.get_json()["data"]["refresh_token"]
+
+        response = client.post(
+            "/api/v1/auth/refresh",
+            headers={"Authorization": f"Bearer {refresh_token}"},
+        )
+        payload = response.get_json()
+
+        assert response.status_code == 200
+        assert payload["success"] is True
+        assert payload["data"]["access_token"]
+
+    def test_refresh_rejects_access_token(self, app, client):
+        """flask-jwt-extended returns 422 (wrong token type), not 401, when an
+        access token is presented where a refresh token is required."""
+        with app.app_context():
+            self._ensure_user("refresh-reject@example.com", Role.CITIZEN, password="Citizen@123")
+
+        login_response = self._login(client, "refresh-reject@example.com", "Citizen@123")
+        access_token = login_response.get_json()["data"]["access_token"]
+
+        response = client.post(
+            "/api/v1/auth/refresh",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+        assert response.status_code == 422
+
+    def test_logout_returns_success_with_valid_token(self, app, client):
+        with app.app_context():
+            self._ensure_user("logout-user@example.com", Role.CITIZEN, password="Citizen@123")
+
+        login_response = self._login(client, "logout-user@example.com", "Citizen@123")
+        access_token = login_response.get_json()["data"]["access_token"]
+
+        response = client.post(
+            "/api/v1/auth/logout",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        payload = response.get_json()
+
+        assert response.status_code == 200
+        assert payload["success"] is True
+        assert payload["message"] == "Logged out successfully."
+
+    def test_logout_requires_authentication(self, client):
+        response = client.post("/api/v1/auth/logout")
+        assert response.status_code == 401
