@@ -148,3 +148,9 @@ flowchart TB
 - Two tabs: "Profile Details" and "Change Password".
 - Profile Details: circular avatar (photo or initials fallback) with camera/gallery upload buttons; editable `first_name`/`last_name`/`phone`; `username` and `email` shown read-only (never editable); administrator level shown as an info chip when applicable.
 - Change Password: current/new/confirm password fields with show/hide toggles, using the same password-strength rules as registration.
+
+## Notification Click Navigation
+
+- Citizen notification with `related_complaint_id` opens `/citizen/complaints/:id`.
+- Administrator notification with `related_complaint_id` opens `/admin/complaints/:id`.
+- Field worker notification prefers `related_assignment_id` and opens `/fieldworker/assignments/:id`; if missing, it falls back to assignment lookup by complaint ID.

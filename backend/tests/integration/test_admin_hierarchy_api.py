@@ -239,3 +239,65 @@ class TestAdminHierarchyEndpoints:
         assert response.status_code == 200
         assert payload["success"] is True
         assert any(city["name"] == "Mumbai" for city in payload["data"]["cities"])
+
+    def test_system_admin_can_list_all_users(self, app, client):
+        with app.app_context():
+            self._ensure_admin("sysadmin-users-list@civicservices.local", AdministratorProfile.SYSTEM)
+
+        token = self._login(client, "sysadmin-users-list@civicservices.local")
+        response = client.get(
+            "/api/v1/admin/users",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        payload = response.get_json()
+
+        assert response.status_code == 200
+        assert payload["success"] is True
+        assert payload["data"]["pagination"]["total"] >= 1
+        assert any(
+            u["email"] == "sysadmin-users-list@civicservices.local"
+            for u in payload["data"]["items"]
+        )
+
+    def test_system_admin_can_update_a_user(self, app, client):
+        with app.app_context():
+            self._ensure_admin("sysadmin-user-update@civicservices.local", AdministratorProfile.SYSTEM)
+            role = Role.query.filter_by(name=Role.CITIZEN).first()
+            target = User.query.filter_by(email="target-user@example.com").first()
+            if not target:
+                target = User(
+                    username="targetuser",
+                    email="target-user@example.com",
+                    first_name="Target",
+                    last_name="User",
+                    role_id=role.id,
+                    is_active=True,
+                )
+                target.set_password("Password123!")
+                db.session.add(target)
+                db.session.commit()
+            target_id = target.id
+
+        token = self._login(client, "sysadmin-user-update@civicservices.local")
+        response = client.put(
+            f"/api/v1/admin/users/{target_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"first_name": "Updated", "is_active": False},
+        )
+        payload = response.get_json()
+
+        assert response.status_code == 200
+        assert payload["data"]["user"]["first_name"] == "Updated"
+        assert payload["data"]["user"]["is_active"] is False
+
+    def test_get_single_user_returns_404_when_missing(self, app, client):
+        with app.app_context():
+            self._ensure_admin("sysadmin-user-404@civicservices.local", AdministratorProfile.SYSTEM)
+
+        token = self._login(client, "sysadmin-user-404@civicservices.local")
+        response = client.get(
+            "/api/v1/admin/users/999999",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert response.status_code == 404

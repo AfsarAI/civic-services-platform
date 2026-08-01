@@ -15,5 +15,6 @@ class NotificationSchema(Schema):
     notification_type = fields.Str(dump_only=True)
     is_read = fields.Bool(dump_only=True)
     related_complaint_id = fields.Int(dump_only=True, allow_none=True)
+    related_assignment_id = fields.Int(dump_only=True, allow_none=True)
     created_at = fields.DateTime(dump_only=True)
     read_at = fields.DateTime(dump_only=True, allow_none=True)

@@ -40,6 +40,22 @@ Obtain a token via `POST /api/v1/auth/login`.
 | Notifications | `/api/v1/notifications` | User notifications |
 | Locations | `/api/v1/locations` | Pincode lookup and city autosuggest |
 
+## Assignment Notification Payload (Field Worker)
+
+When an administrator assigns a complaint, the field worker receives a
+`notification_type="complaint_assigned"` notification immediately. The
+notification message includes:
+- complaint ID
+- assignment date and time
+- complaint location
+- complaint priority
+- expected completion date (or "Not specified")
+- administrator remarks (when provided)
+
+Notification objects now also include `related_assignment_id` in addition to
+`related_complaint_id`. Assignment notifications are idempotent per assignment
+event (no duplicate notification for the same assignment record).
+
 ## Field Worker Assignment Evidence
 
 - `POST /api/v1/fieldworker/assignments/media` — multipart photo upload (field name `photo`), returns `{ "filename": ..., "evidence_url": "/api/v1/fieldworker/assignments/media/<file>" }`.
