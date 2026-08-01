@@ -265,6 +265,9 @@ class CitizenService:
             "resolved_at": (
                 complaint.resolved_at.isoformat() if complaint.resolved_at else None
             ),
+            "closed_at": (
+                complaint.closed_at.isoformat() if complaint.closed_at else None
+            ),
             "created_at": complaint.created_at.isoformat(),
             "updated_at": complaint.updated_at.isoformat(),
             "feedback": (

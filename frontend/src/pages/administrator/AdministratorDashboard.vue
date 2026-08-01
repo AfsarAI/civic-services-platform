@@ -143,6 +143,23 @@
       <div v-for="n in 9" :key="n" class="card animate-pulse">
         <div class="h-8 bg-slate-100 rounded mb-2"></div>
         <div class="h-10 bg-slate-100 rounded"></div>
+
+    <!-- Complaints by Status -->
+    <div class="card mb-4">
+      <h2 class="font-semibold text-gray-900 mb-4">Complaints by Status</h2>
+      <p v-if="!statusBreakdown.length" class="text-gray-400 text-sm italic text-center py-8">No data yet.</p>
+      <div v-else class="space-y-3">
+        <div v-for="row in statusBreakdown" :key="row.status">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-medium capitalize text-gray-700">{{ row.status.replaceAll('_', ' ') }}</span>
+            <span class="text-gray-500">{{ row.count }} ({{ row.percentage }}%)</span>
+          </div>
+          <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div class="h-full rounded-full bg-primary-500" :style="{ width: `${row.percentage}%` }"></div>
+          </div>
+        </div>
+      </div>
+    </div>
       </div>
     </div>
 
@@ -301,7 +318,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import complaintService from '@/services/complaint.service'
@@ -327,9 +344,10 @@ const assignWorkerId = ref('')
 const expectedCompletionAt = ref('')
 const isAssigning = ref(false)
 
+
 const stats = computed(() => {
   if (!dashboardData.value) return []
-  
+
   if (authStore.isSystemAdmin) {
     return [
       { label: 'Total Complaints', value: dashboardData.value.total_complaints || 0, color: 'text-blue-600' },
@@ -345,6 +363,23 @@ const stats = computed(() => {
     { label: 'Closure Rate', value: `${(dashboardData.value.complaint_closure_rate_percentage || 0).toFixed(1)}%`, color: 'text-green-600' },
     { label: 'Satisfaction', value: `${(dashboardData.value.citizen_satisfaction_rating || 0).toFixed(1)}/5`, color: 'text-pink-600' },
   ]
+})
+
+const statusBreakdown = computed(() => {
+  const byStatus = dashboardData.value?.by_status || {}
+  const total = dashboardData.value?.total_complaints || 0
+  const order = ['pending', 'assigned', 'in_progress', 'resolved', 'closed', 'rejected', 'cancelled']
+
+  return order
+    .filter((status) => status in byStatus)
+    .map((status) => {
+      const count = byStatus[status] || 0
+      return {
+        status,
+        count,
+        percentage: total ? Math.round((count / total) * 1000) / 10 : 0,
+      }
+    })
 })
 
 async function loadDashboard() {
@@ -472,7 +507,7 @@ let refreshInterval = null
 onMounted(() => {
   loadDashboard()
   loadComplaints(1)
-  
+
   // Setup auto-refresh every 30 seconds
   if (autoRefresh.value) {
     refreshInterval = setInterval(() => {
@@ -491,6 +526,10 @@ watch(autoRefresh, (newValue) => {
     clearInterval(refreshInterval)
     refreshInterval = null
   }
+})
+
+onBeforeUnmount(() => {
+  if (refreshInterval) clearInterval(refreshInterval)
 })
 </script>
 

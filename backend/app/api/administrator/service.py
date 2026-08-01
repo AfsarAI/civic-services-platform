@@ -4,7 +4,7 @@ Administrator service — business logic for admin-facing operations.
 
 from datetime import datetime, timezone
 from flask import current_app
-from sqlalchemy import and_, not_
+from sqlalchemy import and_, func, not_
 from sqlalchemy.exc import IntegrityError
 
 from app.api.notifications.service import NotificationService
@@ -182,6 +182,8 @@ class AdminService:
             complaint.status = new_status
             if new_status == Complaint.STATUS_RESOLVED and not complaint.resolved_at:
                 complaint.resolved_at = datetime.now(timezone.utc)
+            if new_status == Complaint.STATUS_CLOSED and not complaint.closed_at:
+                complaint.closed_at = datetime.now(timezone.utc)
             status_changed = True
 
         # Update priority level to adjust complaint triage and urgency.
@@ -353,6 +355,9 @@ class AdminService:
         if not enabled:
             return
 
+        closed_at_display = (
+            complaint.closed_at.strftime("%B %d, %Y") if complaint.closed_at else "recently"
+        )
         status_messages = {
             Complaint.STATUS_RESOLVED: (
                 "Complaint resolved",
@@ -362,7 +367,8 @@ class AdminService:
             ),
             Complaint.STATUS_CLOSED: (
                 "Complaint closed",
-                f"Your complaint #{complaint.id} '{complaint.title}' has been verified and closed.",
+                f"Your complaint #{complaint.id} '{complaint.title}' was officially closed on "
+                f"{closed_at_display}. Please share your feedback on the repair.",
                 Notification.TYPE_STATUS_UPDATE,
             ),
             Complaint.STATUS_REJECTED: (
@@ -900,6 +906,33 @@ class AdminService:
                 .count()
             )
 
+            high_priority_open = Complaint.query.filter(
+                Complaint.priority == "high",
+                Complaint.status.in_([
+                    Complaint.STATUS_PENDING,
+                    Complaint.STATUS_ASSIGNED,
+                    Complaint.STATUS_IN_PROGRESS,
+                ]),
+            ).count()
+
+            avg_resolution_hours = None
+            resolved_with_times = Complaint.query.filter(Complaint.resolved_at.isnot(None))
+            if resolved_with_times.count():
+                result = resolved_with_times.with_entities(
+                    func.avg(
+                        (func.julianday(Complaint.resolved_at) -
+                         func.julianday(Complaint.created_at)) * 24
+                    )
+                ).scalar()
+                if result is not None:
+                    avg_resolution_hours = round(float(result), 1)
+
+            fw_role = Role.query.filter_by(name=Role.FIELD_WORKER).first()
+            fw_query = (
+                User.query.filter_by(role_id=fw_role.id) if fw_role else User.query.filter(False)
+            )
+            active_field_workers = fw_query.filter_by(is_active=True).count()
+
             return {
                 "scope": "system",
                 "total_complaints": total,
@@ -912,10 +945,13 @@ class AdminService:
                 "field_worker_completion_rate_percentage": round(fw_completion_rate, 2),
                 "citizen_satisfaction_rating": round(satisfaction_rating, 2),
                 "high_priority_pending_count": high_priority_pending,
+                "high_priority_complaints": high_priority_open,
+                "avg_resolution_hours": avg_resolution_hours,
                 "total_users": total_users,
                 "active_users": active_users,
                 "total_cities": City.query.count(),
                 "municipal_admins": municipal_admins,
+                "active_field_workers": active_field_workers,
                 "recent_complaints": [self._serialize_complaint(c) for c in recent],
             }
 
@@ -974,6 +1010,27 @@ class AdminService:
         total_workers = fw_query.count()
         active_workers = fw_query.filter_by(is_active=True).count()
 
+        high_priority_open = base_query.filter(
+            Complaint.priority == "high",
+            Complaint.status.in_([
+                Complaint.STATUS_PENDING,
+                Complaint.STATUS_ASSIGNED,
+                Complaint.STATUS_IN_PROGRESS,
+            ]),
+        ).count()
+
+        avg_resolution_hours = None
+        resolved_with_times = base_query.filter(Complaint.resolved_at.isnot(None))
+        if resolved_with_times.count():
+            result = resolved_with_times.with_entities(
+                func.avg(
+                    (func.julianday(Complaint.resolved_at) -
+                     func.julianday(Complaint.created_at)) * 24
+                )
+            ).scalar()
+            if result is not None:
+                avg_resolution_hours = round(float(result), 1)
+
         return {
             "scope": "municipal",
             "administrator": self._serialize_user(admin_user),
@@ -988,6 +1045,8 @@ class AdminService:
             "field_worker_completion_rate_percentage": round(fw_completion_rate, 2),
             "citizen_satisfaction_rating": round(satisfaction_rating, 2),
             "high_priority_pending_count": high_priority_pending,
+            "high_priority_complaints": high_priority_open,
+            "avg_resolution_hours": avg_resolution_hours,
             "total_field_workers": total_workers,
             "active_field_workers": active_workers,
             "recent_complaints": [self._serialize_complaint(c) for c in recent],
@@ -1155,6 +1214,9 @@ class AdminService:
             "citizen_id": complaint.citizen_id,
             "resolved_at": (
                 complaint.resolved_at.isoformat() if complaint.resolved_at else None
+            ),
+            "closed_at": (
+                complaint.closed_at.isoformat() if complaint.closed_at else None
             ),
             "created_at": complaint.created_at.isoformat(),
             "updated_at": complaint.updated_at.isoformat(),

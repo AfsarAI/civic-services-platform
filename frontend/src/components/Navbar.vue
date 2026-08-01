@@ -192,6 +192,10 @@ async function handleNotifClick(notification) {
       // Ignore — non-critical UI action.
     }
   }
+  if (notification.related_complaint_id && authStore.userRole === 'citizen') {
+    notifPanelOpen.value = false
+    router.push({ name: 'complaint-details', params: { id: notification.related_complaint_id } })
+  }
 }
 
 async function handleMarkAllRead() {

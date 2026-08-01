@@ -69,6 +69,11 @@ const adminService = {
     const response = await api.put('/admin/settings', payload)
     return response.data
   },
+
+  async getDashboardSummary() {
+    const response = await api.get('/admin/dashboard')
+    return response.data
+  },
 }
 
 export default adminService
