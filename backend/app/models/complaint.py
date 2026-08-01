@@ -52,6 +52,7 @@ class Complaint(db.Model):
     pincode = db.Column(db.String(6), nullable=True, index=True)
     citizen_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     resolved_at = db.Column(db.DateTime, nullable=True)
+    closed_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,

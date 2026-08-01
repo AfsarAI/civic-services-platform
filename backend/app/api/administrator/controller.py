@@ -569,11 +569,25 @@ class AdminDashboardResource(Resource):
     @jwt_required()
     @require_admin
     def get(self):
-        """Get dashboard data for the current administrator subtype."""
+        """Get dashboard data for the current administrator subtype.
+
+        Query Parameters:
+            date_from (optional): Filter from date in YYYY-MM-DD format
+            date_to (optional): Filter to date in YYYY-MM-DD format
+        """
         admin_user = _current_admin_user()
         if not admin_user:
             return error_response("User not found.", status_code=404)
-        data = _svc.get_dashboard_summary(admin_user)
+
+        # Parse optional date filters
+        date_from = request.args.get('date_from')
+        date_to = request.args.get('date_to')
+
+        try:
+            data = _svc.get_dashboard_summary(admin_user, date_from=date_from, date_to=date_to)
+        except ValueError as exc:
+            return error_response(str(exc), status_code=400)
+
         return success_response(data, "Dashboard data retrieved.")
 
 

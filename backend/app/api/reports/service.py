@@ -386,3 +386,304 @@ class ReportsService:
         # Sort by total assignments descending
         results.sort(key=lambda x: x["total_assignments"], reverse=True)
         return {"workers": results}
+
+    # ── Export (TPS — Report Export) ─────────────────────────────────────
+
+    def build_export_dataset(
+        self,
+        city_id: int = None,
+        date_from: datetime = None,
+        date_to: datetime = None,
+        status: str = None,
+    ) -> dict:
+        """Assemble the full report dataset shared by all export formats.
+
+        Mirrors exactly what the Reports screen displays, so PDF/Excel/CSV
+        exports always reflect the same filtered data as the UI.
+        """
+        summary = self.get_complaint_summary(city_id, date_from, date_to, status)
+        by_status = self.get_complaints_by_status(city_id, date_from, date_to)["breakdown"]
+        by_category = self.get_complaints_by_category(city_id, date_from, date_to, status)["breakdown"]
+        by_priority = self.get_complaints_by_priority(city_id, date_from, date_to, status)["breakdown"]
+        by_location = self.get_complaints_by_location(city_id, date_from, date_to, status)["breakdown"]
+        workers = self.get_worker_performance(city_id, date_from, date_to)["workers"]
+
+        filters_applied = {
+            "date_from": date_from.strftime("%Y-%m-%d") if date_from else None,
+            "date_to": date_to.strftime("%Y-%m-%d") if date_to else None,
+            "status": status,
+        }
+
+        return {
+            "generated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+            "filters": filters_applied,
+            "summary": summary,
+            "by_status": by_status,
+            "by_category": by_category,
+            "by_priority": by_priority,
+            "by_location": by_location,
+            "workers": workers,
+        }
+
+    def export_csv(self, dataset: dict) -> str:
+        """Render the report dataset as CSV text (RFC 4180 style)."""
+        import csv
+        import io
+
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+
+        writer.writerow(["Civic Services Platform - Complaint Report"])
+        writer.writerow(["Generated", dataset["generated_at"]])
+        filters = dataset["filters"]
+        if filters.get("date_from") or filters.get("date_to"):
+            writer.writerow([
+                "Date range",
+                f"{filters.get('date_from') or 'any'} to {filters.get('date_to') or 'any'}",
+            ])
+        if filters.get("status"):
+            writer.writerow(["Status filter", filters["status"]])
+        writer.writerow([])
+
+        summary = dataset["summary"]
+        writer.writerow(["Summary"])
+        writer.writerow(["Total Complaints", summary.get("total", 0)])
+        writer.writerow(["Open", summary.get("open", 0)])
+        writer.writerow(["Resolved", summary.get("resolved", 0)])
+        writer.writerow(["Resolution Rate (%)", summary.get("resolution_rate", 0)])
+        writer.writerow(["Avg. Resolution (hrs)", summary.get("avg_resolution_hours") or ""])
+        writer.writerow([])
+
+        writer.writerow(["Complaints by Status"])
+        writer.writerow(["Status", "Count", "Percentage"])
+        for row in dataset["by_status"]:
+            writer.writerow([row["status"], row["count"], row["percentage"]])
+        writer.writerow([])
+
+        writer.writerow(["Complaints by Category"])
+        writer.writerow(["Category", "Count", "Percentage"])
+        for row in dataset["by_category"]:
+            writer.writerow([row["category"], row["count"], row["percentage"]])
+        writer.writerow([])
+
+        writer.writerow(["Complaints by Priority"])
+        writer.writerow(["Priority", "Count", "Percentage"])
+        for row in dataset["by_priority"]:
+            writer.writerow([row["priority"], row["count"], row["percentage"]])
+        writer.writerow([])
+
+        writer.writerow(["Complaints by Location"])
+        writer.writerow(["City", "Count", "Percentage"])
+        for row in dataset["by_location"]:
+            writer.writerow([row["city_name"], row["count"], row["percentage"]])
+        writer.writerow([])
+
+        writer.writerow(["Field Worker Performance"])
+        writer.writerow(
+            ["Worker", "Total Assignments", "Completed", "Completion Rate (%)", "Avg. Time (hrs)", "Active"]
+        )
+        for w in dataset["workers"]:
+            writer.writerow([
+                w["name"],
+                w["total_assignments"],
+                w["by_status"].get("completed", 0),
+                w["completion_rate"],
+                w["avg_completion_hours"] if w["avg_completion_hours"] is not None else "",
+                "Yes" if w["is_active"] else "No",
+            ])
+
+        return buffer.getvalue()
+
+    def export_excel(self, dataset: dict):
+        """Render the report dataset as an in-memory .xlsx workbook (bytes)."""
+        import io
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill
+
+        wb = Workbook()
+        header_fill = PatternFill(start_color="1D4ED8", end_color="1D4ED8", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF")
+        title_font = Font(bold=True, size=14)
+
+        def style_header_row(ws, row_idx, col_count):
+            for col in range(1, col_count + 1):
+                cell = ws.cell(row=row_idx, column=col)
+                cell.font = header_font
+                cell.fill = header_fill
+
+        def autosize(ws):
+            for column_cells in ws.columns:
+                length = max((len(str(cell.value)) if cell.value is not None else 0) for cell in column_cells)
+                ws.column_dimensions[column_cells[0].column_letter].width = min(max(length + 2, 10), 40)
+
+        # ── Summary sheet ────────────────────────────────────────────────
+        ws = wb.active
+        ws.title = "Summary"
+        ws.append(["Civic Services Platform - Complaint Report"])
+        ws["A1"].font = title_font
+        ws.append(["Generated", dataset["generated_at"]])
+        filters = dataset["filters"]
+        if filters.get("date_from") or filters.get("date_to"):
+            ws.append(["Date range", f"{filters.get('date_from') or 'any'} to {filters.get('date_to') or 'any'}"])
+        if filters.get("status"):
+            ws.append(["Status filter", filters["status"]])
+        ws.append([])
+
+        summary = dataset["summary"]
+        ws.append(["Metric", "Value"])
+        style_header_row(ws, ws.max_row, 2)
+        ws.append(["Total Complaints", summary.get("total", 0)])
+        ws.append(["Open", summary.get("open", 0)])
+        ws.append(["Resolved", summary.get("resolved", 0)])
+        ws.append(["Resolution Rate (%)", summary.get("resolution_rate", 0)])
+        ws.append(["Avg. Resolution (hrs)", summary.get("avg_resolution_hours") or ""])
+        autosize(ws)
+
+        # ── By status sheet ──────────────────────────────────────────────
+        ws2 = wb.create_sheet("By Status")
+        ws2.append(["Status", "Count", "Percentage"])
+        style_header_row(ws2, 1, 3)
+        for row in dataset["by_status"]:
+            ws2.append([row["status"], row["count"], row["percentage"]])
+        autosize(ws2)
+
+        # ── By category sheet ────────────────────────────────────────────
+        ws3 = wb.create_sheet("By Category")
+        ws3.append(["Category", "Count", "Percentage"])
+        style_header_row(ws3, 1, 3)
+        for row in dataset["by_category"]:
+            ws3.append([row["category"], row["count"], row["percentage"]])
+        autosize(ws3)
+
+        # ── By priority sheet ────────────────────────────────────────────
+        ws4 = wb.create_sheet("By Priority")
+        ws4.append(["Priority", "Count", "Percentage"])
+        style_header_row(ws4, 1, 3)
+        for row in dataset["by_priority"]:
+            ws4.append([row["priority"], row["count"], row["percentage"]])
+        autosize(ws4)
+
+        # ── By location sheet ────────────────────────────────────────────
+        ws5 = wb.create_sheet("By Location")
+        ws5.append(["City", "Count", "Percentage"])
+        style_header_row(ws5, 1, 3)
+        for row in dataset["by_location"]:
+            ws5.append([row["city_name"], row["count"], row["percentage"]])
+        autosize(ws5)
+
+        # ── Worker performance sheet ─────────────────────────────────────
+        ws6 = wb.create_sheet("Worker Performance")
+        ws6.append(["Worker", "Total Assignments", "Completed", "Completion Rate (%)", "Avg. Time (hrs)", "Active"])
+        style_header_row(ws6, 1, 6)
+        for w in dataset["workers"]:
+            ws6.append([
+                w["name"],
+                w["total_assignments"],
+                w["by_status"].get("completed", 0),
+                w["completion_rate"],
+                w["avg_completion_hours"] if w["avg_completion_hours"] is not None else "",
+                "Yes" if w["is_active"] else "No",
+            ])
+        autosize(ws6)
+
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    def export_pdf(self, dataset: dict) -> bytes:
+        """Render the report dataset as a paginated PDF document (bytes)."""
+        import io
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.lib.units import cm
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buffer, pagesize=A4,
+            topMargin=1.5 * cm, bottomMargin=1.5 * cm,
+            leftMargin=1.5 * cm, rightMargin=1.5 * cm,
+        )
+        styles = getSampleStyleSheet()
+        story = [
+            Paragraph("Civic Services Platform &mdash; Complaint Report", styles["Title"]),
+            Paragraph(f"Generated: {dataset['generated_at']}", styles["Normal"]),
+        ]
+
+        filters = dataset["filters"]
+        if filters.get("date_from") or filters.get("date_to"):
+            story.append(Paragraph(
+                f"Date range: {filters.get('date_from') or 'any'} to {filters.get('date_to') or 'any'}",
+                styles["Normal"],
+            ))
+        if filters.get("status"):
+            story.append(Paragraph(f"Status filter: {filters['status']}", styles["Normal"]))
+        story.append(Spacer(1, 0.5 * cm))
+
+        table_style = TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1D4ED8")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ])
+
+        def add_section(title, header, rows):
+            story.append(Paragraph(title, styles["Heading2"]))
+            if not rows:
+                story.append(Paragraph("No data.", styles["Normal"]))
+            else:
+                table_data = [header] + rows
+                table = Table(table_data, hAlign="LEFT", repeatRows=1)
+                table.setStyle(table_style)
+                story.append(table)
+            story.append(Spacer(1, 0.4 * cm))
+
+        summary = dataset["summary"]
+        add_section("Summary", ["Metric", "Value"], [
+            ["Total Complaints", str(summary.get("total", 0))],
+            ["Open", str(summary.get("open", 0))],
+            ["Resolved", str(summary.get("resolved", 0))],
+            ["Resolution Rate (%)", str(summary.get("resolution_rate", 0))],
+            ["Avg. Resolution (hrs)", str(summary.get("avg_resolution_hours") or "-")],
+        ])
+
+        add_section("Complaints by Status", ["Status", "Count", "Percentage"], [
+            [r["status"], str(r["count"]), f"{r['percentage']}%"] for r in dataset["by_status"]
+        ])
+
+        add_section("Complaints by Category", ["Category", "Count", "Percentage"], [
+            [r["category"], str(r["count"]), f"{r['percentage']}%"] for r in dataset["by_category"]
+        ])
+
+        add_section("Complaints by Priority", ["Priority", "Count", "Percentage"], [
+            [r["priority"], str(r["count"]), f"{r['percentage']}%"] for r in dataset["by_priority"]
+        ])
+
+        add_section("Complaints by Location", ["City", "Count", "Percentage"], [
+            [r["city_name"], str(r["count"]), f"{r['percentage']}%"] for r in dataset["by_location"]
+        ])
+
+        add_section(
+            "Field Worker Performance",
+            ["Worker", "Total", "Completed", "Rate (%)", "Avg (hrs)", "Active"],
+            [
+                [
+                    w["name"],
+                    str(w["total_assignments"]),
+                    str(w["by_status"].get("completed", 0)),
+                    f"{w['completion_rate']}%",
+                    str(w["avg_completion_hours"]) if w["avg_completion_hours"] is not None else "-",
+                    "Yes" if w["is_active"] else "No",
+                ]
+                for w in dataset["workers"]
+            ],
+        )
+
+        doc.build(story)
+        buffer.seek(0)
+        return buffer.getvalue()

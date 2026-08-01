@@ -243,3 +243,113 @@ class TestReportsEndpoints:
         )
         assert response.status_code == 200
         assert response.get_json()["data"]["by_priority"].get("urgent", 0) >= 1
+
+    EXPORT_ENDPOINTS = [
+        ("/api/v1/reports/export/csv", "text/csv"),
+        (
+            "/api/v1/reports/export/excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ),
+        ("/api/v1/reports/export/pdf", "application/pdf"),
+    ]
+
+    def test_non_admin_cannot_export_reports(self, app, client):
+        citizen_auth = self._register_and_login_citizen(client, "export-citizen@example.com")
+        citizen_token = citizen_auth["access_token"]
+        for endpoint, _ in self.EXPORT_ENDPOINTS:
+            response = client.get(endpoint, headers={"Authorization": f"Bearer {citizen_token}"})
+            assert response.status_code == 403, endpoint
+
+    def test_admin_can_export_reports_in_all_formats(self, app, client):
+        self._ensure_admin("export-sysadmin@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "export-sysadmin@example.com")
+        city = self._ensure_city("ExportCityA")
+        citizen_auth = self._register_and_login_citizen(client, "export-citizen-a@example.com")
+        self._submit_complaint(client, citizen_auth["access_token"], city.id)
+
+        for endpoint, mimetype in self.EXPORT_ENDPOINTS:
+            response = client.get(endpoint, headers={"Authorization": f"Bearer {token}"})
+            assert response.status_code == 200, endpoint
+            assert response.mimetype == mimetype, endpoint
+            assert "attachment" in response.headers.get("Content-Disposition", "")
+            assert len(response.data) > 0
+
+    def test_csv_export_contains_filtered_data(self, app, client):
+        self._ensure_admin("export-sysadmin2@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "export-sysadmin2@example.com")
+        city = self._ensure_city("ExportCityB")
+        citizen_auth = self._register_and_login_citizen(client, "export-citizen-b@example.com")
+        self._submit_complaint(client, citizen_auth["access_token"], city.id, priority="urgent")
+
+        response = client.get(
+            "/api/v1/reports/export/csv",
+            headers={"Authorization": f"Bearer {token}"},
+            query_string={"status": "pending"},
+        )
+        assert response.status_code == 200
+        text = response.data.decode("utf-8")
+        assert "Civic Services Platform" in text
+        assert "Status filter" in text
+        assert "pending" in text
+        assert "ExportCityB" in text
+
+    def test_municipal_admin_export_is_city_scoped(self, app, client):
+        city_a = self._ensure_city("ExportCityC")
+        city_b = self._ensure_city("ExportCityD")
+        self._ensure_admin("export-muni@example.com", AdministratorProfile.MUNICIPAL, "ExportCityC")
+        muni_token = self._login(client, "export-muni@example.com")
+
+        citizen_a = self._register_and_login_citizen(client, "export-citizen-c@example.com")
+        self._submit_complaint(client, citizen_a["access_token"], city_a.id)
+        citizen_b = self._register_and_login_citizen(client, "export-citizen-d@example.com")
+        self._submit_complaint(client, citizen_b["access_token"], city_b.id)
+
+        response = client.get(
+            "/api/v1/reports/export/csv", headers={"Authorization": f"Bearer {muni_token}"}
+        )
+        assert response.status_code == 200
+        text = response.data.decode("utf-8")
+        assert "ExportCityC" in text
+        assert "ExportCityD" not in text
+
+    def test_export_invalid_date_returns_400(self, app, client):
+        self._ensure_admin("export-sysadmin3@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "export-sysadmin3@example.com")
+        for endpoint, _ in self.EXPORT_ENDPOINTS:
+            response = client.get(
+                endpoint,
+                headers={"Authorization": f"Bearer {token}"},
+                query_string={"date_from": "not-a-date"},
+            )
+            assert response.status_code == 400, endpoint
+
+    def test_excel_export_is_valid_workbook(self, app, client):
+        import io
+        from openpyxl import load_workbook
+
+        self._ensure_admin("export-sysadmin4@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "export-sysadmin4@example.com")
+        city = self._ensure_city("ExportCityE")
+        citizen_auth = self._register_and_login_citizen(client, "export-citizen-e@example.com")
+        self._submit_complaint(client, citizen_auth["access_token"], city.id)
+
+        response = client.get(
+            "/api/v1/reports/export/excel", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+        wb = load_workbook(io.BytesIO(response.data))
+        assert "Summary" in wb.sheetnames
+        assert "By Status" in wb.sheetnames
+        assert "By Category" in wb.sheetnames
+        assert "By Priority" in wb.sheetnames
+        assert "By Location" in wb.sheetnames
+        assert "Worker Performance" in wb.sheetnames
+
+    def test_pdf_export_has_pdf_magic_bytes(self, app, client):
+        self._ensure_admin("export-sysadmin5@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "export-sysadmin5@example.com")
+        response = client.get(
+            "/api/v1/reports/export/pdf", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+        assert response.data[:4] == b"%PDF"

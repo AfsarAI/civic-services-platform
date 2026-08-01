@@ -55,6 +55,11 @@ const adminService = {
     return response.data
   },
 
+  async getDashboard(params = {}) {
+    const response = await api.get('/admin/dashboard', { params })
+    return response.data
+  },
+
   async getSystemSettings() {
     const response = await api.get('/admin/settings')
     return response.data
@@ -62,6 +67,11 @@ const adminService = {
 
   async updateSystemSettings(payload) {
     const response = await api.put('/admin/settings', payload)
+    return response.data
+  },
+
+  async getDashboardSummary() {
+    const response = await api.get('/admin/dashboard')
     return response.data
   },
 }
