@@ -43,6 +43,18 @@ const reportsService = {
     const response = await api.get('/reports/workers/performance', { params: filters })
     return response.data
   },
+
+  async exportCsv(filters = {}) {
+    return api.get('/reports/export/csv', { params: filters, responseType: 'blob' })
+  },
+
+  async exportExcel(filters = {}) {
+    return api.get('/reports/export/excel', { params: filters, responseType: 'blob' })
+  },
+
+  async exportPdf(filters = {}) {
+    return api.get('/reports/export/pdf', { params: filters, responseType: 'blob' })
+  },
 }
 
 export default reportsService

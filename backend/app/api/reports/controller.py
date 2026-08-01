@@ -9,9 +9,10 @@ scoped to their own city — mirroring the same pattern used for
 ``/admin/complaints``/``/admin/field-workers``.
 """
 
-from flask import request
+from flask import request, Response
 from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from datetime import datetime
 
 from app.api.reports.service import ReportsService
 from app.models.user import User
@@ -213,3 +214,98 @@ class WorkerPerformanceReport(Resource):
             return success_response(data, "Worker performance retrieved.")
         except ValueError as exc:
             return error_response(str(exc), status_code=400)
+
+
+def _export_filename(extension: str) -> str:
+    stamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    return f"complaint-report-{stamp}.{extension}"
+
+
+@ns.route("/export/csv")
+class ExportCsvReport(Resource):
+
+    @ns.response(200, "CSV file")
+    @ns.response(400, "Invalid filter", _envelope)
+    @jwt_required()
+    @require_admin
+    def get(self):
+        """Export the current filtered report data as a CSV file.
+
+        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.
+        """
+        city_id = _scoped_city_id(_current_admin_user())
+        status = request.args.get("status")
+        try:
+            date_from, date_to = _parse_date_filters()
+            dataset = _svc.build_export_dataset(city_id, date_from, date_to, status)
+            csv_text = _svc.export_csv(dataset)
+        except ValueError as exc:
+            return error_response(str(exc), status_code=400)
+
+        return Response(
+            csv_text,
+            mimetype="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename={_export_filename('csv')}"
+            },
+        )
+
+
+@ns.route("/export/excel")
+class ExportExcelReport(Resource):
+
+    @ns.response(200, "Excel file")
+    @ns.response(400, "Invalid filter", _envelope)
+    @jwt_required()
+    @require_admin
+    def get(self):
+        """Export the current filtered report data as an Excel (.xlsx) workbook.
+
+        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.
+        """
+        city_id = _scoped_city_id(_current_admin_user())
+        status = request.args.get("status")
+        try:
+            date_from, date_to = _parse_date_filters()
+            dataset = _svc.build_export_dataset(city_id, date_from, date_to, status)
+            xlsx_bytes = _svc.export_excel(dataset)
+        except ValueError as exc:
+            return error_response(str(exc), status_code=400)
+
+        return Response(
+            xlsx_bytes,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename={_export_filename('xlsx')}"
+            },
+        )
+
+
+@ns.route("/export/pdf")
+class ExportPdfReport(Resource):
+
+    @ns.response(200, "PDF file")
+    @ns.response(400, "Invalid filter", _envelope)
+    @jwt_required()
+    @require_admin
+    def get(self):
+        """Export the current filtered report data as a PDF document.
+
+        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.
+        """
+        city_id = _scoped_city_id(_current_admin_user())
+        status = request.args.get("status")
+        try:
+            date_from, date_to = _parse_date_filters()
+            dataset = _svc.build_export_dataset(city_id, date_from, date_to, status)
+            pdf_bytes = _svc.export_pdf(dataset)
+        except ValueError as exc:
+            return error_response(str(exc), status_code=400)
+
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={_export_filename('pdf')}"
+            },
+        )

@@ -826,15 +826,47 @@ class AdminService:
 
     # ── Dashboard ─────────────────────────────────────────────────────────
 
-    def get_dashboard_summary(self, admin_user: User) -> dict:
-        """Return dashboard data depending on administrator subtype."""
+    def get_dashboard_summary(self, admin_user: User, date_from: str = None, date_to: str = None) -> dict:
+        """Return dashboard data depending on administrator subtype.
+
+        Args:
+            admin_user: The administrator requesting the dashboard
+            date_from: Optional filter start date (YYYY-MM-DD)
+            date_to: Optional filter end date (YYYY-MM-DD)
+        """
+        from datetime import datetime as dt, timezone
+
+        # Parse date filters if provided
+        date_filter = None
+        if date_from or date_to:
+            filters = []
+            if date_from:
+                try:
+                    start_date = dt.strptime(date_from, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+                    filters.append(Complaint.created_at >= start_date)
+                except ValueError:
+                    raise ValueError("Invalid date_from format. Use YYYY-MM-DD.")
+            if date_to:
+                try:
+                    end_date = dt.strptime(date_to, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+                    end_date = end_date.replace(hour=23, minute=59, second=59)
+                    filters.append(Complaint.created_at <= end_date)
+                except ValueError:
+                    raise ValueError("Invalid date_to format. Use YYYY-MM-DD.")
+            date_filter = and_(*filters) if filters else None
+
         if admin_user.is_system_admin:
+            # System admin: unscoped view of all cities
+            query = Complaint.query
+            if date_filter is not None:
+                query = query.filter(date_filter)
+
             counts = {s: 0 for s in Complaint.VALID_STATUSES}
             for status in Complaint.VALID_STATUSES:
-                counts[status] = Complaint.query.filter_by(status=status).count()
+                counts[status] = query.filter_by(status=status).count()
 
-            total = Complaint.query.count()
-            open_count = Complaint.query.filter(
+            total = query.count()
+            open_count = query.filter(
                 Complaint.status.in_([
                     Complaint.STATUS_PENDING,
                     Complaint.STATUS_ASSIGNED,
@@ -843,11 +875,28 @@ class AdminService:
             ).count()
 
             recent = (
-                Complaint.query
+                query
                 .order_by(Complaint.created_at.desc())
                 .limit(10)
                 .all()
             )
+
+            # Calculate KPI metrics
+            avg_resolution_time = self._calculate_avg_resolution_time(query)
+            avg_assignment_time = self._calculate_avg_assignment_time(query)
+            closure_rate = self._calculate_closure_rate(counts, total)
+            satisfaction_rating = self._calculate_avg_satisfaction_rating()
+            high_priority_pending = query.filter(
+                and_(
+                    Complaint.priority.in_(['urgent', 'high']),
+                    Complaint.status.in_([Complaint.STATUS_PENDING, Complaint.STATUS_ASSIGNED])
+                )
+            ).count()
+
+            # Field worker productivity aggregation
+            fw_completions = ComplaintAssignment.query.filter_by(status=ComplaintAssignment.STATUS_COMPLETED).count()
+            total_assignments = ComplaintAssignment.query.count()
+            fw_completion_rate = (fw_completions / total_assignments * 100) if total_assignments > 0 else 0
 
             total_users = User.query.count()
             active_users = User.query.filter_by(is_active=True).count()
@@ -888,7 +937,14 @@ class AdminService:
                 "scope": "system",
                 "total_complaints": total,
                 "open_complaints": open_count,
+                "closed_complaints": counts.get(Complaint.STATUS_CLOSED, 0),
                 "by_status": counts,
+                "avg_resolution_time_hours": round(avg_resolution_time, 2),
+                "avg_assignment_time_hours": round(avg_assignment_time, 2),
+                "complaint_closure_rate_percentage": round(closure_rate, 2),
+                "field_worker_completion_rate_percentage": round(fw_completion_rate, 2),
+                "citizen_satisfaction_rating": round(satisfaction_rating, 2),
+                "high_priority_pending_count": high_priority_pending,
                 "high_priority_complaints": high_priority_open,
                 "avg_resolution_hours": avg_resolution_hours,
                 "total_users": total_users,
@@ -899,8 +955,11 @@ class AdminService:
                 "recent_complaints": [self._serialize_complaint(c) for c in recent],
             }
 
+        # Municipal admin: city-scoped view
         city_id = admin_user.admin_city_id
         base_query = Complaint.query.filter_by(city_id=city_id)
+        if date_filter is not None:
+            base_query = base_query.filter(date_filter)
 
         counts = {s: base_query.filter_by(status=s).count() for s in Complaint.VALID_STATUSES}
         total = base_query.count()
@@ -912,6 +971,36 @@ class AdminService:
             ])
         ).count()
         recent = base_query.order_by(Complaint.created_at.desc()).limit(10).all()
+
+        # Calculate KPI metrics (city-scoped)
+        avg_resolution_time = self._calculate_avg_resolution_time(base_query)
+        avg_assignment_time = self._calculate_avg_assignment_time(base_query)
+        closure_rate = self._calculate_closure_rate(counts, total)
+        satisfaction_rating = self._calculate_avg_satisfaction_rating(city_id=city_id)
+        high_priority_pending = base_query.filter(
+            and_(
+                Complaint.priority.in_(['urgent', 'high']),
+                Complaint.status.in_([Complaint.STATUS_PENDING, Complaint.STATUS_ASSIGNED])
+            )
+        ).count()
+
+        # Field worker productivity for this city
+        fw_completions = (
+            ComplaintAssignment.query
+            .join(Complaint)
+            .filter(and_(
+                Complaint.city_id == city_id,
+                ComplaintAssignment.status == ComplaintAssignment.STATUS_COMPLETED,
+            ))
+            .count()
+        )
+        total_assignments = (
+            ComplaintAssignment.query
+            .join(Complaint)
+            .filter(Complaint.city_id == city_id)
+            .count()
+        )
+        fw_completion_rate = (fw_completions / total_assignments * 100) if total_assignments > 0 else 0
 
         fw_role = Role.query.filter_by(name=Role.FIELD_WORKER).first()
         fw_query = (
@@ -948,7 +1037,14 @@ class AdminService:
             "managed_city": self._serialize_city(admin_user.admin_profile.city),
             "total_complaints": total,
             "open_complaints": open_count,
+            "closed_complaints": counts.get(Complaint.STATUS_CLOSED, 0),
             "by_status": counts,
+            "avg_resolution_time_hours": round(avg_resolution_time, 2),
+            "avg_assignment_time_hours": round(avg_assignment_time, 2),
+            "complaint_closure_rate_percentage": round(closure_rate, 2),
+            "field_worker_completion_rate_percentage": round(fw_completion_rate, 2),
+            "citizen_satisfaction_rating": round(satisfaction_rating, 2),
+            "high_priority_pending_count": high_priority_pending,
             "high_priority_complaints": high_priority_open,
             "avg_resolution_hours": avg_resolution_hours,
             "total_field_workers": total_workers,
@@ -957,6 +1053,81 @@ class AdminService:
         }
 
     # ── Internal helpers ──────────────────────────────────────────────────
+
+    def _calculate_avg_resolution_time(self, query) -> float:
+        """Calculate average resolution time in hours.
+
+        Includes any complaint that has ever been resolved (``resolved_at``
+        set), not just those currently in ``resolved`` status — a complaint
+        that has since moved on to ``closed`` still took that long to fix.
+        Mirrors ``ReportsService.get_complaint_summary``'s definition so the
+        dashboard and the Reports screen report the same figure.
+        """
+        resolved = query.filter(Complaint.resolved_at.isnot(None)).all()
+        if not resolved:
+            return 0.0
+
+        resolution_times = []
+        for complaint in resolved:
+            if complaint.resolved_at and complaint.created_at:
+                delta = complaint.resolved_at - complaint.created_at
+                hours = delta.total_seconds() / 3600
+                resolution_times.append(hours)
+
+        return sum(resolution_times) / len(resolution_times) if resolution_times else 0.0
+
+    def _calculate_avg_assignment_time(self, query) -> float:
+        """Calculate average time from assignment to acceptance in hours."""
+        # Join with assignments for the complaints in the query
+        complaint_ids = [c.id for c in query.all()]
+        if not complaint_ids:
+            return 0.0
+
+        completed_assignments = (
+            ComplaintAssignment.query
+            .filter(and_(
+                ComplaintAssignment.complaint_id.in_(complaint_ids),
+                ComplaintAssignment.status == ComplaintAssignment.STATUS_ACCEPTED
+            ))
+            .all()
+        )
+
+        if not completed_assignments:
+            return 0.0
+
+        assignment_times = []
+        for assignment in completed_assignments:
+            if assignment.accepted_at and assignment.assigned_at:
+                delta = assignment.accepted_at - assignment.assigned_at
+                hours = delta.total_seconds() / 3600
+                assignment_times.append(hours)
+
+        return sum(assignment_times) / len(assignment_times) if assignment_times else 0.0
+
+    def _calculate_closure_rate(self, counts: dict, total: int) -> float:
+        """Calculate complaint closure rate as percentage."""
+        if total == 0:
+            return 0.0
+
+        resolved = counts.get(Complaint.STATUS_RESOLVED, 0)
+        closed = counts.get(Complaint.STATUS_CLOSED, 0)
+        rate = ((resolved + closed) / total) * 100
+        return rate
+
+    def _calculate_avg_satisfaction_rating(self, city_id: int = None) -> float:
+        """Calculate average citizen satisfaction rating (1-5 stars)."""
+        from app.models.feedback import Feedback
+
+        query = Feedback.query
+        if city_id is not None:
+            query = query.join(Complaint).filter(Complaint.city_id == city_id)
+
+        feedback_records = query.all()
+        if not feedback_records:
+            return 0.0
+
+        avg_rating = sum(f.rating for f in feedback_records) / len(feedback_records)
+        return avg_rating
 
     def _get_or_create_city(self, city_name: str, city_state: str = None) -> City:
         normalized_name = city_name.strip()
