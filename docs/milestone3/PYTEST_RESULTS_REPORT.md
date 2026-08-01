@@ -1,10 +1,20 @@
 # pytest RESULTS REPORT
 ## Complete Test Execution Analysis
 
-**Date**: 2026-07-31  
-**Time**: 22.29 seconds  
+**Date**: 2026-08-01 (originally 2026-07-31)  
+**Time**: 38.60 seconds (182 tests; was 22.29s for the original 130)  
 **Framework**: pytest 8.3.3  
-**Python**: 3.12.3  
+**Python**: 3.12.3 (local run; project/CI targets Python 3.13 per `.github/workflows/backend-ci.yml`)  
+
+> **Update note (2026-08-01):** 52 tests were added on top of the original 130
+> documented in detail below — 7 Report Export (CSV/Excel/PDF, TPS-98), 16 KPI
+> Dashboard (TPS-97), and 29 more merged from `dev` (TPS-91 View Notifications,
+> TPS-94 Complaint Closure Notifications, TPS-95 View Dashboard). All 52 are
+> fully documented in the required `[API | Inputs | Expected | Actual | Result]`
+> box format in `TEST_CASE_DOCUMENTATION.md`, and the complete, real (not
+> simulated) verbose pytest output for all 182 tests is in `pytest_full_output.txt`
+> (regenerated 2026-08-01). The per-file breakdowns immediately below reflect
+> the original 130-test baseline only, to avoid duplicating that content here.
 
 ---
 
@@ -17,23 +27,23 @@ cachedir: .pytest_cache
 rootdir: /mnt/c/users/jedku/iitm/MAY2026-Team-005/backend
 configfile: pytest.ini
 
-COLLECTED: 130 items
+COLLECTED: 182 items
 ───────────────────────────────────────────────────────────────────────────
 
 RESULTS:
-  ✅ PASSED:  130
+  ✅ PASSED:  182
   ❌ FAILED:  0
   ⏭️  SKIPPED: 0
   ⚠️  ERRORS: 0
 
-SUMMARY: 130 passed in 22.29s ✅
+SUMMARY: 182 passed in 38.60s ✅
 
 ============================= test session ends ===============================
 ```
 
 ---
 
-## 📊 DETAILED TEST RESULTS BY FILE
+## 📊 DETAILED TEST RESULTS BY FILE (original 130-test baseline)
 
 ### 1. Integration Tests: Admin City Scoping (12/12 PASS ✅)
 
@@ -582,14 +592,14 @@ tests/unit/test_schemas.py
 
 ### Documentation Complete
 ✅ Test case format documented  
-✅ All 130 tests documented in required format  
+✅ All 182 tests documented in required format (across `TEST_CASE_DOCUMENTATION.md`)  
 ✅ Input/output examples provided  
 ✅ Actual test results captured  
 ✅ Performance metrics included  
 
 ### Executable & Verified
 ✅ pytest code present in repository  
-✅ All 130 tests execute successfully  
+✅ All 182 tests execute successfully  
 ✅ 100% pass rate achieved  
 ✅ Error highlighting available  
 ✅ Performance benchmarked  
@@ -603,5 +613,5 @@ tests/unit/test_schemas.py
 
 ---
 
-**Status**: ✅ STEP 2 — TEST DOCUMENTATION COMPLETE
+**Status**: ✅ STEP 2 — TEST DOCUMENTATION COMPLETE (updated 2026-08-01, 182/182 passing)
 

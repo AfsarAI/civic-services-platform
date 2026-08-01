@@ -30,27 +30,28 @@ For IITM submission, each test case is documented in the following format:
 
 ## 📊 TEST EXECUTION SUMMARY
 
-**Total Tests**: 153  
-**Passed**: 153 ✅  
+**Total Tests**: 182  
+**Passed**: 182 ✅  
 **Failed**: 0  
 **Skipped**: 0  
 **Errors**: 0  
 **Pass Rate**: 100%  
-**Execution Time**: ~27 seconds  
-**Python Version**: 3.12.3  
+**Execution Time**: ~38 seconds  
+**Python Version**: 3.12.3 (local run; project/CI targets Python 3.13 per `.github/workflows/backend-ci.yml`)  
 **pytest Version**: 8.3.3  
 
-> Updated 2026-07-31 after adding the **Report Export** (CSV/Excel/PDF, 7 tests)
-> and **KPI Dashboard** (Performance Metrics, 16 tests) stories — 23 new tests
-> on top of the original 130.
+> Updated 2026-08-01 after merging `dev` (TPS-91 View Notifications, TPS-94
+> Complaint Closure Notifications, TPS-95 View Dashboard — 29 more tests) on
+> top of the Report Export (7) and KPI Dashboard (16) work already merged
+> into this branch, for a total of 52 new tests on top of the original 130.
 
 ### Test Distribution
 
 | Category | Count | % |
 |---|---|---|
-| Integration Tests | 119 | 77.8% |
-| Unit Tests | 34 | 22.2% |
-| **Total** | **153** | **100%** |
+| Integration Tests | 142 | 78.0% |
+| Unit Tests | 40 | 22.0% |
+| **Total** | **182** | **100%** |
 
 ### Test Files Summary
 
@@ -58,17 +59,20 @@ For IITM submission, each test case is documented in the following format:
 |---|---|---|
 | test_admin_city_scoping_api.py | 12 | ✅ All Pass |
 | test_admin_complaint_workflow_api.py | 11 | ✅ All Pass |
-| test_admin_dashboard_kpi_api.py **(NEW)** | 7 | ✅ All Pass |
+| test_admin_dashboard_api.py **(NEW — TPS-95)** | 4 | ✅ All Pass |
+| test_admin_dashboard_kpi_api.py (TPS-97) | 7 | ✅ All Pass |
 | test_admin_hierarchy_api.py | 8 | ✅ All Pass |
 | test_auth_api.py | 21 | ✅ All Pass |
 | test_citizen_api.py | 14 | ✅ All Pass |
 | test_citizen_feedback_api.py | 6 | ✅ All Pass |
+| test_complaint_closure_notification_api.py **(NEW — TPS-94)** | 7 | ✅ All Pass |
 | test_fieldworker_api.py | 7 | ✅ All Pass |
 | test_location_api.py | 9 | ✅ All Pass |
-| test_reports_api.py (incl. 7 export tests) | 16 | ✅ All Pass |
+| test_notifications_api.py **(NEW — TPS-91)** | 12 | ✅ All Pass |
+| test_reports_api.py (incl. 7 export tests, TPS-98) | 16 | ✅ All Pass |
 | test_system_settings_api.py | 8 | ✅ All Pass |
-| test_admin_dashboard_kpi.py **(NEW, unit)** | 9 | ✅ All Pass |
-| test_admin_service.py | 2 | ✅ All Pass |
+| test_admin_dashboard_kpi.py (unit, TPS-97) | 9 | ✅ All Pass |
+| test_admin_service.py (incl. 6 new dashboard-KPI unit tests) | 8 | ✅ All Pass |
 | test_models.py | 8 | ✅ All Pass |
 | test_schemas.py | 15 | ✅ All Pass |
 
@@ -334,7 +338,7 @@ All 20 citizen tests PASS ✅
 
 ---
 
-### ADMINISTRATOR TESTS (33 cases, excl. KPI dashboard — see dedicated section below)
+### ADMINISTRATOR TESTS (39 cases, excl. KPI dashboard — see dedicated section below)
 
 #### Example: Assign Complaint to Field Worker
 ```
@@ -386,7 +390,31 @@ All 20 citizen tests PASS ✅
 ╚════════════════════════════════════════════════════════════════╝
 ```
 
-All 33 administrator tests PASS ✅ (plus the 16 KPI dashboard tests documented separately below)
+#### Example: Dashboard KPI Unit Test (Average Resolution Hours, Merged from dev)
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : AdminService.get_dashboard_summary()       ║
+║                        (TPS-95 dev-branch fields)                 ║
+║ Test Case ID        : test_system_scope_computes_average_        ║
+║                        resolution_hours                            ║
+║ Description         : avg_resolution_hours computed correctly    ║
+║                        for system-wide scope                      ║
+║ Inputs              : Resolved complaints with known resolved_at/║
+║                        created_at deltas                          ║
+║ Expected Output     : avg_resolution_hours matches hand-computed  ║
+║                        mean                                        ║
+║ Actual Output       : Computed value matches expected exactly ✓  ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+Other 5 new unit tests in this file (all PASS ✅): high-priority/open
+complaint counting (system scope), active-field-worker counting (system
+scope, unscoped by city), municipal-scope KPI scoping to the administrator's
+city, municipal-scope average resolution hours, and the null-safe case when
+a city has no resolved complaints yet.
+
+All 39 administrator tests PASS ✅ (plus the 16 KPI dashboard tests documented separately below)
 
 ---
 
@@ -910,29 +938,361 @@ figure for the same data.
 
 ---
 
-### NOTIFICATIONS TESTS (2 cases)
+### NOTIFICATIONS TESTS (12 cases) — TPS-91
 
+#### 1. List Own Notifications
 ```
 ╔════════════════════════════════════════════════════════════════╗
-║ API Being Tested    : GET /api/v1/notifications (TPS-60)         ║
-║ Test Case ID        : test_notifications_list                    ║
-║ Description         : Get all notifications for user             ║
+║ API Being Tested    : GET /api/v1/notifications/ (TPS-91)        ║
+║ Test Case ID        : test_user_can_list_own_notifications       ║
+║ Description         : Notification Center loads user's own list  ║
 ║ Inputs              :                                            ║
-║   - GET /api/v1/notifications?page=1                             ║
+║   - 2 notifications created for the user                         ║
+║   - GET /api/v1/notifications/                                   ║
 ║   - Auth: Bearer [user_token]                                    ║
 ║ Expected Output     :                                            ║
 ║   - Status Code: 200                                             ║
-║   - data.items: [notifications]                                  ║
-║   - Each notification has: id, type, message, read, created_at   ║
+║   - data.pagination.total == 2                                   ║
+║   - data.items has 2 entries                                     ║
 ║ Actual Output       :                                            ║
 ║   - Status Code: 200 ✓                                           ║
-║   - items: [5 notifications] ✓                                   ║
-║   - Fields present: ✓                                            ║
+║   - pagination.total: 2 ✓                                        ║
+║   - items: 2 entries ✓                                           ║
 ║ Result              : ✅ PASS                                   ║
 ╚════════════════════════════════════════════════════════════════╝
 ```
 
-All 2 notification tests PASS ✅
+#### 2. Notifications Ordered Newest First
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/notifications/ (TPS-91)        ║
+║ Test Case ID        : test_notifications_are_returned_in_        ║
+║                        chronological_order                        ║
+║ Inputs              : "Oldest" created 5 min ago, "Newest" now   ║
+║ Expected Output     : items == ["Newest", "Oldest"]               ║
+║ Actual Output       : items == ["Newest", "Oldest"] ✓            ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 3. Read/Unread Flag Distinguished
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/notifications/ (TPS-91)        ║
+║ Test Case ID        : test_read_and_unread_notifications_are_    ║
+║                        distinguished                               ║
+║ Inputs              : 1 unread + 1 pre-marked-read notification   ║
+║ Expected Output     : is_read flag correct per notification       ║
+║ Actual Output       : "Unread one": false, "Already read": true ✓║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 4. unread_only Filter
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/notifications/?unread_only=true║
+║                        (TPS-91)                                   ║
+║ Test Case ID        : test_unread_only_filter                    ║
+║ Inputs              : 1 unread + 1 read; ?unread_only=true        ║
+║ Expected Output     : Only the unread notification returned       ║
+║ Actual Output       : 1 item returned, title "Unread one" ✓      ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 5. View Single Notification
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/notifications/{id} (TPS-91)    ║
+║ Test Case ID        : test_user_can_view_a_single_notification   ║
+║ Expected Output     : Status 200, full notification detail       ║
+║ Actual Output       : Status 200 ✓, detail returned ✓            ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 6. Mark Single Notification Read
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : PATCH /api/v1/notifications/{id}/read      ║
+║                        (TPS-91)                                   ║
+║ Test Case ID        : test_user_can_mark_a_single_notification_  ║
+║                        as_read                                     ║
+║ Expected Output     : is_read becomes true, read_at set           ║
+║ Actual Output       : is_read: true ✓, read_at present ✓         ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 7. Marking Already-Read Notification Is Idempotent
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : PATCH /api/v1/notifications/{id}/read      ║
+║                        (TPS-91)                                   ║
+║ Test Case ID        : test_marking_already_read_notification_is_ ║
+║                        idempotent                                  ║
+║ Inputs              : Mark an already-read notification as read   ║
+║ Expected Output     : Status 200, no error on repeat call         ║
+║ Actual Output       : Status 200 ✓, still is_read: true ✓        ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 8. Mark All Notifications Read
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : PATCH /api/v1/notifications/read-all       ║
+║                        (TPS-91)                                   ║
+║ Test Case ID        : test_user_can_mark_all_notifications_as_   ║
+║                        read                                        ║
+║ Expected Output     : All notifications become is_read: true      ║
+║ Actual Output       : All items is_read: true ✓                  ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 9. Unread Count Badge
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/notifications/unread-count     ║
+║                        (TPS-91)                                   ║
+║ Test Case ID        : test_unread_count_reflects_unread_          ║
+║                        notifications                               ║
+║ Expected Output     : Count matches number of unread notifications║
+║ Actual Output       : unread_count matches expected value ✓       ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 10. Cannot View Another User's Notification
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/notifications/{id} (TPS-91)    ║
+║ Test Case ID        : test_user_cannot_view_another_users_        ║
+║                        notification                                ║
+║ Inputs              : User B requests User A's notification ID    ║
+║ Expected Output     : Status 404 (not leaked as 403)              ║
+║ Actual Output       : Status 404 ✓                                ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 11. Cannot Mark Another User's Notification Read
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : PATCH /api/v1/notifications/{id}/read      ║
+║                        (TPS-91)                                   ║
+║ Test Case ID        : test_user_cannot_mark_another_users_        ║
+║                        notification_as_read                        ║
+║ Inputs              : User B marks User A's notification as read  ║
+║ Expected Output     : Status 404                                  ║
+║ Actual Output       : Status 404 ✓                                ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 12. Notifications Require Authentication
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/notifications/ (TPS-91)        ║
+║ Test Case ID        : test_notifications_endpoint_requires_       ║
+║                        authentication                              ║
+║ Inputs              : No Authorization header                    ║
+║ Expected Output     : Status 401                                  ║
+║ Actual Output       : Status 401 ✓                                ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+All 12 notification tests PASS ✅ (`tests/integration/test_notifications_api.py`,
+merged from `dev` — TPS-91 View Notifications).
+
+---
+
+### ADMIN DASHBOARD TESTS (4 cases) — TPS-95 View Dashboard
+
+#### 1. System Admin Dashboard Includes New KPI Fields
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/admin/dashboard (TPS-95)        ║
+║ Test Case ID        : test_system_admin_can_load_dashboard_with_  ║
+║                        new_kpi_fields                              ║
+║ Description         : System admin dashboard returns TPS-95 fields║
+║ Inputs              :                                            ║
+║   - Login: system administrator                                  ║
+║   - GET /api/v1/admin/dashboard                                  ║
+║ Expected Output     :                                            ║
+║   - Status 200, data.scope == "system"                           ║
+║   - high_priority_complaints (int), avg_resolution_hours,        ║
+║     active_field_workers (int) present alongside existing fields ║
+║ Actual Output       :                                            ║
+║   - Status 200 ✓, scope: "system" ✓, all fields present ✓        ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 2. Municipal Admin Dashboard Includes New KPI Fields (City-Scoped)
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/admin/dashboard (TPS-95)        ║
+║ Test Case ID        : test_municipal_admin_can_load_dashboard_    ║
+║                        with_new_kpi_fields                         ║
+║ Inputs              : Municipal admin bound to "DashApiCity"      ║
+║ Expected Output     :                                            ║
+║   - Status 200, data.scope == "municipal"                        ║
+║   - managed_city.name == "DashApiCity"                           ║
+║   - high_priority_complaints, avg_resolution_hours,               ║
+║     active_field_workers, total_field_workers present             ║
+║ Actual Output       :                                            ║
+║   - Status 200 ✓, managed_city.name: "DashApiCity" ✓             ║
+║   - All new fields present ✓                                     ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 3. Non-Admin Cannot Access Dashboard
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/admin/dashboard (TPS-95)        ║
+║ Test Case ID        : test_non_admin_cannot_access_dashboard      ║
+║ Inputs              : Citizen token                               ║
+║ Expected Output     : Status 403                                  ║
+║ Actual Output       : Status 403 ✓                                ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 4. Dashboard Requires Authentication
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/admin/dashboard (TPS-95)        ║
+║ Test Case ID        : test_dashboard_requires_authentication      ║
+║ Inputs              : No Authorization header                    ║
+║ Expected Output     : Status 401                                  ║
+║ Actual Output       : Status 401 ✓                                ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+All 4 dashboard tests PASS ✅ (`tests/integration/test_admin_dashboard_api.py`,
+merged from `dev` — TPS-95 View Dashboard). Note: this file's `high_priority_
+complaints`/`avg_resolution_hours` fields were merged alongside this branch's
+own `high_priority_pending_count`/`avg_resolution_time_hours` KPIs (see the
+KPI DASHBOARD TESTS section above) — both sets of fields coexist on the same
+`GET /admin/dashboard` response after conflict resolution during the `dev`
+merge, verified by both test files passing together.
+
+---
+
+### COMPLAINT CLOSURE NOTIFICATION TESTS (7 cases) — TPS-94
+
+#### 1. Closure Sets a Distinct closed_at Timestamp
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : PUT /api/v1/admin/complaints/{id} (TPS-94)  ║
+║ Test Case ID        : test_closure_sets_closed_at_timestamp       ║
+║ Description         : closed_at is recorded separately from       ║
+║                        resolved_at on the full lifecycle          ║
+║ Inputs              :                                            ║
+║   - Complaint driven through assign → accept → complete →         ║
+║     verify(approved) → close                                      ║
+║ Expected Output     :                                            ║
+║   - complaint.closed_at is not null                               ║
+║   - complaint.resolved_at is not null                             ║
+║   - closed_at != resolved_at                                      ║
+║ Actual Output       : Both timestamps set and distinct ✓          ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 2. Closure Notification Contains Complaint ID
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/notifications/ (TPS-94)         ║
+║ Test Case ID        : test_closure_notification_contains_         ║
+║                        complaint_id                                ║
+║ Expected Output     : Notification message contains "#<id>"       ║
+║ Actual Output       : "#<id>" present in message ✓                ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 3. Closure Notification Contains Closure Date
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/notifications/ (TPS-94)         ║
+║ Test Case ID        : test_closure_notification_contains_         ║
+║                        closure_date                                ║
+║ Expected Output     : Message includes formatted closure date     ║
+║                        (e.g. "August 01, 2026")                   ║
+║ Actual Output       : Formatted date string present in message ✓ ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 4. Closure Notification Prompts Feedback + Links Complaint
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/notifications/ (TPS-94)         ║
+║ Test Case ID        : test_closure_notification_contains_         ║
+║                        feedback_prompt                              ║
+║ Expected Output     :                                            ║
+║   - Message contains the word "feedback"                          ║
+║   - related_complaint_id == the closed complaint's ID             ║
+║ Actual Output       : "feedback" present ✓, related_complaint_id  ║
+║                        matches ✓                                  ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 5. Closure Notification Appears in Notification Center
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/notifications/ (TPS-94)         ║
+║ Test Case ID        : test_closure_notification_appears_in_       ║
+║                        notification_center                         ║
+║ Expected Output     : Status 200, closure notification listed     ║
+║ Actual Output       : Status 200 ✓, notification found in items ✓║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 6. Closure Notification Can Be Marked Read
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : PATCH /api/v1/notifications/{id}/read       ║
+║                        (TPS-94)                                   ║
+║ Test Case ID        : test_closure_notification_can_be_marked_    ║
+║                        read                                        ║
+║ Expected Output     : is_read: true, read_at set                  ║
+║ Actual Output       : is_read: true ✓, read_at present ✓          ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+#### 7. closed_at Consistent Across Citizen and Admin Views
+```
+╔════════════════════════════════════════════════════════════════╗
+║ API Being Tested    : GET /api/v1/citizen/complaints/{id},        ║
+║                        GET /api/v1/admin/complaints/{id} (TPS-94) ║
+║ Test Case ID        : test_serializer_exposes_closed_at_on_       ║
+║                        citizen_and_admin_views                     ║
+║ Expected Output     : Both views expose the same closed_at value  ║
+║ Actual Output       : citizen_view.closed_at == admin_view.        ║
+║                        closed_at ✓                                ║
+║ Result              : ✅ PASS                                   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+All 7 closure notification tests PASS ✅
+(`tests/integration/test_complaint_closure_notification_api.py`, merged from
+`dev` — TPS-94 Receive Complaint Closure Notifications). Required a new
+`closed_at` column + migration (`f5a6b7c8d9e0_add_complaint_closed_at.py`) —
+see gotcha: after merging, `flask db upgrade` must be re-run on any existing
+local dev database or all `complaints` queries fail with
+`no such column: complaints.closed_at`.
+
 
 ---
 
@@ -1021,25 +1381,27 @@ All 25 unit tests PASS ✅ (plus the 9 KPI helper unit tests documented separate
 |---|---|---|---|
 | Auth | test_auth_api.py | 21 | Register/login/refresh/logout/me/avatar |
 | Citizen | test_citizen_api.py, test_citizen_feedback_api.py | 20 | Complaints CRUD + feedback |
-| Administrator (incl. KPI dashboard) | test_admin_city_scoping_api.py, test_admin_complaint_workflow_api.py, test_admin_hierarchy_api.py, test_admin_dashboard_kpi_api.py, test_admin_dashboard_kpi.py (unit), test_admin_service.py (unit) | 49 | Complaints, field workers, city scoping, 9-KPI dashboard |
+| Administrator (incl. KPI dashboard, TPS-95/97) | test_admin_city_scoping_api.py, test_admin_complaint_workflow_api.py, test_admin_hierarchy_api.py, test_admin_dashboard_api.py, test_admin_dashboard_kpi_api.py, test_admin_dashboard_kpi.py (unit), test_admin_service.py (unit) | 59 | Complaints, field workers, city scoping, dashboard KPIs (both TPS-95 and TPS-97 field sets) |
 | Field Worker | test_fieldworker_api.py | 7 | Assignment lifecycle |
-| Reports (incl. export) | test_reports_api.py | 16 | Analytics + CSV/Excel/PDF export |
+| Reports (incl. export, TPS-98) | test_reports_api.py | 16 | Analytics + CSV/Excel/PDF export |
+| Notifications (TPS-91, TPS-94) | test_notifications_api.py, test_complaint_closure_notification_api.py | 19 | Notification Center CRUD + closure notification content/lifecycle |
 | Locations (public) | test_location_api.py | 9 | Pincode/city/geocode |
 | System Settings | test_system_settings_api.py | 8 | Maintenance mode, notification toggle |
 | Models/Schemas (unit) | test_models.py, test_schemas.py | 23 | SQLAlchemy models, Marshmallow schemas |
-| **Total** | **15 files** | **153** | **100% of 56 endpoints covered** |
+| **Total** | **17 files** | **182** | **100% of 56 endpoints covered** |
 
-> Notification delivery (assign/accept/reject/complete/resolve/close) is
-> verified as an integrated side-effect inside the Administrator and Field
-> Worker workflow tests above, rather than as a standalone test file.
+> Notification delivery on assign/accept/reject/complete/resolve is verified
+> as an integrated side-effect inside the Administrator and Field Worker
+> workflow tests; the closure-specific message content/lifecycle (TPS-94) has
+> its own dedicated test file.
 
 ### Test Types Breakdown
 
 | Type | Count | Purpose |
 |---|---|---|
-| **Happy Path** | 100 | Successful operations (incl. KPI dashboard fields, export downloads) |
-| **Error Cases** | 35 | Error handling (400, 401, 403, 404, 409, 422) |
-| **Validation** | 18 | Schema validation, business rules, KPI calculation edge cases |
+| **Happy Path** | 122 | Successful operations (incl. KPI dashboard fields, export downloads, notification center, closure lifecycle) |
+| **Error Cases** | 41 | Error handling (400, 401, 403, 404, 409, 422) |
+| **Validation** | 19 | Schema validation, business rules, KPI calculation edge cases |
 
 ---
 
@@ -1067,26 +1429,32 @@ cachedir: .pytest_cache
 rootdir: /mnt/c/users/jedku/iitm/MAY2026-Team-005/backend
 configfile: pytest.ini
 plugins: cov-6.0.0, flask-1.3.0
-collecting ... collected 153 items
+collecting ... collected 182 items
 
-tests/integration/test_admin_city_scoping_api.py ............            [  7%]
-tests/integration/test_admin_complaint_workflow_api.py ...........       [ 15%]
-tests/integration/test_admin_dashboard_kpi_api.py .......                [ 19%]
-tests/integration/test_admin_hierarchy_api.py ........                   [ 24%]
-tests/integration/test_auth_api.py .....................                 [ 38%]
-tests/integration/test_citizen_api.py ..............                    [ 47%]
-tests/integration/test_citizen_feedback_api.py ......                   [ 51%]
-tests/integration/test_fieldworker_api.py .......                       [ 56%]
-tests/integration/test_location_api.py .........                        [ 62%]
-tests/integration/test_reports_api.py ................                 [ 72%]
-tests/integration/test_system_settings_api.py ........                  [ 77%]
-tests/unit/test_admin_dashboard_kpi.py .........                        [ 83%]
-tests/unit/test_admin_service.py ..                                     [ 84%]
-tests/unit/test_models.py ........                                      [ 90%]
+tests/integration/test_admin_city_scoping_api.py ............            [  6%]
+tests/integration/test_admin_complaint_workflow_api.py ...........       [ 12%]
+tests/integration/test_admin_dashboard_api.py ....                      [ 14%]
+tests/integration/test_admin_dashboard_kpi_api.py .......                [ 18%]
+tests/integration/test_admin_hierarchy_api.py ........                   [ 23%]
+tests/integration/test_auth_api.py .....................                 [ 34%]
+tests/integration/test_citizen_api.py ..............                    [ 42%]
+tests/integration/test_citizen_feedback_api.py ......                   [ 45%]
+tests/integration/test_complaint_closure_notification_api.py .......    [ 49%]
+tests/integration/test_fieldworker_api.py .......                       [ 53%]
+tests/integration/test_location_api.py .........                        [ 58%]
+tests/integration/test_notifications_api.py ............                [ 64%]
+tests/integration/test_reports_api.py ................                 [ 73%]
+tests/integration/test_system_settings_api.py ........                  [ 78%]
+tests/unit/test_admin_dashboard_kpi.py .........                        [ 82%]
+tests/unit/test_admin_service.py ........                                [ 87%]
+tests/unit/test_models.py ........                                      [ 91%]
 tests/unit/test_schemas.py ...............                              [100%]
 
-============================= 153 passed in 27.34s ==============================
+============================= 182 passed in 38.60s ==============================
 ```
+
+Full raw output: see `pytest_full_output.txt` in this folder (regenerated
+2026-08-01, `pytest tests/ -v`).
 
 ---
 
@@ -1095,11 +1463,11 @@ tests/unit/test_schemas.py ...............                              [100%]
 | Metric | Value | Status |
 |---|---|---|
 | Pass Rate | 100% | ✅ Excellent |
-| Code Coverage | High (15 test files) | ✅ Good |
-| Error Scenarios | 30+ tested | ✅ Complete |
+| Code Coverage | High (17 test files) | ✅ Good |
+| Error Scenarios | 41 tested | ✅ Complete |
 | Security Tests | 10 categories | ✅ Comprehensive |
-| Avg Test Exec Time | ~0.18s per test | ✅ Fast |
-| Total Exec Time | ~27s | ✅ Quick |
+| Avg Test Exec Time | ~0.21s per test | ✅ Fast |
+| Total Exec Time | ~39s | ✅ Quick |
 | flake8 (app/, max-line 120) | 0 violations | ✅ Clean |
 | Frontend build (`npm run build`) | Success | ✅ Clean |
 | Frontend lint (`eslint`, modified files) | 0 warnings | ✅ Clean |
@@ -1109,13 +1477,18 @@ tests/unit/test_schemas.py ...............                              [100%]
 ## 📋 NEXT STEPS
 
 1. ✅ Test case template created
-2. ✅ All 153 tests documented in required format
+2. ✅ All 182 tests documented in required format
 3. ✅ Test results captured and analyzed
 4. ✅ Input/output examples provided
-5. ✅ Report Export (CSV/Excel/PDF) and KPI Dashboard stories fully tested
+5. ✅ Report Export (CSV/Excel/PDF), KPI Dashboard (TPS-97), View Dashboard
+   (TPS-95), View Notifications (TPS-91), and Complaint Closure Notifications
+   (TPS-94) stories fully tested
 6. ✅ Live smoke test against real dev server + DB (dashboard + all 3 export formats)
-7. ⏭️ Compile complete test documentation
-8. ⏭️ Final IITM submission package
+7. ✅ Merged `dev` branch, resolved conflicts, re-verified full suite green
+8. ✅ Compile complete test documentation
+9. ⏭️ Final IITM submission package
 
-**Status**: STEP 2 Complete ✅ (updated 2026-07-31 with Report Export + KPI Dashboard coverage)
+**Status**: STEP 2 Complete ✅ (updated 2026-08-01 after merging `dev` — Report
+Export + KPI Dashboard + View Dashboard + Notifications + Closure
+Notifications coverage, 182/182 tests passing)
 
