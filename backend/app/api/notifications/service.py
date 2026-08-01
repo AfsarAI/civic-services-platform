@@ -4,6 +4,8 @@ Notification service — notification management and delivery.
 
 from datetime import datetime, timezone
 
+from sqlalchemy.exc import IntegrityError
+
 from app.extensions import db
 from app.models.notification import Notification
 
@@ -97,6 +99,7 @@ class NotificationService:
         message: str,
         notification_type: str = Notification.TYPE_GENERAL,
         related_complaint_id: int = None,
+        related_assignment_id: int = None,
         commit: bool = True,
     ) -> dict:
         """Create and persist a notification for a user.
@@ -109,18 +112,49 @@ class NotificationService:
 
         Returns the serialised notification dict.
         """
+        # Assignment notifications are idempotent per assignment event.
+        if (
+            notification_type == Notification.TYPE_COMPLAINT_ASSIGNED
+            and related_assignment_id is not None
+        ):
+            existing = Notification.query.filter_by(
+                user_id=user_id,
+                notification_type=notification_type,
+                related_assignment_id=related_assignment_id,
+            ).first()
+            if existing:
+                return self._serialize(existing)
+
         notification = Notification(
             user_id=user_id,
             title=title,
             message=message,
             notification_type=notification_type,
             related_complaint_id=related_complaint_id,
+            related_assignment_id=related_assignment_id,
         )
         db.session.add(notification)
-        if commit:
-            db.session.commit()
-        else:
-            db.session.flush()
+        try:
+            if commit:
+                db.session.commit()
+            else:
+                db.session.flush()
+        except IntegrityError:
+            if not commit:
+                raise
+            db.session.rollback()
+            if (
+                notification_type == Notification.TYPE_COMPLAINT_ASSIGNED
+                and related_assignment_id is not None
+            ):
+                existing = Notification.query.filter_by(
+                    user_id=user_id,
+                    notification_type=notification_type,
+                    related_assignment_id=related_assignment_id,
+                ).first()
+                if existing:
+                    return self._serialize(existing)
+            raise
         return self._serialize(notification)
 
     # ── Helpers ───────────────────────────────────────────────────────────
@@ -151,6 +185,7 @@ class NotificationService:
             "notification_type": notification.notification_type,
             "is_read": notification.is_read,
             "related_complaint_id": notification.related_complaint_id,
+            "related_assignment_id": notification.related_assignment_id,
             "created_at": notification.created_at.isoformat(),
             "read_at": (
                 notification.read_at.isoformat() if notification.read_at else None

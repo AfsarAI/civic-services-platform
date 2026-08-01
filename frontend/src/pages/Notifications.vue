@@ -78,6 +78,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import fieldWorkerService from '@/services/fieldworker.service'
 import notificationService from '@/services/notification.service'
 
 const router = useRouter()
@@ -111,8 +112,33 @@ async function handleNotifClick(notification) {
       // Ignore — non-critical UI action.
     }
   }
-  if (notification.related_complaint_id && authStore.userRole === 'citizen') {
+  if (!notification.related_complaint_id) return
+
+  if (authStore.userRole === 'citizen') {
     router.push({ name: 'complaint-details', params: { id: notification.related_complaint_id } })
+    return
+  }
+  if (authStore.userRole === 'administrator') {
+    router.push({ name: 'admin-complaint-details', params: { id: notification.related_complaint_id } })
+    return
+  }
+  if (authStore.userRole === 'field_worker') {
+    let assignmentId = notification.related_assignment_id || null
+    if (!assignmentId) {
+      try {
+        const response = await fieldWorkerService.getAssignments({
+          page: 1,
+          per_page: 1,
+          search: String(notification.related_complaint_id),
+        })
+        assignmentId = response?.data?.items?.[0]?.id || null
+      } catch {
+        assignmentId = null
+      }
+    }
+    if (assignmentId) {
+      router.push({ name: 'fieldworker-assignment-details', params: { id: assignmentId } })
+    }
   }
 }
 

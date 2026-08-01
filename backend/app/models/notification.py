@@ -24,6 +24,12 @@ class Notification(db.Model):
     notification_type = db.Column(db.String(50), nullable=False, default=TYPE_GENERAL)
     is_read = db.Column(db.Boolean, default=False, nullable=False)
     related_complaint_id = db.Column(db.Integer, db.ForeignKey("complaints.id"), nullable=True)
+    related_assignment_id = db.Column(
+        db.Integer,
+        db.ForeignKey("complaint_assignments.id"),
+        nullable=True,
+        index=True,
+    )
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     read_at = db.Column(db.DateTime, nullable=True)
 

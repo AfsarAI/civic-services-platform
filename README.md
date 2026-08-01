@@ -242,6 +242,7 @@ Implementation summary:
 - Reworked the mobile report screen around photo, map pin, pincode, and city selection.
 - Added backend support for uploading complaint photos and serving them back by URL.
 - Added the `flask import-pincodes` command for loading `city_pincodes` from `database/pincode.csv`.
+- Expanded assignment notifications so field workers immediately receive complaint ID, assignment date/time, location, priority, expected completion, and optional administrator remarks; notification links now route role-wise (citizen/admin/field-worker views).
 - Updated the documentation set to match the current setup order and database seeding flow.
 
 ---
