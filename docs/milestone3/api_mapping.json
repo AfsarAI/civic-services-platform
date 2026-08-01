@@ -1,0 +1,292 @@
+{
+  "/api/v1/auth/register": {
+    "stories": [
+      "TPS-1"
+    ],
+    "description": "User Registration",
+    "errors": {
+      "400": "Validation failure (weak password, invalid email, duplicate email)",
+      "422": "Missing/invalid required fields"
+    }
+  },
+  "/api/v1/auth/login": {
+    "stories": [
+      "TPS-2"
+    ],
+    "description": "User Login and Token Generation",
+    "errors": {
+      "401": "Invalid credentials or inactive account",
+      "503": "Maintenance mode enabled for non-admins"
+    }
+  },
+  "/api/v1/auth/refresh": {
+    "stories": [
+      "TPS-2"
+    ],
+    "description": "Refresh JWT Access Token",
+    "errors": {
+      "401": "Invalid or expired refresh token"
+    }
+  },
+  "/api/v1/auth/logout": {
+    "stories": [
+      "TPS-2"
+    ],
+    "description": "User Logout",
+    "errors": {
+      "401": "JWT required"
+    }
+  },
+  "/api/v1/auth/me": {
+    "stories": [
+      "TPS-2"
+    ],
+    "description": "Get Current User Profile",
+    "errors": {
+      "401": "JWT required"
+    }
+  },
+  "/api/v1/citizen/complaints": {
+    "stories": [
+      "TPS-3",
+      "TPS-4"
+    ],
+    "description": "Submit Complaint (POST) and List Complaints (GET)",
+    "errors": {
+      "400": "Invalid pincode or missing required fields",
+      "401": "JWT required",
+      "403": "Not a citizen role",
+      "422": "Validation failure"
+    }
+  },
+  "/api/v1/citizen/complaints/{id}": {
+    "stories": [
+      "TPS-5"
+    ],
+    "description": "View/Update/Cancel Complaint",
+    "errors": {
+      "400": "Cannot edit complaint that is not pending",
+      "401": "JWT required",
+      "403": "Not the complaint owner",
+      "404": "Complaint not found"
+    }
+  },
+  "/api/v1/citizen/complaints/{id}/feedback": {
+    "stories": [
+      "TPS-59"
+    ],
+    "description": "Submit Citizen Feedback",
+    "errors": {
+      "400": "Complaint not resolved/closed, or feedback already exists",
+      "401": "JWT required",
+      "403": "Not the complaint owner",
+      "404": "Complaint not found"
+    }
+  },
+  "/api/v1/citizen/dashboard": {
+    "stories": [
+      "TPS-10"
+    ],
+    "description": "Citizen Dashboard - Complaint Stats",
+    "errors": {
+      "401": "JWT required",
+      "403": "Not a citizen role"
+    }
+  },
+  "/api/v1/admin/complaints": {
+    "stories": [
+      "TPS-80"
+    ],
+    "description": "List Complaints (Admin)",
+    "errors": {
+      "401": "JWT required",
+      "403": "Not admin role",
+      "400": "Invalid filter parameters"
+    }
+  },
+  "/api/v1/admin/complaints/{id}": {
+    "stories": [
+      "TPS-81",
+      "TPS-82",
+      "TPS-83"
+    ],
+    "description": "View/Update Complaint Status and Priority",
+    "errors": {
+      "400": "Invalid status transition or priority",
+      "401": "JWT required",
+      "403": "Not admin role or out of scope (municipal admin)",
+      "404": "Complaint not found"
+    }
+  },
+  "/api/v1/admin/complaints/{id}/assign": {
+    "stories": [
+      "TPS-52"
+    ],
+    "description": "Assign Complaint to Field Worker",
+    "errors": {
+      "400": "Worker not in same city as complaint",
+      "401": "JWT required",
+      "403": "Not admin role",
+      "404": "Complaint or worker not found"
+    }
+  },
+  "/api/v1/admin/field-workers": {
+    "stories": [
+      "TPS-27"
+    ],
+    "description": "Create/List/Update/Deactivate Field Workers",
+    "errors": {
+      "400": "Invalid phone or data",
+      "401": "JWT required",
+      "403": "Only municipal admins can manage field workers",
+      "409": "Duplicate email",
+      "422": "Validation failure"
+    }
+  },
+  "/api/v1/admin/users": {
+    "stories": [
+      "TPS-33"
+    ],
+    "description": "Manage Users (List/Update/Deactivate)",
+    "errors": {
+      "400": "Cannot deactivate own account",
+      "401": "JWT required",
+      "403": "Not admin role",
+      "404": "User not found"
+    }
+  },
+  "/api/v1/admin/dashboard": {
+    "stories": [
+      "TPS-35"
+    ],
+    "description": "Admin Dashboard - Platform Stats",
+    "errors": {
+      "401": "JWT required",
+      "403": "Not admin role"
+    }
+  },
+  "/api/v1/admin/settings": {
+    "stories": [
+      "TPS-99"
+    ],
+    "description": "System Settings (Get/Update)",
+    "errors": {
+      "401": "JWT required",
+      "403": "Only system admins can access",
+      "400": "Invalid setting value"
+    }
+  },
+  "/api/v1/admin/municipal-administrators": {
+    "stories": [
+      "TPS-98"
+    ],
+    "description": "Manage Municipal Administrators",
+    "errors": {
+      "401": "JWT required",
+      "403": "Only system admins can manage",
+      "409": "Duplicate email",
+      "422": "Validation failure"
+    }
+  },
+  "/api/v1/fieldworker/assignments": {
+    "stories": [
+      "TPS-42"
+    ],
+    "description": "List Field Worker Assignments",
+    "errors": {
+      "401": "JWT required",
+      "403": "Not field worker role",
+      "400": "Invalid filter parameters"
+    }
+  },
+  "/api/v1/fieldworker/assignments/{id}": {
+    "stories": [
+      "TPS-45"
+    ],
+    "description": "View Assignment Details",
+    "errors": {
+      "401": "JWT required",
+      "403": "Not field worker role",
+      "404": "Assignment not found"
+    }
+  },
+  "/api/v1/fieldworker/assignments/{id}/accept": {
+    "stories": [
+      "TPS-43"
+    ],
+    "description": "Accept Assignment",
+    "errors": {
+      "400": "Assignment already accepted or complaint no longer actionable",
+      "401": "JWT required",
+      "403": "Not field worker role",
+      "404": "Assignment not found"
+    }
+  },
+  "/api/v1/fieldworker/assignments/{id}/update": {
+    "stories": [
+      "TPS-44"
+    ],
+    "description": "Update Progress on Repair",
+    "errors": {
+      "400": "Invalid status or complaint no longer actionable",
+      "401": "JWT required",
+      "403": "Not field worker role",
+      "404": "Assignment not found"
+    }
+  },
+  "/api/v1/fieldworker/assignments/{id}/complete": {
+    "stories": [
+      "TPS-50"
+    ],
+    "description": "Mark Assignment Complete (Upload Evidence)",
+    "errors": {
+      "400": "Assignment already completed or complaint no longer actionable",
+      "401": "JWT required",
+      "403": "Not field worker role",
+      "404": "Assignment not found"
+    }
+  },
+  "/api/v1/fieldworker/dashboard": {
+    "stories": [
+      "TPS-47"
+    ],
+    "description": "Field Worker Dashboard - Assignment Stats",
+    "errors": {
+      "401": "JWT required",
+      "403": "Not field worker role"
+    }
+  },
+  "/api/v1/notifications": {
+    "stories": [
+      "TPS-60",
+      "TPS-91"
+    ],
+    "description": "List Notifications",
+    "errors": {
+      "401": "JWT required"
+    }
+  },
+  "/api/v1/reports/complaints/summary": {
+    "stories": [
+      "TPS-53",
+      "TPS-85",
+      "TPS-96"
+    ],
+    "description": "Complaint Summary Report",
+    "errors": {
+      "401": "JWT required",
+      "403": "Non-admins cannot access",
+      "400": "Invalid filter parameters"
+    }
+  },
+  "/api/v1/locations": {
+    "stories": [
+      "TPS-31"
+    ],
+    "description": "Public Location Lookup (Pincode/City/Reverse Geocode)",
+    "errors": {
+      "400": "Invalid pincode or coordinates",
+      "404": "Location not found"
+    }
+  }
+}

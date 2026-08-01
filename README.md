@@ -171,6 +171,25 @@ FLASK_APP=app.py flask import-pincodes
 FLASK_APP=app.py FLASK_ENV=development flask run
 ```
 
+### Code Quality — Flake8 Analysis
+
+```bash
+cd backend
+
+# Run Flake8 with project's standard (120 char line limit)
+python3 -m flake8 app/ --max-line-length=120
+
+# Run with PEP 8 strict mode (79 char limit)
+python3 -m flake8 app/
+
+# Generate detailed report
+python3 -m flake8 app/ --max-line-length=120 --count --statistics
+```
+
+**Status:** ✅ 0 violations with `--max-line-length=120` | ⚠️ 149 E501 violations with PEP 8 default (79 chars)
+
+See [Software_Metrics_Report_Flake8.md](Software_Metrics_Report_Flake8.md) for detailed analysis.
+
 ### Database setup order
 
 Run these backend commands in order after creating `.env`:

@@ -55,6 +55,11 @@ const adminService = {
     return response.data
   },
 
+  async getDashboard(params = {}) {
+    const response = await api.get('/admin/dashboard', { params })
+    return response.data
+  },
+
   async getSystemSettings() {
     const response = await api.get('/admin/settings')
     return response.data

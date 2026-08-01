@@ -5,9 +5,17 @@
         <h1 class="text-2xl font-bold text-gray-900 mb-1">Reports &amp; Analytics</h1>
         <p class="text-gray-500 text-sm">{{ scopeDescription }}</p>
       </div>
-      <button type="button" class="btn-secondary px-4 py-2 text-sm shrink-0" @click="exportCsv">
-        Export CSV
-      </button>
+      <div class="flex gap-2 shrink-0">
+        <button type="button" class="btn-secondary px-4 py-2 text-sm" :disabled="exporting" @click="exportReport('csv')">
+          {{ exporting === 'csv' ? 'Exporting…' : 'Export CSV' }}
+        </button>
+        <button type="button" class="btn-secondary px-4 py-2 text-sm" :disabled="exporting" @click="exportReport('excel')">
+          {{ exporting === 'excel' ? 'Exporting…' : 'Export Excel' }}
+        </button>
+        <button type="button" class="btn-secondary px-4 py-2 text-sm" :disabled="exporting" @click="exportReport('pdf')">
+          {{ exporting === 'pdf' ? 'Exporting…' : 'Export PDF' }}
+        </button>
+      </div>
     </div>
 
     <div v-if="error" class="card border-red-200 bg-red-50 text-red-700 p-4 text-sm">{{ error }}</div>
@@ -201,6 +209,7 @@ const byLocation = ref([])
 const trends = ref([])
 const trendPeriod = ref('daily')
 const workerPerformance = ref([])
+const exporting = ref(false)
 
 const filters = reactive({ date_from: '', date_to: '', status: '' })
 const statusOptions = ['pending', 'assigned', 'in_progress', 'resolved', 'closed', 'rejected', 'cancelled']
@@ -321,82 +330,50 @@ function resetFilters() {
   loadAll()
 }
 
-// Guards against CSV/formula injection (OWASP): quote fields containing
-// delimiters, and neutralise leading =, +, -, @ which spreadsheet apps treat
-// as the start of a formula.
-function csvField(value) {
-  let str = String(value ?? '')
-  if (/^[=+\-@]/.test(str)) str = `'${str}`
-  if (/[",\n]/.test(str)) str = `"${str.replace(/"/g, '""')}"`
-  return str
+// Guards against CSV/formula injection (OWASP) if any client-side rendering
+// of user-controlled strings (e.g. worker names) is ever added elsewhere.
+const exportConfig = {
+  csv: { call: (filters) => reportsService.exportCsv(filters), extension: 'csv' },
+  excel: { call: (filters) => reportsService.exportExcel(filters), extension: 'xlsx' },
+  pdf: { call: (filters) => reportsService.exportPdf(filters), extension: 'pdf' },
 }
 
-function csvRow(fields) {
-  return fields.map(csvField).join(',')
+async function exportReport(format) {
+  const config = exportConfig[format]
+  if (!config || exporting.value) return
+
+  exporting.value = format
+  error.value = ''
+  try {
+    const response = await config.call(activeFilters.value)
+    const blob = new Blob([response.data])
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const stamp = new Date().toISOString().slice(0, 10)
+    link.href = url
+    link.setAttribute('download', `complaint-report-${stamp}.${config.extension}`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (err) {
+    error.value = await extractBlobErrorMessage(err) || `Could not export report as ${format.toUpperCase()}.`
+  } finally {
+    exporting.value = false
+  }
 }
 
-function exportCsv() {
-  const lines = []
-  lines.push('Civic Services Platform — Complaint Report')
-  lines.push(csvRow(['Generated', new Date().toISOString()]))
-  if (activeFilters.value.date_from || activeFilters.value.date_to) {
-    lines.push(csvRow(['Date range', `${filters.date_from || 'any'} to ${filters.date_to || 'any'}`]))
+// With responseType: 'blob', axios also delivers JSON error bodies (e.g. 400
+// invalid date) as a Blob instead of parsed JSON — read and parse it manually.
+async function extractBlobErrorMessage(err) {
+  const data = err?.response?.data
+  if (!(data instanceof Blob)) return err?.response?.data?.message
+  try {
+    const text = await data.text()
+    return JSON.parse(text)?.message
+  } catch {
+    return null
   }
-  if (activeFilters.value.status) {
-    lines.push(csvRow(['Status filter', filters.status]))
-  }
-  lines.push('')
-
-  lines.push('Summary')
-  lines.push(csvRow(['Total Complaints', summary.value.total ?? 0]))
-  lines.push(csvRow(['Open', summary.value.open ?? 0]))
-  lines.push(csvRow(['Resolved', summary.value.resolved ?? 0]))
-  lines.push(csvRow(['Resolution Rate (%)', summary.value.resolution_rate ?? 0]))
-  lines.push(csvRow(['Avg. Resolution (hrs)', summary.value.avg_resolution_hours ?? '']))
-  lines.push('')
-
-  lines.push('Complaints by Status')
-  lines.push(csvRow(['Status', 'Count', 'Percentage']))
-  byStatus.value.forEach((row) => lines.push(csvRow([row.status, row.count, row.percentage])))
-  lines.push('')
-
-  lines.push('Complaints by Category')
-  lines.push(csvRow(['Category', 'Count', 'Percentage']))
-  byCategory.value.forEach((row) => lines.push(csvRow([row.category, row.count, row.percentage])))
-  lines.push('')
-
-  lines.push('Complaints by Priority')
-  lines.push(csvRow(['Priority', 'Count', 'Percentage']))
-  byPriority.value.forEach((row) => lines.push(csvRow([row.priority, row.count, row.percentage])))
-  lines.push('')
-
-  lines.push('Complaints by Location')
-  lines.push(csvRow(['City', 'Count', 'Percentage']))
-  byLocation.value.forEach((row) => lines.push(csvRow([row.city_name, row.count, row.percentage])))
-  lines.push('')
-
-  lines.push('Field Worker Performance')
-  lines.push(csvRow(['Worker', 'Total Assignments', 'Completed', 'Completion Rate (%)', 'Avg. Time (hrs)', 'Active']))
-  workerPerformance.value.forEach((w) => lines.push(csvRow([
-    w.name,
-    w.total_assignments,
-    w.by_status?.completed || 0,
-    w.completion_rate,
-    w.avg_completion_hours ?? '',
-    w.is_active ? 'Yes' : 'No',
-  ])))
-
-  const csvContent = lines.join('\r\n')
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  const stamp = new Date().toISOString().slice(0, 10)
-  link.href = url
-  link.setAttribute('download', `complaint-report-${stamp}.csv`)
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
 }
 
 onMounted(() => {
