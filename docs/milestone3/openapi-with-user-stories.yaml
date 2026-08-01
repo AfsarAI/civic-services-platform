@@ -106,7 +106,7 @@ tags:
     description: Complaint submission, tracking, and feedback (TPS-3 through TPS-10, TPS-59)
 
   - name: Administrator APIs
-    description: Complaint management, field worker assignment, user management, dashboard KPIs, system settings (TPS-27, TPS-33, TPS-35, TPS-52, TPS-80 through TPS-84, TPS-95, TPS-97 through TPS-99)
+    description: Complaint management, field worker assignment, user management, dashboard KPIs, system settings, and municipal administrator hierarchy (TPS-27, TPS-33, TPS-35, TPS-52, TPS-80 through TPS-84, TPS-95, TPS-97, TPS-99; municipal admin management itself has no baseline Jira story)
 
   - name: Field Worker APIs
     description: Assignment management, progress tracking, repair completion (TPS-42 through TPS-50)
@@ -336,7 +336,7 @@ paths:
             schema:
               type: object
               properties:
-                file: { type: string, format: binary }
+                photo: { type: string, format: binary }
       responses:
         "200":
           description: Avatar uploaded, returns updated user with avatar_url
@@ -625,9 +625,9 @@ paths:
             schema:
               type: object
               properties:
-                file: { type: string, format: binary }
+                photo: { type: string, format: binary }
       responses:
-        "200":
+        "201":
           description: Photo uploaded, returns image_url
         "400":
           description: Invalid file type or size
@@ -1565,9 +1565,9 @@ paths:
             schema:
               type: object
               properties:
-                file: { type: string, format: binary }
+                photo: { type: string, format: binary }
       responses:
-        "200":
+        "201":
           description: Photo uploaded, returns evidence_url
         "400":
           description: Invalid file type or size
@@ -1613,7 +1613,7 @@ paths:
         "403":
           $ref: '#/components/responses/ForbiddenError'
 
-  /notifications:
+  /notifications/:
     get:
       tags: [Notifications]
       summary: List Notifications
@@ -2186,7 +2186,7 @@ paths:
 | TPS-85, TPS-96 | Administrative & Analytics Reports | GET /reports/complaints/summary, /by-status, /by-priority, /by-location, /workers/performance |
 | TPS-85 | Category Report | GET /reports/complaints/by-category |
 | TPS-96 | Complaint Trends | GET /reports/complaints/trends |
-| TPS-98 | Municipal Admin Mgmt | GET/POST /admin/municipal-administrators, GET/PUT/DELETE /admin/municipal-administrators/{id}, GET /admin/cities |
+| None (added beyond baseline) | Municipal Admin Mgmt (Administrator Hierarchy) | GET/POST /admin/municipal-administrators, GET/PUT/DELETE /admin/municipal-administrators/{id}, GET /admin/cities |
 | TPS-98 | Export Reports (CSV/Excel/PDF) | GET /reports/export/csv, /reports/export/excel, /reports/export/pdf |
 | TPS-99 | System Settings | GET/PUT /admin/settings |
 
@@ -2204,3 +2204,23 @@ been corrected above:
   non-existent path `/fieldworker/assignments/{id}/update` — the real route
   is the same path as the GET (`/fieldworker/assignments/{id}`).
 - `/admin/municipal-administrators` was missing its `GET` (list) operation.
+
+### Corrections made on 2026-08-01 (round 2 — Copilot PR review)
+- `/admin/municipal-administrators`, `/admin/municipal-administrators/{id}`,
+  and `/admin/cities` were incorrectly tagged TPS-98 (which is actually
+  "Export Reports", unrelated) — corrected to "no baseline Jira story";
+  the Administrator Hierarchy (system/municipal admin subtype) is a feature
+  added beyond the original 55-story baseline scope, verified by confirming
+  no story in `Jira.csv` (TPS-1 through TPS-108) mentions municipal
+  administrator management.
+- `POST /auth/me/avatar`, `POST /citizen/complaints/media`, and
+  `POST /fieldworker/assignments/media` documented the multipart field name
+  as `file`, but the backend controllers read `request.files.get("photo")` —
+  corrected to `photo` in all three.
+- `POST /citizen/complaints/media` and `POST /fieldworker/assignments/media`
+  documented a `200` success response, but both controllers return `201`
+  (`success_response(..., 201)`) — corrected. `POST /auth/me/avatar` genuinely
+  returns `200` (no explicit status override), left unchanged.
+- `/notifications` was documented without a trailing slash, but the backend
+  registers this route as `/notifications/` (`Namespace(..., path="/notifications")`
+  + `@ns.route("/")`) — corrected to avoid client-side 308 redirects.

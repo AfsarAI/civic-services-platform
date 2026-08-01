@@ -259,7 +259,7 @@ class ExportExcelReport(Resource):
     @jwt_required()
     @require_admin
     def get(self):
-        """Export the current filtered report data as an Excel (.xlsx) workbook.
+        """Export the current filtered report data as an XLSX workbook.
 
         Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.
         """

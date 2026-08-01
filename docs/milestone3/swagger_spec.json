@@ -252,22 +252,6 @@
       }
     },
     "/admin/field-workers": {
-      "get": {
-        "responses": {
-          "200": {
-            "description": "Field workers",
-            "schema": {
-              "$ref": "#/definitions/AdminEnvelope"
-            }
-          }
-        },
-        "summary": "List field workers for the assignment dropdown and management page",
-        "description": "Municipal administrators only see field workers in their own city.\nQuery param ``is_active`` (true/false) filters by status; omit it to\nsee both active and inactive workers.",
-        "operationId": "get_admin_field_worker_list_resource",
-        "tags": [
-          "admin"
-        ]
-      },
       "post": {
         "responses": {
           "422": {
@@ -307,6 +291,22 @@
             }
           }
         ],
+        "tags": [
+          "admin"
+        ]
+      },
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Field workers",
+            "schema": {
+              "$ref": "#/definitions/AdminEnvelope"
+            }
+          }
+        },
+        "summary": "List field workers for the assignment dropdown and management page",
+        "description": "Municipal administrators only see field workers in their own city.\nQuery param ``is_active`` (true/false) filters by status; omit it to\nsee both active and inactive workers.",
+        "operationId": "get_admin_field_worker_list_resource",
         "tags": [
           "admin"
         ]
@@ -404,21 +404,6 @@
       }
     },
     "/admin/municipal-administrators": {
-      "get": {
-        "responses": {
-          "200": {
-            "description": "Paginated municipal administrators",
-            "schema": {
-              "$ref": "#/definitions/AdminEnvelope"
-            }
-          }
-        },
-        "summary": "List municipal administrators",
-        "operationId": "get_municipal_administrator_list_resource",
-        "tags": [
-          "admin"
-        ]
-      },
       "post": {
         "responses": {
           "422": {
@@ -458,6 +443,21 @@
             }
           }
         ],
+        "tags": [
+          "admin"
+        ]
+      },
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Paginated municipal administrators",
+            "schema": {
+              "$ref": "#/definitions/AdminEnvelope"
+            }
+          }
+        },
+        "summary": "List municipal administrators",
+        "operationId": "get_municipal_administrator_list_resource",
         "tags": [
           "admin"
         ]
@@ -1881,8 +1881,8 @@
             "description": "Excel file"
           }
         },
-        "summary": "Export the current filtered report data as an Excel (",
-        "description": "xlsx) workbook.\n\nQuery params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.",
+        "summary": "Export the current filtered report data as an XLSX workbook",
+        "description": "Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.",
         "operationId": "get_export_excel_report",
         "tags": [
           "reports"

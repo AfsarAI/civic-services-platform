@@ -37,7 +37,7 @@ For IITM submission, each test case is documented in the following format:
 **Errors**: 0  
 **Pass Rate**: 100%  
 **Execution Time**: ~38 seconds  
-**Python Version**: 3.12.3  
+**Python Version**: 3.12.3 (local run; project/CI targets Python 3.13 per `.github/workflows/backend-ci.yml`)  
 **pytest Version**: 8.3.3  
 
 > Updated 2026-08-01 after merging `dev` (TPS-91 View Notifications, TPS-94

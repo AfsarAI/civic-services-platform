@@ -18,9 +18,8 @@
     "methods": [
       "GET"
     ],
-    "stories": [
-      "TPS-98"
-    ]
+    "note": "Added beyond baseline scope (Administrator Hierarchy) \u2014 no corresponding Jira TPS story",
+    "stories": []
   },
   "/api/v1/admin/complaints": {
     "description": "List all complaints (city-scoped for municipal admins)",
@@ -134,9 +133,8 @@
       "GET",
       "POST"
     ],
-    "stories": [
-      "TPS-98"
-    ]
+    "note": "Added beyond baseline scope (Administrator Hierarchy) \u2014 no corresponding Jira TPS story",
+    "stories": []
   },
   "/api/v1/admin/municipal-administrators/{user_id}": {
     "description": "View/update/disable a municipal administrator",
@@ -150,9 +148,8 @@
       "GET",
       "PUT"
     ],
-    "stories": [
-      "TPS-98"
-    ]
+    "note": "Added beyond baseline scope (Administrator Hierarchy) \u2014 no corresponding Jira TPS story",
+    "stories": []
   },
   "/api/v1/admin/settings": {
     "description": "View/update platform-wide system settings",
@@ -296,6 +293,7 @@
       "422": "Validation error"
     },
     "methods": [
+      "GET",
       "POST"
     ],
     "stories": [

@@ -4,7 +4,7 @@
 **Date**: 2026-08-01 (originally 2026-07-31)  
 **Time**: 38.60 seconds (182 tests; was 22.29s for the original 130)  
 **Framework**: pytest 8.3.3  
-**Python**: 3.12.3  
+**Python**: 3.12.3 (local run; project/CI targets Python 3.13 per `.github/workflows/backend-ci.yml`)  
 
 > **Update note (2026-08-01):** 52 tests were added on top of the original 130
 > documented in detail below — 7 Report Export (CSV/Excel/PDF, TPS-98), 16 KPI
