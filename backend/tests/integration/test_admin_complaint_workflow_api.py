@@ -11,6 +11,7 @@ from unittest.mock import patch
 import pytest
 
 from app.api.administrator.service import AdminService
+from app.api.notifications.service import NotificationService
 from app.extensions import db
 from app.models.administrator_profile import AdministratorProfile
 from app.models.audit_log import AuditLog
@@ -205,21 +206,72 @@ class TestAdminComplaintWorkflow:
         complaint_id = self._submit_complaint(client, citizen_token, citizen_auth["user"]["city_id"])
 
         worker_id = self._create_field_worker(app, "wf-worker3@example.com")
+        expected_completion = datetime(2026, 8, 15, 17, 45, tzinfo=timezone.utc)
+        admin_remarks = "Carry patch material and secure traffic cones before work starts."
 
         # Assign
         assign_response = client.post(
             f"/api/v1/admin/complaints/{complaint_id}/assign",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"worker_id": worker_id},
+            json={
+                "worker_id": worker_id,
+                "expected_completion_at": expected_completion.isoformat(),
+                "notes": admin_remarks,
+            },
         )
         assert assign_response.status_code == 201
+        assignment = assign_response.get_json()["data"]["assignment"]
 
         # Worker notified of assignment
         worker_token = self._login(client, "wf-worker3@example.com", "Password123!")
         worker_notifs = client.get(
             "/api/v1/notifications/", headers={"Authorization": f"Bearer {worker_token}"}
         ).get_json()["data"]["items"]
-        assert any(n["notification_type"] == "complaint_assigned" for n in worker_notifs)
+        assignment_notifs = [
+            n
+            for n in worker_notifs
+            if n["notification_type"] == "complaint_assigned"
+            and n.get("related_assignment_id") == assignment["id"]
+        ]
+        assert len(assignment_notifs) == 1
+        assignment_message = assignment_notifs[0]["message"]
+        assert f"Complaint #{complaint_id}" in assignment_message
+        assert "Assignment Date:" in assignment_message
+        assert "Assignment Time:" in assignment_message
+        assert "Complaint Location:" in assignment_message
+        assert "Complaint Priority: Medium" in assignment_message
+        assert "Expected Completion Date:" in assignment_message
+        assert "2026-08-15" in assignment_message
+        assert f"Administrator Remarks: {admin_remarks}" in assignment_message
+        with app.app_context():
+            before_count = Notification.query.filter_by(
+                user_id=worker_id,
+                notification_type=Notification.TYPE_COMPLAINT_ASSIGNED,
+                related_assignment_id=assignment["id"],
+            ).count()
+            notif_service = NotificationService()
+            notif_service.send_notification(
+                user_id=worker_id,
+                title="New task assigned",
+                message="Duplicate probe 1",
+                notification_type=Notification.TYPE_COMPLAINT_ASSIGNED,
+                related_complaint_id=complaint_id,
+                related_assignment_id=assignment["id"],
+            )
+            notif_service.send_notification(
+                user_id=worker_id,
+                title="New task assigned",
+                message="Duplicate probe 2",
+                notification_type=Notification.TYPE_COMPLAINT_ASSIGNED,
+                related_complaint_id=complaint_id,
+                related_assignment_id=assignment["id"],
+            )
+            after_count = Notification.query.filter_by(
+                user_id=worker_id,
+                notification_type=Notification.TYPE_COMPLAINT_ASSIGNED,
+                related_assignment_id=assignment["id"],
+            ).count()
+            assert after_count == before_count
 
         # Citizen notified of assignment (status update)
         citizen_notifs = client.get(

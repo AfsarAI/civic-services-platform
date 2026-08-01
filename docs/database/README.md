@@ -97,6 +97,7 @@ erDiagram
         int id PK
         int user_id FK
         int related_complaint_id FK
+        int related_assignment_id FK
         string notification_type
         bool is_read
     }
@@ -286,6 +287,7 @@ Table notifications {
     notification_type varchar(50) [not null, default: 'general']
     is_read boolean [not null, default: false]
     related_complaint_id int [ref: > complaints.id]
+    related_assignment_id int [ref: > complaint_assignments.id]
     created_at datetime
     read_at datetime
 }

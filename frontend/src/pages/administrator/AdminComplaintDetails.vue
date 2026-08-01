@@ -185,6 +185,15 @@
                     <option value="">Select a field worker</option>
                     <option v-for="w in activeFieldWorkers" :key="w.id" :value="w.id">{{ w.full_name }}</option>
                   </select>
+                  <label class="form-label" for="assignment-remarks">Administrator remarks (optional)</label>
+                  <textarea
+                    id="assignment-remarks"
+                    v-model="assignNotes"
+                    rows="2"
+                    maxlength="1000"
+                    class="form-input"
+                    placeholder="Add instructions for the field worker"
+                  ></textarea>
                   <label class="form-label" for="expected-completion">Expected completion</label>
                   <input
                     id="expected-completion"
@@ -287,6 +296,7 @@ const priorityForm = ref('medium')
 
 const activeFieldWorkers = ref([])
 const assignWorkerId = ref('')
+const assignNotes = ref('')
 const expectedCompletionAt = ref('')
 const verificationRemarks = ref('')
 
@@ -476,11 +486,13 @@ async function handleAssign() {
   try {
     await complaintService.assignComplaint(complaint.value.id, {
       worker_id: Number(assignWorkerId.value),
+      notes: assignNotes.value.trim() || null,
       expected_completion_at: expectedCompletionAt.value
         ? new Date(expectedCompletionAt.value).toISOString()
         : null,
     })
     assignWorkerId.value = ''
+    assignNotes.value = ''
     expectedCompletionAt.value = ''
     actionMessage.value = 'Complaint assigned successfully.'
     await loadComplaint()
