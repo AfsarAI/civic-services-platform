@@ -2,9 +2,9 @@
   <section class="rounded-3xl border border-slate-200 bg-white p-4 shadow-md sm:p-5">
     <div class="mb-4 flex items-start justify-between gap-3">
       <div>
-        <h3 class="text-base font-semibold text-slate-900 sm:text-lg">India Complaint Map</h3>
+        <h3 class="text-base font-semibold text-slate-900 sm:text-lg">{{ title }}</h3>
         <p class="mt-1 text-xs text-slate-500 sm:text-sm">
-          Live open-source map with pins from reported complaint coordinates.
+          {{ subtitle }}
         </p>
       </div>
       <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
@@ -22,7 +22,7 @@
       </div>
 
       <div v-else-if="!markers.length" class="absolute inset-x-4 bottom-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 sm:text-sm">
-        No complaint coordinates available yet. New geotagged reports will appear here.
+        {{ emptyMessage }}
       </div>
     </div>
 
@@ -67,7 +67,27 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  title: {
+    type: String,
+    default: 'India Complaint Map',
+  },
+  subtitle: {
+    type: String,
+    default: 'Live open-source map with pins from reported complaint coordinates.',
+  },
+  emptyMessage: {
+    type: String,
+    default: 'No complaint coordinates available yet. New geotagged reports will appear here.',
+  },
+  // When true, popups include a "View details" link that emits `pin-click`
+  // instead of just showing read-only info (used on the citizen dashboard).
+  showViewDetails: {
+    type: Boolean,
+    default: false,
+  },
 })
+
+const emit = defineEmits(['pin-click'])
 
 const mapRef = ref(null)
 let map = null
@@ -94,11 +114,15 @@ function popupContent(marker) {
   const category = escapeHtml(marker.category || 'other')
   const status = escapeHtml(marker.status || 'unknown')
   const city = escapeHtml(marker.city_name || 'Unknown city')
+  const detailsLink = props.showViewDetails
+    ? `<button type="button" data-complaint-id="${marker.id}" class="map-pin-view-details" style="margin-top:6px;border:0;background:none;padding:0;color:#2563eb;font-size:12px;font-weight:700;cursor:pointer;">View full details &rarr;</button>`
+    : ''
   return `
     <div style="min-width: 180px;">
       <p style="margin:0 0 4px;font-weight:700;color:#0f172a;">${title}</p>
       <p style="margin:0;color:#334155;font-size:12px;">${category} | ${status}</p>
       <p style="margin:2px 0 0;color:#64748b;font-size:12px;">${city}</p>
+      ${detailsLink}
     </div>
   `
 }
@@ -170,6 +194,15 @@ function initMap() {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map)
+
+  map.on('popupopen', (event) => {
+    const button = event.popup?._contentNode?.querySelector('.map-pin-view-details')
+    if (!button) return
+    button.addEventListener('click', () => {
+      const id = Number(button.getAttribute('data-complaint-id'))
+      if (id) emit('pin-click', id)
+    })
+  })
 
   clusterLayer = L.markerClusterGroup({
     maxClusterRadius: 50,

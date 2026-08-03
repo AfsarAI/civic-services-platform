@@ -200,6 +200,20 @@
       </div>
     </transition>
 
+    <!-- Complaints Map -->
+    <PublicComplaintMap
+      class="mb-4"
+      :markers="mapMarkers"
+      :loading="loadingMap"
+      :title="authStore.isSystemAdmin ? 'All India Complaint Map' : `Complaints Map \u2014 ${authStore.cityName || 'your city'}`"
+      :subtitle="authStore.isSystemAdmin
+        ? 'All complaints across every city on the platform, pinned by location. Click a pin to view full details.'
+        : `All complaints reported in ${authStore.cityName || 'your city'}, pinned by location. Click a pin to view full details.`"
+      empty-message="No complaints have a saved map location yet."
+      show-view-details
+      @pin-click="goToComplaint"
+    />
+
     <div class="card mb-4">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-semibold text-gray-900">
@@ -231,7 +245,62 @@
         No complaints match the current filters.
       </p>
 
-      <div v-else class="overflow-x-auto">
+      <!-- Card view (mobile / tablet / small laptop screens) -->
+      <div v-else class="lg:hidden space-y-3">
+        <div v-for="c in complaints" :key="c.id" class="rounded-xl border border-slate-100 p-4 space-y-2.5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="font-semibold text-slate-900 text-sm truncate">{{ c.title }}</p>
+              <p class="text-xs text-slate-400 mt-0.5">Ref: #{{ c.id }}{{ c.city_name ? ` \u00b7 ${c.city_name}` : '' }}</p>
+            </div>
+            <span :class="statusBadgeClass(c)" class="shrink-0">{{ statusLabel(c) }}</span>
+          </div>
+          <p v-if="isAwaitingVerification(c)" class="text-[11px] font-normal text-purple-600">
+            Marked as fixed, pending verification.
+          </p>
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="capitalize text-slate-500">{{ c.priority }}</span>
+            <span class="text-slate-400">Reported: {{ formatDate(c.created_at) }}</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <RouterLink
+              :to="{ name: 'admin-complaint-details', params: { id: c.id } }"
+              class="text-xs font-bold text-slate-600 hover:text-slate-800"
+            >
+              View
+            </RouterLink>
+            <button
+              v-if="['pending', 'assigned'].includes(c.status)"
+              class="text-xs font-bold text-primary-600 hover:text-primary-700"
+              @click="toggleAssignRow(c)"
+            >
+              {{ assigningId === c.id ? 'Cancel' : 'Assign' }}
+            </button>
+          </div>
+          <div v-if="assigningId === c.id" class="rounded-lg bg-slate-50 p-3 space-y-2">
+            <select v-model="assignWorkerId" class="form-input w-full text-sm">
+              <option value="">Select a field worker</option>
+              <option v-for="w in activeFieldWorkers" :key="w.id" :value="w.id">
+                {{ w.full_name }}{{ w.city_name ? ` (${w.city_name})` : '' }}
+              </option>
+            </select>
+            <input
+              v-model="expectedCompletionAt"
+              type="datetime-local"
+              class="form-input w-full text-sm"
+              aria-label="Expected completion date"
+            />
+            <button class="btn-primary w-full py-2 text-xs" :disabled="!assignWorkerId || isAssigning" @click="handleAssign(c)">
+              {{ isAssigning ? 'Assigning...' : 'Confirm assignment' }}
+            </button>
+            <p v-if="activeFieldWorkers.length === 0" class="text-xs text-slate-500">
+              No active field workers available{{ authStore.isMunicipalAdmin ? ' in your city' : '' }}.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="!loadingComplaints && complaints.length > 0" class="hidden lg:block overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-100 text-left text-sm">
           <thead>
             <tr class="text-slate-400 text-xs font-semibold uppercase tracking-wider">
@@ -319,16 +388,20 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import complaintService from '@/services/complaint.service'
 import adminService from '@/services/admin.service'
+import PublicComplaintMap from '@/components/PublicComplaintMap.vue'
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 const complaints = ref([])
+const mapComplaints = ref([])
 const loadingComplaints = ref(true)
 const loadingDashboard = ref(true)
+const loadingMap = ref(true)
 const error = ref('')
 const statusFilter = ref('')
 const categoryFilter = ref('')
@@ -343,6 +416,36 @@ const assigningId = ref(null)
 const assignWorkerId = ref('')
 const expectedCompletionAt = ref('')
 const isAssigning = ref(false)
+
+const mapMarkers = computed(() =>
+  mapComplaints.value
+    .filter((c) => c.latitude != null && c.longitude != null)
+    .map((c) => ({
+      id: c.id,
+      latitude: c.latitude,
+      longitude: c.longitude,
+      title: c.title,
+      category: c.category,
+      status: c.status,
+      city_name: c.city_name,
+    }))
+)
+
+function goToComplaint(id) {
+  router.push({ name: 'admin-complaint-details', params: { id } })
+}
+
+async function loadMapComplaints() {
+  loadingMap.value = true
+  try {
+    const response = await complaintService.getAllComplaints({ per_page: 100 })
+    mapComplaints.value = response?.data?.items || []
+  } catch {
+    // Non-critical: the map simply stays empty on failure, rest of the dashboard still works.
+  } finally {
+    loadingMap.value = false
+  }
+}
 
 
 const stats = computed(() => {
@@ -507,11 +610,15 @@ let refreshInterval = null
 onMounted(() => {
   loadDashboard()
   loadComplaints(1)
+  loadMapComplaints()
 
   // Setup auto-refresh every 30 seconds
   if (autoRefresh.value) {
     refreshInterval = setInterval(() => {
-      if (autoRefresh.value) loadDashboard()
+      if (autoRefresh.value) {
+        loadDashboard()
+        loadMapComplaints()
+      }
     }, 30000)
   }
 })
@@ -520,7 +627,10 @@ onMounted(() => {
 watch(autoRefresh, (newValue) => {
   if (newValue && !refreshInterval) {
     refreshInterval = setInterval(() => {
-      if (autoRefresh.value) loadDashboard()
+      if (autoRefresh.value) {
+        loadDashboard()
+        loadMapComplaints()
+      }
     }, 30000)
   } else if (!newValue && refreshInterval) {
     clearInterval(refreshInterval)

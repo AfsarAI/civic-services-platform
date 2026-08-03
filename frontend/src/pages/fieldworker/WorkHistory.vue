@@ -74,57 +74,61 @@
         </p>
       </div>
 
-      <!-- Table -->
-      <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-100 text-left text-sm">
-          <thead>
-            <tr class="text-slate-400 text-xs font-semibold uppercase tracking-wider">
-              <th class="py-3 px-4">Complaint</th>
-              <th class="py-3 px-4">Assigned</th>
-              <th class="py-3 px-4">Location</th>
-              <th class="py-3 px-4">Priority</th>
-              <th class="py-3 px-4">Status</th>
-              <th class="py-3 px-4">Completed</th>
-              <th class="py-3 px-4">Repair Remarks</th>
-              <th class="py-3 px-4 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
-            <tr v-for="a in assignments" :key="a.id" class="hover:bg-slate-50/50 transition-colors">
-              <td class="py-3 px-4 max-w-xs truncate">
-                <span class="block font-semibold text-slate-900">{{ a.complaint?.title || `Complaint #${a.complaint_id}` }}</span>
-                <span class="block text-xs text-slate-400 mt-0.5">Ref: #{{ a.complaint_id }}</span>
-              </td>
-              <td class="py-3 px-4 text-xs text-slate-500">
-                {{ formatDate(a.assigned_at) }}
-              </td>
-              <td class="py-3 px-4 text-xs text-slate-600">
-                <span class="block font-medium text-slate-800">{{ a.complaint?.city_name || '—' }}</span>
-                <span class="block text-slate-400 mt-0.5">{{ a.complaint?.address || 'No street name provided' }}</span>
-              </td>
-              <td class="py-3 px-4 text-xs">
-                <span :class="priorityClass(a.complaint?.priority)">{{ a.complaint?.priority || '-' }}</span>
-              </td>
-              <td class="py-3 px-4 text-xs">
-                <span :class="statusBadgeClass(a.status)">{{ a.status?.replaceAll('_', ' ') }}</span>
-              </td>
-              <td class="py-3 px-4 text-xs text-slate-500">
-                {{ a.completed_at ? formatDate(a.completed_at) : '—' }}
-              </td>
-              <td class="py-3 px-4 max-w-[16rem] truncate text-xs text-slate-600" :title="a.notes || ''">
-                {{ a.notes || '—' }}
-              </td>
-              <td class="py-3 px-4 text-right">
-                <RouterLink
-                  :to="{ name: 'fieldworker-assignment-details', params: { id: a.id } }"
-                  class="text-xs font-bold text-primary-600 hover:text-primary-700 transition-colors"
-                >
-                  View Details →
-                </RouterLink>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Card view (all screen sizes) -->
+      <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <article
+          v-for="a in assignments"
+          :key="a.id"
+          class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+        >
+          <div class="h-1.5" :class="statusAccentClass(a.status)"></div>
+          <div class="space-y-4 p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Ref: #{{ a.complaint_id }}</p>
+                <h2 class="mt-1 text-base font-semibold text-slate-900 line-clamp-2">
+                  {{ a.complaint?.title || `Complaint #${a.complaint_id}` }}
+                </h2>
+              </div>
+              <span class="shrink-0" :class="statusBadgeClass(a.status)">{{ a.status?.replaceAll('_', ' ') }}</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs text-slate-600">
+              <div>
+                <p class="font-semibold text-slate-500">Priority</p>
+                <p class="mt-1"><span :class="priorityClass(a.complaint?.priority)">{{ a.complaint?.priority || '-' }}</span></p>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-500">Location</p>
+                <p class="mt-1 text-slate-900">{{ a.complaint?.city_name || '—' }}</p>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-500">Assigned</p>
+                <p class="mt-1 text-slate-900">{{ formatDate(a.assigned_at) }}</p>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-500">Completed</p>
+                <p class="mt-1 text-slate-900">{{ a.completed_at ? formatDate(a.completed_at) : '—' }}</p>
+              </div>
+            </div>
+
+            <p class="text-xs text-slate-500">{{ a.complaint?.address || 'No street name provided' }}</p>
+
+            <div v-if="a.notes" class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+              <p class="font-semibold text-slate-500">Repair Remarks</p>
+              <p class="mt-1 line-clamp-3">{{ a.notes }}</p>
+            </div>
+
+            <div class="pt-1">
+              <RouterLink
+                :to="{ name: 'fieldworker-assignment-details', params: { id: a.id } }"
+                class="btn-primary w-full py-2 text-center text-sm"
+              >
+                View Details →
+              </RouterLink>
+            </div>
+          </div>
+        </article>
       </div>
 
       <!-- Pagination -->
@@ -250,6 +254,20 @@ function statusBadgeClass(status) {
       return 'badge-rejected'
     default:
       return 'inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700'
+  }
+}
+
+function statusAccentClass(status) {
+  switch (status?.toLowerCase()) {
+    case 'completed':
+      return 'bg-emerald-500'
+    case 'rejected':
+      return 'bg-rose-500'
+    case 'in_progress':
+    case 'accepted':
+      return 'bg-sky-500'
+    default:
+      return 'bg-amber-500'
   }
 }
 
