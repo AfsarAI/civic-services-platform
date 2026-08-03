@@ -52,6 +52,8 @@ def _parse_date_filters():
     """
     date_from = _svc.parse_date(request.args.get("date_from"))
     date_to = _svc.parse_date(request.args.get("date_to"), end_of_day=True)
+    if date_from and date_to and date_from > date_to:
+        raise ValueError("From date must be on or before to date.")
     return date_from, date_to
 
 
@@ -94,9 +96,10 @@ class ComplaintsByStatusReport(Resource):
         Query params: ``date_from``, ``date_to`` (YYYY-MM-DD).
         """
         city_id = _scoped_city_id(_current_admin_user())
+        status = request.args.get("status")
         try:
             date_from, date_to = _parse_date_filters()
-            data = _svc.get_complaints_by_status(city_id, date_from, date_to)
+            data = _svc.get_complaints_by_status(city_id, date_from, date_to, status)
             return success_response(data, "Complaints by status retrieved.")
         except ValueError as exc:
             return error_response(str(exc), status_code=400)
@@ -208,9 +211,10 @@ class WorkerPerformanceReport(Resource):
         own city. Query params: ``date_from``, ``date_to`` (YYYY-MM-DD).
         """
         city_id = _scoped_city_id(_current_admin_user())
+        status = request.args.get("status")
         try:
             date_from, date_to = _parse_date_filters()
-            data = _svc.get_worker_performance(city_id, date_from, date_to)
+            data = _svc.get_worker_performance(city_id, date_from, date_to, status)
             return success_response(data, "Worker performance retrieved.")
         except ValueError as exc:
             return error_response(str(exc), status_code=400)
