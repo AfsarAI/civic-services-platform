@@ -45,6 +45,12 @@
             Review the completion evidence and field-worker remarks below before making a decision.
           </div>
 
+          <div v-if="complaint.duplicate_of_id" class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <span class="font-semibold">Linked as a duplicate of complaint #{{ complaint.duplicate_of_id }}</span>
+            <template v-if="complaint.duplicate_of_title"> ({{ complaint.duplicate_of_title }})</template>.
+            <span v-if="complaint.duplicate_reason"> Reason: {{ complaint.duplicate_reason }}</span>
+          </div>
+
           <div v-if="complaint.image_url" class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
             <img :src="mediaUrl(complaint.image_url)" alt="Complaint photo" class="h-72 w-full object-cover sm:h-96" />
           </div>
@@ -178,6 +184,43 @@
                   </button>
                 </div>
 
+                <!-- Possible duplicates nearby -->
+                <div
+                  v-if="['pending', 'assigned', 'in_progress'].includes(complaint.status) && duplicateCandidates.length > 0"
+                  class="space-y-3 border-t border-slate-100 pt-3"
+                >
+                  <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                    Possible duplicates nearby ({{ duplicateCandidates.length }})
+                  </p>
+                  <div
+                    v-for="candidate in duplicateCandidates"
+                    :key="candidate.id"
+                    class="rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-2"
+                  >
+                    <div class="flex items-start gap-3">
+                      <img
+                        v-if="candidate.image_url"
+                        :src="mediaUrl(candidate.image_url)"
+                        alt="Nearby complaint photo"
+                        class="h-14 w-14 shrink-0 rounded-lg object-cover"
+                      />
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-semibold text-slate-900 truncate">{{ candidate.title }}</p>
+                        <p class="text-xs text-slate-500">
+                          #{{ candidate.id }} · {{ candidate.distance_meters }}m away · {{ candidate.status?.replaceAll('_', ' ') }}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      class="btn-secondary w-full py-1.5 text-xs"
+                      :disabled="actionLoading"
+                      @click="handleMarkDuplicate(candidate.id)"
+                    >
+                      Mark this complaint as a duplicate of #{{ candidate.id }}
+                    </button>
+                  </div>
+                </div>
+
                 <!-- Assign (pending/assigned) -->
                 <div v-if="['pending', 'assigned'].includes(complaint.status)" class="space-y-2 border-t border-slate-100 pt-3">
                   <label class="form-label" for="worker">Assign to field worker</label>
@@ -299,6 +342,7 @@ const assignWorkerId = ref('')
 const assignNotes = ref('')
 const expectedCompletionAt = ref('')
 const verificationRemarks = ref('')
+const duplicateCandidates = ref([])
 
 // The complaint's own `status` intentionally stays `in_progress` even after the
 // field worker's assignment reaches `completed` — an administrator must still
@@ -408,6 +452,7 @@ async function loadComplaint() {
     complaint.value = response?.data?.complaint || null
     if (complaint.value) {
       priorityForm.value = complaint.value.priority || 'medium'
+      loadDuplicateCandidates()
     } else {
       error.value = 'Complaint not found.'
     }
@@ -427,6 +472,34 @@ async function loadActiveFieldWorkers() {
     activeFieldWorkers.value = response?.data?.field_workers || []
   } catch {
     activeFieldWorkers.value = []
+  }
+}
+
+async function loadDuplicateCandidates() {
+  if (!complaint.value || !['pending', 'assigned', 'in_progress'].includes(complaint.value.status)) {
+    duplicateCandidates.value = []
+    return
+  }
+  try {
+    const response = await adminService.getDuplicateCandidates(complaint.value.id)
+    duplicateCandidates.value = response?.data?.candidates || []
+  } catch {
+    duplicateCandidates.value = []
+  }
+}
+
+async function handleMarkDuplicate(primaryComplaintId) {
+  resetActionAlerts()
+  actionLoading.value = true
+  try {
+    await adminService.markDuplicate(complaint.value.id, { duplicate_of_id: primaryComplaintId })
+    actionMessage.value = `Complaint linked as a duplicate of #${primaryComplaintId} and rejected.`
+    duplicateCandidates.value = []
+    await loadComplaint()
+  } catch (err) {
+    actionError.value = err?.response?.data?.message || 'Could not mark this complaint as a duplicate.'
+  } finally {
+    actionLoading.value = false
   }
 }
 

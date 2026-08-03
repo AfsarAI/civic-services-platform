@@ -14,6 +14,7 @@ from app.api.administrator.schema import (
     AssignComplaintBodySchema,
     FieldWorkerCreateSchema,
     FieldWorkerUpdateSchema,
+    MarkDuplicateSchema,
     MunicipalAdminCreateSchema,
     MunicipalAdminUpdateSchema,
     SystemSettingUpdateSchema,
@@ -25,6 +26,7 @@ from app.api.administrator.service import (
     VerificationConflictError,
 )
 from app.models.user import User
+from app.utils.api_fields import NullableString
 from app.utils.decorators import (
     validate_body,
     require_admin,
@@ -59,6 +61,11 @@ _assign_body = ns.model("AssignComplaint", {
         example="2026-08-01T17:00:00+00:00"
     ),
     "notes": fields.String(example="Urgent - please inspect by end of day."),
+})
+
+_mark_duplicate_body = ns.model("MarkDuplicate", {
+    "duplicate_of_id": fields.Integer(required=True, example=12),
+    "reason": fields.String(example="Same pothole reported on the map."),
 })
 
 _verification_body = ns.model("RepairVerification", {
@@ -122,10 +129,13 @@ _field_worker_update = ns.model("FieldWorkerUpdate", {
 
 _system_settings_update = ns.model("SystemSettingsUpdate", {
     "site_name": fields.String(example="Civic Services Platform"),
-    "support_email": fields.String(example="support@civicservices.local"),
+    # Nullable: sending null clears the field. See NullableString's docstring
+    # for why a plain fields.String would incorrectly reject null here.
+    "support_email": NullableString(example="support@civicservices.local"),
     "maintenance_mode": fields.Boolean(example=False),
     "notify_on_status_change": fields.Boolean(example=True),
     "default_complaint_priority": fields.String(example="medium", enum=["low", "medium", "high", "urgent"]),
+    "duplicate_detection_radius_meters": fields.Integer(example=50),
 })
 
 
@@ -298,6 +308,56 @@ class AdminAssignComplaintResource(Resource):
         try:
             data = _svc.assign_complaint(complaint_id, admin_id, body, city_id)
             return success_response(data, "Complaint assigned successfully.", 201)
+        except ValueError as exc:
+            code = 404 if "not found" in str(exc).lower() else 400
+            return error_response(str(exc), status_code=code)
+
+
+@ns.route("/complaints/<int:complaint_id>/duplicates")
+@ns.param("complaint_id", "Complaint ID")
+class AdminComplaintDuplicatesResource(Resource):
+
+    @ns.response(200, "Nearby possible-duplicate complaints", _envelope)
+    @ns.response(404, "Not found", _envelope)
+    @jwt_required()
+    @require_admin
+    def get(self, complaint_id):
+        """List still-open complaints near this one that might report the same issue.
+
+        Optional query param ``radius_meters`` overrides the configured
+        system-wide duplicate-detection radius for this lookup only.
+        """
+        city_id = _scoped_city_id(_current_admin_user())
+        radius_meters = request.args.get("radius_meters", type=int)
+        try:
+            data = _svc.get_duplicate_candidates(complaint_id, city_id, radius_meters)
+            return success_response(data, "Duplicate candidates retrieved.")
+        except ValueError as exc:
+            return error_response(str(exc), status_code=404)
+
+
+@ns.route("/complaints/<int:complaint_id>/mark-duplicate")
+@ns.param("complaint_id", "Complaint ID")
+class AdminMarkDuplicateResource(Resource):
+
+    @ns.expect(_mark_duplicate_body)
+    @ns.response(200, "Complaint linked as a duplicate", _envelope)
+    @ns.response(400, "Business rule violation", _envelope)
+    @ns.response(422, "Validation error", _envelope)
+    @jwt_required()
+    @require_admin
+    @validate_body(MarkDuplicateSchema)
+    def post(self, body, complaint_id):
+        """Link a complaint as a duplicate of an existing, still-open report.
+
+        Rejects the duplicate complaint (reusing the existing status
+        transition) and notifies the citizen with duplicate-specific wording.
+        """
+        admin_id = int(get_jwt_identity())
+        city_id = _scoped_city_id(_current_admin_user())
+        try:
+            data = _svc.mark_duplicate(complaint_id, admin_id, body, city_id)
+            return success_response(data, "Complaint linked as a duplicate successfully.")
         except ValueError as exc:
             code = 404 if "not found" in str(exc).lower() else 400
             return error_response(str(exc), status_code=code)

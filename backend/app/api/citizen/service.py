@@ -11,6 +11,7 @@ from app.models.complaint_assignment import ComplaintAssignment
 from app.models.feedback import Feedback
 from app.models.notification import Notification
 from app.models.user import User
+from app.services.duplicate_detection_service import DuplicateDetectionService
 from app.services.system_settings_service import SystemSettingsService
 
 
@@ -204,6 +205,40 @@ class CitizenService:
 
         return {"feedback": self._serialize_feedback(feedback)}
 
+    # ── Duplicate detection (pre-submission advisory) ───────────────────────
+
+    @staticmethod
+    def check_nearby_duplicates(
+        latitude: float, longitude: float, radius_meters: int = None
+    ) -> dict:
+        """Return still-open complaints reported nearby, so the citizen can
+        confirm "is this the same pothole?" before submitting a new report.
+
+        This is advisory only — it never blocks submission. No citizen-identifying
+        information is included, only enough to visually compare (title, photo,
+        status, distance).
+        """
+        radius = radius_meters or DuplicateDetectionService.default_radius_meters()
+        pairs = DuplicateDetectionService.find_nearby_open_complaints(
+            latitude, longitude, radius_meters=radius
+        )
+        return {
+            "radius_meters": radius,
+            "candidates": [
+                {
+                    "id": complaint.id,
+                    "title": complaint.title,
+                    "category": complaint.category,
+                    "status": complaint.status,
+                    "image_url": complaint.image_url,
+                    "address": complaint.address,
+                    "created_at": complaint.created_at.isoformat(),
+                    "distance_meters": round(distance, 1),
+                }
+                for distance, complaint in pairs
+            ],
+        }
+
     # ── Dashboard summary ─────────────────────────────────────────────────
 
     def get_dashboard_summary(self, citizen_id: int) -> dict:
@@ -285,6 +320,8 @@ class CitizenService:
             "repair_evidence_url": (
                 latest_assignment.evidence_url if latest_assignment else None
             ),
+            "duplicate_of_id": complaint.duplicate_of_id,
+            "duplicate_reason": complaint.duplicate_reason,
         }
 
     @staticmethod
