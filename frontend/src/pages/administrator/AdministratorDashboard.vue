@@ -258,9 +258,6 @@
           <p v-if="isAwaitingVerification(c)" class="text-[11px] font-normal text-purple-600">
             Marked as fixed, pending verification.
           </p>
-          <p v-if="c.duplicate_candidate_count > 0" class="inline-flex w-fit items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-            ⚠️ Duplicate candidate ({{ c.duplicate_candidate_count }})
-          </p>
           <div class="flex flex-wrap items-center gap-2 text-xs">
             <span class="capitalize text-slate-500">{{ c.priority }}</span>
             <span class="text-slate-400">Reported: {{ formatDate(c.created_at) }}</span>
@@ -320,9 +317,6 @@
                 <td class="py-3 px-4 max-w-xs truncate">
                   <span class="block font-semibold text-slate-900">{{ c.title }}</span>
                   <span class="block text-xs text-slate-400 mt-0.5">Ref: #{{ c.id }}{{ c.city_name ? ` · ${c.city_name}` : '' }}</span>
-                  <span v-if="c.duplicate_candidate_count > 0" class="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-                    ⚠️ Duplicate candidate ({{ c.duplicate_candidate_count }})
-                  </span>
                 </td>
                 <td class="py-3 px-4 text-xs capitalize">{{ c.priority }}</td>
                 <td class="py-3 px-4 text-xs">

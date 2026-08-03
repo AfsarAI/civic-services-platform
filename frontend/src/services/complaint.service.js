@@ -23,20 +23,6 @@ const complaintService = {
   },
 
   /**
-   * Check for still-open complaints reported near a map pin, before
-   * submitting a new one. Advisory only — never blocks submission.
-   * @param {number} latitude
-   * @param {number} longitude
-   * @param {number} [radiusMeters]
-   */
-  async checkNearbyDuplicates(latitude, longitude, radiusMeters) {
-    const params = { latitude, longitude }
-    if (radiusMeters) params.radius_meters = radiusMeters
-    const response = await api.get('/citizen/complaints/nearby-duplicates', { params })
-    return response.data
-  },
-
-  /**
    * Submit a new complaint.
    * @param {Object} data - Complaint payload
    */

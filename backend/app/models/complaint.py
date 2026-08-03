@@ -53,12 +53,6 @@ class Complaint(db.Model):
     citizen_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     resolved_at = db.Column(db.DateTime, nullable=True)
     closed_at = db.Column(db.DateTime, nullable=True)
-    # Set when this complaint is manually linked by an administrator as a
-    # duplicate report of an existing, still-open complaint (same pothole
-    # reported more than once). Reuses the existing `rejected` status rather
-    # than introducing a new one — see AdminService.mark_duplicate.
-    duplicate_of_id = db.Column(db.Integer, db.ForeignKey("complaints.id"), nullable=True, index=True)
-    duplicate_reason = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
@@ -76,7 +70,6 @@ class Complaint(db.Model):
         lazy="dynamic",
     )
     feedback = db.relationship("Feedback", back_populates="complaint", uselist=False)
-    duplicate_of = db.relationship("Complaint", remote_side=[id], foreign_keys=[duplicate_of_id])
 
     def __repr__(self) -> str:
         return f"<Complaint {self.id}: {self.title[:30]}>"

@@ -116,10 +116,6 @@
               Repair marked complete by the field worker — awaiting administrator verification.
             </p>
 
-            <p v-if="complaint.duplicate_of_id" class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              Linked to complaint #{{ complaint.duplicate_of_id }}, which is already being addressed.
-            </p>
-
             <div class="grid grid-cols-2 gap-3 text-xs text-slate-600">
               <div>
                 <p class="font-semibold text-slate-500">Priority</p>
@@ -247,7 +243,6 @@ const paginatedComplaints = computed(() => filteredComplaints.value.slice(pageSt
 
 function statusLabel(status, complaint) {
   if (status === 'in_progress' && complaint?.assignment_status === 'completed') return 'Awaiting verification'
-  if (status === 'rejected' && complaint?.duplicate_of_id) return 'Duplicate report'
   return (status || 'pending').replaceAll('_', ' ')
 }
 

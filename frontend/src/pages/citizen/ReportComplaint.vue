@@ -240,54 +240,11 @@
       </div>
 
       <div class="sticky bottom-0 z-20 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
-        <button type="submit" class="btn-primary w-full py-4 text-base" :disabled="isLoading || isCheckingDuplicates || !canSubmit">
-          {{ isCheckingDuplicates ? 'Checking for similar reports...' : (isLoading ? 'Submitting...' : 'Submit pothole report') }}
+        <button type="submit" class="btn-primary w-full py-4 text-base" :disabled="isLoading || !canSubmit">
+          {{ isLoading ? 'Submitting...' : 'Submit pothole report' }}
         </button>
       </div>
     </form>
-
-    <!-- Nearby duplicate warning -->
-    <div v-if="showDuplicateModal" class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:items-center sm:p-4">
-      <div class="max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:max-w-lg sm:rounded-3xl sm:p-6">
-        <p class="text-xs font-semibold uppercase tracking-wide text-amber-600">Similar report found nearby</p>
-        <h2 class="mt-1 text-lg font-bold text-slate-900">Is this the same pothole?</h2>
-        <p class="mt-2 text-sm text-slate-600">
-          {{ duplicateCandidates.length === 1 ? 'A similar report already exists nearby.' : `${duplicateCandidates.length} similar reports already exist nearby.` }}
-          Compare the photo below — you can still submit if this is a different issue.
-        </p>
-
-        <div class="mt-4 space-y-3">
-          <div
-            v-for="candidate in duplicateCandidates"
-            :key="candidate.id"
-            class="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3"
-          >
-            <img
-              v-if="candidate.image_url"
-              :src="resolveMediaUrl(candidate.image_url)"
-              alt="Nearby existing report photo"
-              class="h-20 w-20 shrink-0 rounded-xl object-cover"
-            />
-            <div class="min-w-0 flex-1">
-              <p class="text-sm font-semibold text-slate-900 truncate">{{ candidate.title }}</p>
-              <p class="mt-0.5 text-xs text-slate-500">
-                {{ candidate.distance_meters }}m away · {{ candidate.status?.replaceAll('_', ' ') }}
-              </p>
-              <p v-if="candidate.address" class="mt-1 text-xs text-slate-500 truncate">{{ candidate.address }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-5 flex flex-col gap-2 sm:flex-row">
-          <button type="button" class="btn-secondary w-full py-2.5 text-sm" @click="dismissDuplicateWarning">
-            Cancel, let me review
-          </button>
-          <button type="button" class="btn-primary w-full py-2.5 text-sm" :disabled="isLoading" @click="confirmSubmitAnyway">
-            {{ isLoading ? 'Submitting...' : 'Submit anyway' }}
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -310,7 +267,6 @@ const isLocating = ref(false)
 const isResolvingLocation = ref(false)
 const isUploadingPhoto = ref(false)
 const isSearchingCities = ref(false)
-const isCheckingDuplicates = ref(false)
 const manualModeEnabled = ref(false)
 const error = ref(null)
 const photoError = ref('')
@@ -320,9 +276,6 @@ const photoPreviewUrl = ref('')
 const photoName = ref('')
 const uploadStatusMessage = ref('No photo uploaded yet.')
 const manualCityQuery = ref('')
-const duplicateCandidates = ref([])
-const showDuplicateModal = ref(false)
-const duplicateWarningAcknowledged = ref(false)
 
 const form = reactive({
   title: '',
@@ -366,13 +319,6 @@ const locationMessageClass = computed(() => {
 
 function coordinateText(value) {
   return Number.isFinite(value) ? Number(value).toFixed(6) : ''
-}
-
-function resolveMediaUrl(url) {
-  if (!url) return ''
-  if (/^https?:\/\//i.test(url)) return url
-  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1'
-  return `${apiBase.replace(/\/api\/v1$/, '')}${url}`
 }
 
 function setLocationMessage(message, type = 'info') {
@@ -665,40 +611,6 @@ async function handleSubmit() {
     return
   }
 
-  if (!duplicateWarningAcknowledged.value) {
-    error.value = null
-    isCheckingDuplicates.value = true
-    try {
-      const response = await complaintService.checkNearbyDuplicates(
-        Number(form.latitude), Number(form.longitude),
-      )
-      const candidates = response?.data?.candidates || []
-      if (candidates.length > 0) {
-        duplicateCandidates.value = candidates
-        showDuplicateModal.value = true
-        return
-      }
-    } catch {
-      // Non-critical: if the advisory check fails, proceed with submission.
-    } finally {
-      isCheckingDuplicates.value = false
-    }
-  }
-
-  await performSubmit()
-}
-
-function dismissDuplicateWarning() {
-  showDuplicateModal.value = false
-}
-
-async function confirmSubmitAnyway() {
-  duplicateWarningAcknowledged.value = true
-  showDuplicateModal.value = false
-  await performSubmit()
-}
-
-async function performSubmit() {
   isLoading.value = true
   error.value = null
 
