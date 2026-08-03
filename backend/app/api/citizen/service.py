@@ -282,6 +282,9 @@ class CitizenService:
                 latest_assignment.completed_at.isoformat()
                 if latest_assignment and latest_assignment.completed_at else None
             ),
+            "repair_evidence_url": (
+                latest_assignment.evidence_url if latest_assignment else None
+            ),
         }
 
     @staticmethod

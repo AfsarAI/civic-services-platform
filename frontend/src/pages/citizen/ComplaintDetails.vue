@@ -142,6 +142,18 @@
                 <p class="mt-1 text-sm leading-6 text-slate-700 whitespace-pre-line">{{ complaint.description }}</p>
               </div>
 
+              <div v-if="complaint.repair_evidence_url" class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Repair Photo</p>
+                <p class="mt-1 text-xs text-emerald-600">
+                  Uploaded by the field worker<template v-if="complaint.repair_completed_at"> on {{ formatDate(complaint.repair_completed_at) }}</template> as proof of completed repair.
+                </p>
+                <img
+                  :src="photoUrl(complaint.repair_evidence_url)"
+                  alt="Repair completion photo uploaded by field worker"
+                  class="mt-3 h-64 w-full rounded-xl border border-emerald-200 object-cover sm:h-80"
+                />
+              </div>
+
               <div class="grid gap-3 sm:grid-cols-2">
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Location</p>

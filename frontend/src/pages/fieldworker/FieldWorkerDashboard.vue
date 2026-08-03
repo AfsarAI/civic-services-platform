@@ -71,6 +71,17 @@
       </div>
     </div>
 
+    <!-- Your Assigned Complaints Map -->
+    <PublicComplaintMap
+      :markers="mapMarkers"
+      :loading="loadingMap"
+      title="Your Assigned Complaints Map"
+      subtitle="All complaints assigned to you, pinned by location. Click a pin to view full details."
+      empty-message="None of your assigned complaints have a saved map location yet."
+      show-view-details
+      @pin-click="goToAssignment"
+    />
+
     <!-- Assigned Tasks -->
     <div class="card space-y-4">
       <div class="flex flex-col gap-3">
@@ -137,8 +148,46 @@
         </p>
       </div>
 
-      <!-- Table -->
-      <div v-else class="overflow-x-auto">
+      <!-- Card view (mobile / tablet / small laptop screens) -->
+      <div v-else class="lg:hidden space-y-3">
+        <div
+          v-for="a in assignments"
+          :key="a.id"
+          class="rounded-xl border border-slate-100 p-4 space-y-2.5"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="font-semibold text-slate-900 text-sm truncate">{{ a.complaint?.title || `Complaint #${a.complaint_id}` }}</p>
+              <p class="text-xs text-slate-400 mt-0.5">Ref: #{{ a.complaint_id }}</p>
+            </div>
+            <span :class="statusBadgeClass(a.status)" class="shrink-0">{{ a.status?.replaceAll('_', ' ') }}</span>
+          </div>
+          <p v-if="isComplaintTerminal(a)" class="text-[11px] font-semibold text-amber-600">
+            Complaint {{ a.complaint?.status?.replaceAll('_', ' ') }} by admin — no action needed
+          </p>
+          <div class="text-xs text-slate-600">
+            <span class="block font-medium text-slate-800">{{ a.complaint?.city_name || '—' }}</span>
+            <span class="block text-slate-400 mt-0.5">{{ a.complaint?.address || 'No street name provided' }}</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span :class="priorityClass(a.complaint?.priority)">{{ a.complaint?.priority || '-' }}</span>
+            <span class="text-slate-400">Reported: {{ formatDate(a.complaint?.created_at) }}</span>
+            <span class="text-slate-400">Assigned: {{ formatDate(a.assigned_at) }}</span>
+          </div>
+          <div v-if="a.expected_completion_at" class="text-xs text-slate-400">
+            Expected completion: {{ formatDate(a.expected_completion_at) }}
+          </div>
+          <RouterLink
+            :to="{ name: 'fieldworker-assignment-details', params: { id: a.id } }"
+            class="inline-block text-xs font-bold text-primary-600 hover:text-primary-700 transition-colors"
+          >
+            View Details →
+          </RouterLink>
+        </div>
+      </div>
+
+      <!-- Table (lg and up) -->
+      <div v-if="!loadingList && assignments.length > 0" class="hidden lg:block overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-100 text-left text-sm">
           <thead>
             <tr class="text-slate-400 text-xs font-semibold uppercase tracking-wider">
@@ -216,14 +265,17 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import fieldWorkerService from '@/services/fieldworker.service'
+import PublicComplaintMap from '@/components/PublicComplaintMap.vue'
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 const loadingStats = ref(true)
 const loadingList = ref(true)
+const loadingMap = ref(true)
 const error = ref(null)
 
 const stats = ref({
@@ -239,6 +291,7 @@ const stats = ref({
 })
 
 const assignments = ref([])
+const mapAssignments = ref([])
 const statusFilter = ref('')
 const priorityFilter = ref('')
 const searchQuery = ref('')
@@ -246,6 +299,32 @@ const sortBy = ref('assigned_at')
 const sortOrder = ref('desc')
 const pagination = ref({ page: 1, per_page: 10, total: 0, pages: 0 })
 let searchDebounceTimer = null
+
+const mapMarkers = computed(() =>
+  mapAssignments.value
+    .filter((a) => a.complaint?.latitude != null && a.complaint?.longitude != null)
+    .map((a) => ({
+      id: a.id,
+      latitude: a.complaint.latitude,
+      longitude: a.complaint.longitude,
+      title: a.complaint.title,
+      category: a.complaint.category,
+      status: mapAssignmentStatusForPin(a.status),
+      city_name: a.complaint.city_name,
+    }))
+)
+
+// Reuses the map's existing open/resolved/rejected colour scheme, mapped from
+// this assignment's own progress status rather than the complaint's status.
+function mapAssignmentStatusForPin(status) {
+  if (status === 'completed') return 'resolved'
+  if (status === 'rejected') return 'rejected'
+  return 'pending'
+}
+
+function goToAssignment(id) {
+  router.push({ name: 'fieldworker-assignment-details', params: { id } })
+}
 
 const statsData = computed(() => [
   {
@@ -333,6 +412,20 @@ function onFilterChange() {
   fetchAssignments(1)
 }
 
+async function fetchMapAssignments() {
+  loadingMap.value = true
+  try {
+    const res = await fieldWorkerService.getAssignments({ per_page: 100 })
+    if (res?.success && res?.data) {
+      mapAssignments.value = res.data.items || []
+    }
+  } catch {
+    // Non-critical: the map simply stays empty on failure, rest of the dashboard still works.
+  } finally {
+    loadingMap.value = false
+  }
+}
+
 function onSearchInput() {
   clearTimeout(searchDebounceTimer)
   searchDebounceTimer = setTimeout(() => {
@@ -352,6 +445,7 @@ function goToPage(page) {
 function refreshAll() {
   fetchStats()
   fetchAssignments(pagination.value.page || 1)
+  fetchMapAssignments()
 }
 
 function formatDate(isoStr) {
@@ -404,6 +498,7 @@ function isComplaintTerminal(assignment) {
 onMounted(() => {
   fetchStats()
   fetchAssignments(1)
+  fetchMapAssignments()
 })
 </script>
 

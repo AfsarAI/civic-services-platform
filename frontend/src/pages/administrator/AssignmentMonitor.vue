@@ -32,57 +32,62 @@
       <p v-else-if="assignments.length === 0" class="py-10 text-center text-sm italic text-slate-400">
         No assignments match the current filters.
       </p>
-      <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-100 text-left text-sm">
-          <thead>
-            <tr class="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              <th class="px-3 py-3">Complaint</th>
-              <th class="px-3 py-3">Priority</th>
-              <th class="px-3 py-3">Worker</th>
-              <th class="px-3 py-3">Assigned</th>
-              <th class="px-3 py-3">Expected completion</th>
-              <th class="px-3 py-3">Last progress</th>
-              <th class="px-3 py-3">Repair status</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 text-slate-700">
-            <tr
-              v-for="assignment in assignments"
-              :key="assignment.id"
-              :class="assignment.is_overdue ? 'bg-rose-50/70' : 'hover:bg-slate-50/60'"
-            >
-              <td class="px-3 py-3">
+      <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <article
+          v-for="assignment in assignments"
+          :key="assignment.id"
+          class="overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+          :class="assignment.is_overdue ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200'"
+        >
+          <div class="h-1.5" :class="statusAccentClass(assignment.status)"></div>
+          <div class="space-y-4 p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Complaint #{{ assignment.complaint.id }}</p>
                 <RouterLink
                   :to="{ name: 'admin-complaint-details', params: { id: assignment.complaint.id } }"
-                  class="font-semibold text-primary-700 hover:text-primary-800"
+                  class="mt-1 block text-base font-semibold text-primary-700 line-clamp-2 hover:text-primary-800"
                 >
-                  #{{ assignment.complaint.id }} · {{ assignment.complaint.title }}
+                  {{ assignment.complaint.title }}
                 </RouterLink>
-                <p class="mt-0.5 text-xs capitalize text-slate-400">
-                  Complaint: {{ label(assignment.complaint.status) }}
-                  <span v-if="assignment.complaint.city_name"> · {{ assignment.complaint.city_name }}</span>
-                </p>
-              </td>
-              <td class="px-3 py-3 text-xs font-semibold capitalize">{{ assignment.complaint.priority }}</td>
-              <td class="px-3 py-3">{{ assignment.worker_name || `Worker #${assignment.worker_id}` }}</td>
-              <td class="whitespace-nowrap px-3 py-3 text-xs">{{ formatDate(assignment.assigned_at) }}</td>
-              <td class="whitespace-nowrap px-3 py-3 text-xs">
-                <span :class="assignment.is_overdue ? 'font-bold text-rose-700' : ''">
+              </div>
+              <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize" :class="statusClass(assignment.status)">
+                {{ label(assignment.status) }}
+              </span>
+            </div>
+
+            <span v-if="assignment.is_overdue" class="inline-flex rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-700">
+              Overdue
+            </span>
+
+            <div class="grid grid-cols-2 gap-3 text-xs text-slate-600">
+              <div>
+                <p class="font-semibold text-slate-500">Priority</p>
+                <p class="mt-1 capitalize text-slate-900">{{ assignment.complaint.priority }}</p>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-500">Worker</p>
+                <p class="mt-1 text-slate-900">{{ assignment.worker_name || `Worker #${assignment.worker_id}` }}</p>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-500">Assigned</p>
+                <p class="mt-1 text-slate-900">{{ formatDate(assignment.assigned_at) }}</p>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-500">Expected completion</p>
+                <p class="mt-1" :class="assignment.is_overdue ? 'font-bold text-rose-700' : 'text-slate-900'">
                   {{ formatDate(assignment.expected_completion_at) }}
-                </span>
-                <span v-if="assignment.is_overdue" class="ml-2 rounded-full bg-rose-100 px-2 py-0.5 font-bold text-rose-700">
-                  Overdue
-                </span>
-              </td>
-              <td class="whitespace-nowrap px-3 py-3 text-xs">{{ formatDate(assignment.updated_at) }}</td>
-              <td class="px-3 py-3">
-                <span class="rounded-full px-2.5 py-1 text-xs font-semibold capitalize" :class="statusClass(assignment.status)">
-                  {{ label(assignment.status) }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </p>
+              </div>
+            </div>
+
+            <p class="text-xs text-slate-500">
+              Complaint status: <span class="capitalize">{{ label(assignment.complaint.status) }}</span>
+              <template v-if="assignment.complaint.city_name"> · {{ assignment.complaint.city_name }}</template>
+            </p>
+            <p class="text-xs text-slate-400">Last progress: {{ formatDate(assignment.updated_at) }}</p>
+          </div>
+        </article>
       </div>
 
       <div v-if="!loading && pagination.pages > 1" class="flex items-center justify-between pt-4 text-xs text-slate-500">
@@ -142,6 +147,13 @@ function statusClass(status) {
   if (status === 'rejected') return 'bg-rose-100 text-rose-700'
   if (['accepted', 'in_progress'].includes(status)) return 'bg-sky-100 text-sky-700'
   return 'bg-amber-100 text-amber-700'
+}
+
+function statusAccentClass(status) {
+  if (status === 'completed') return 'bg-emerald-500'
+  if (status === 'rejected') return 'bg-rose-500'
+  if (['accepted', 'in_progress'].includes(status)) return 'bg-sky-500'
+  return 'bg-amber-500'
 }
 
 onMounted(() => loadAssignments(1))
