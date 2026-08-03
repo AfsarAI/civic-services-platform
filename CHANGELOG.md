@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Field worker dashboard (TPS-86) gained search (by title/street/complaint ID), a priority filter alongside the existing status filter, and sort controls (by assignment date or priority, ascending/descending); the assignment table now also shows Reported Date, Location, Road/Street Name, and Expected Completion Date, all previously missing from the UI despite the backend already having the data
 - New Work History page (TPS-90) at `/fieldworker/history`: a dedicated, searchable/filterable/sortable view of all past and current assignments (separate from the action-oriented Dashboard), showing Completion Date and Repair Remarks columns; reuses the existing assignments API with no backend changes required
+- Assignment notifications for field workers now include structured assignment context in the message (complaint ID, assignment date/time, location, priority, expected completion, and optional administrator remarks), expose `related_assignment_id`, and are idempotent per assignment event to avoid duplicates
 
 ### Changed
 - `flask seed` now creates a default System Administrator profile

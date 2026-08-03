@@ -518,12 +518,17 @@ class AdminService:
         db.session.commit()
 
         if SystemSettingsService.notifications_enabled():
+            assignment_message = self._build_assignment_notification_message(
+                complaint=complaint,
+                assignment=assignment,
+            )
             self.notifications.send_notification(
                 user_id=worker.id,
                 title="New task assigned",
-                message=f"You have been assigned a new complaint #{complaint.id}: '{complaint.title}'.",
+                message=assignment_message,
                 notification_type=Notification.TYPE_COMPLAINT_ASSIGNED,
                 related_complaint_id=complaint.id,
+                related_assignment_id=assignment.id,
             )
             self.notifications.send_notification(
                 user_id=complaint.citizen_id,
@@ -531,6 +536,7 @@ class AdminService:
                 message=f"Your complaint #{complaint.id} '{complaint.title}' has been assigned to a field worker.",
                 notification_type=Notification.TYPE_STATUS_UPDATE,
                 related_complaint_id=complaint.id,
+                related_assignment_id=assignment.id,
             )
 
         return {
@@ -638,6 +644,46 @@ class AdminService:
             notification_type=Notification.TYPE_STATUS_UPDATE,
             related_complaint_id=complaint.id,
         )
+
+    @staticmethod
+    def _build_assignment_notification_message(
+        complaint: Complaint,
+        assignment: ComplaintAssignment,
+    ) -> str:
+        assigned_at = assignment.assigned_at or datetime.now(timezone.utc)
+        if assigned_at.tzinfo is None:
+            assigned_at = assigned_at.replace(tzinfo=timezone.utc)
+
+        expected_at = assignment.expected_completion_at
+        if expected_at and expected_at.tzinfo is None:
+            expected_at = expected_at.replace(tzinfo=timezone.utc)
+
+        location_parts = []
+        if complaint.address:
+            location_parts.append(complaint.address.strip())
+        if complaint.city and complaint.city.name:
+            location_parts.append(complaint.city.name.strip())
+        elif complaint.pincode:
+            location_parts.append(f"Pincode {complaint.pincode}")
+        location_text = ", ".join(part for part in location_parts if part) or "Not specified"
+
+        lines = [
+            f"Complaint #{complaint.id} has been assigned to you.",
+            f"Assignment Date: {assigned_at.strftime('%Y-%m-%d')}",
+            f"Assignment Time: {assigned_at.strftime('%H:%M:%S %Z')}",
+            f"Complaint Location: {location_text}",
+            f"Complaint Priority: {(complaint.priority or 'medium').title()}",
+            (
+                "Expected Completion Date: "
+                f"{expected_at.strftime('%Y-%m-%d %H:%M:%S %Z')}"
+                if expected_at else
+                "Expected Completion Date: Not specified"
+            ),
+        ]
+        if assignment.notes:
+            lines.append(f"Administrator Remarks: {assignment.notes.strip()}")
+
+        return "\n".join(lines)
 
     # ── Users ─────────────────────────────────────────────────────────────
 
