@@ -392,12 +392,25 @@ class ReportsService:
             .with_entities(
                 ComplaintAssignment.worker_id,
                 func.count(ComplaintAssignment.id).label("total"),
-                func.sum(case((ComplaintAssignment.status == ComplaintAssignment.STATUS_COMPLETED, 1), else_=0)).label("completed"),
+                func.sum(case(
+                    (
+                        ComplaintAssignment.status
+                        == ComplaintAssignment.STATUS_COMPLETED,
+                        1,
+                    ),
+                    else_=0,
+                )).label("completed"),
                 func.avg(case((
-                    (ComplaintAssignment.status == ComplaintAssignment.STATUS_COMPLETED)
+                    (
+                        ComplaintAssignment.status
+                        == ComplaintAssignment.STATUS_COMPLETED
+                    )
                     & ComplaintAssignment.accepted_at.isnot(None)
                     & ComplaintAssignment.completed_at.isnot(None),
-                    (func.julianday(ComplaintAssignment.completed_at) - func.julianday(ComplaintAssignment.accepted_at)) * 24,
+                    (
+                        func.julianday(ComplaintAssignment.completed_at)
+                        - func.julianday(ComplaintAssignment.accepted_at)
+                    ) * 24,
                 ), else_=None)).label("avg_hours"),
             )
             .group_by(ComplaintAssignment.worker_id)
