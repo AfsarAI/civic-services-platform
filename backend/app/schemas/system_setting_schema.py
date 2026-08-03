@@ -20,9 +20,6 @@ class SystemSettingUpdateSchema(Schema):
     default_complaint_priority = fields.Str(
         validate=validate.OneOf(["low", "medium", "high", "urgent"])
     )
-    duplicate_detection_radius_meters = fields.Int(
-        validate=validate.Range(min=10, max=2000)
-    )
 
     @pre_load
     def normalize_fields(self, data: dict, **_) -> dict:

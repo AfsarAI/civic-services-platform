@@ -21,9 +21,6 @@ class SystemSetting(db.Model):
     maintenance_mode = db.Column(db.Boolean, nullable=False, default=False)
     notify_on_status_change = db.Column(db.Boolean, nullable=False, default=True)
     default_complaint_priority = db.Column(db.String(20), nullable=False, default="medium")
-    # Radius (in meters) used by DuplicateDetectionService to flag possible
-    # duplicate pothole reports at both submission time and admin review.
-    duplicate_detection_radius_meters = db.Column(db.Integer, nullable=False, default=50)
     updated_at = db.Column(
         db.DateTime,
         default=lambda: datetime.now(timezone.utc),
