@@ -76,3 +76,10 @@ class AdminComplaintUpdateSchema(Schema):
         )
     )
     priority = fields.Str(validate=validate.OneOf(["low", "medium", "high", "urgent"]))
+
+
+class MarkDuplicateSchema(Schema):
+    """Schema for admin linking a complaint as a duplicate of another one."""
+
+    duplicate_of_id = fields.Int(required=True)
+    reason = fields.Str(validate=validate.Length(max=500), allow_none=True)

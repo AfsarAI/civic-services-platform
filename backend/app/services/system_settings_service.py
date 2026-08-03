@@ -16,6 +16,7 @@ class SystemSettingsService:
         "maintenance_mode",
         "notify_on_status_change",
         "default_complaint_priority",
+        "duplicate_detection_radius_meters",
     )
 
     @staticmethod
@@ -60,6 +61,11 @@ class SystemSettingsService:
         return SystemSettingsService.get_settings().notify_on_status_change
 
     @staticmethod
+    def duplicate_detection_radius_meters() -> int:
+        """Return the configured duplicate-complaint detection radius, in meters."""
+        return SystemSettingsService.get_settings().duplicate_detection_radius_meters
+
+    @staticmethod
     def serialize(setting: SystemSetting) -> dict:
         return {
             "id": setting.id,
@@ -68,6 +74,7 @@ class SystemSettingsService:
             "maintenance_mode": setting.maintenance_mode,
             "notify_on_status_change": setting.notify_on_status_change,
             "default_complaint_priority": setting.default_complaint_priority,
+            "duplicate_detection_radius_meters": setting.duplicate_detection_radius_meters,
             "updated_at": setting.updated_at.isoformat() if setting.updated_at else None,
             "updated_by_id": setting.updated_by_id,
         }
