@@ -19,6 +19,7 @@ from app.models.role import Role
 from app.models.user import User
 from app.repositories import AdministratorRepository
 from app.services.audit_log_service import AuditLogService
+from app.services.duplicate_detection_service import DuplicateDetectionService
 from app.services.system_settings_service import SystemSettingsService
 
 
@@ -71,12 +72,48 @@ class AdminService:
         query = query.order_by(Complaint.created_at.desc())
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
+        items = [self._serialize_complaint(c) for c in pagination.items]
+        self._attach_duplicate_candidate_counts(pagination.items, items)
+
         return {
-            "items": [self._serialize_complaint(c) for c in pagination.items],
+            "items": items,
             "total": pagination.total,
             "page": pagination.page,
             "per_page": pagination.per_page,
         }
+
+    @staticmethod
+    def _attach_duplicate_candidate_counts(complaints: list, serialized_items: list) -> None:
+        """Attach a ``duplicate_candidate_count`` to each serialized complaint
+        dict, so the admin can spot likely duplicates directly in the list
+        (and while assigning a worker) instead of opening every complaint's
+        detail page one by one.
+
+        Bounded to the current page (typically 10-20 rows), so this is a
+        handful of cheap bounding-box queries, not an expensive N+1 scan of
+        the whole table.
+        """
+        open_statuses = (
+            Complaint.STATUS_PENDING,
+            Complaint.STATUS_ASSIGNED,
+            Complaint.STATUS_IN_PROGRESS,
+        )
+        for complaint, item in zip(complaints, serialized_items):
+            if (
+                complaint.status not in open_statuses
+                or complaint.duplicate_of_id is not None
+                or complaint.latitude is None
+                or complaint.longitude is None
+            ):
+                item["duplicate_candidate_count"] = 0
+                continue
+            pairs = DuplicateDetectionService.find_nearby_open_complaints(
+                complaint.latitude,
+                complaint.longitude,
+                exclude_complaint_id=complaint.id,
+                city_id=complaint.city_id,
+            )
+            item["duplicate_candidate_count"] = len(pairs)
 
     def get_complaint(self, complaint_id: int, city_id: int = None) -> dict:
         """Return full complaint details including assignment and feedback.
@@ -546,6 +583,106 @@ class AdminService:
             lines.append(f"Administrator Remarks: {assignment.notes.strip()}")
 
         return "\n".join(lines)
+    # ── Duplicate detection ───────────────────────────────────────────────
+
+    def get_duplicate_candidates(
+        self, complaint_id: int, city_id: int = None, radius_meters: int = None
+    ) -> dict:
+        """Return nearby still-open complaints that might be reports of the
+        same physical issue, nearest first, for the administrator to review
+        before assigning a field worker.
+
+        Raises:
+            ValueError: If the complaint is not found or is out of scope.
+        """
+        complaint = Complaint.query.get(complaint_id)
+        if not complaint or (city_id is not None and complaint.city_id != city_id):
+            raise ValueError("Complaint not found.")
+
+        radius = radius_meters or DuplicateDetectionService.default_radius_meters()
+        if complaint.latitude is None or complaint.longitude is None:
+            return {"complaint_id": complaint_id, "radius_meters": radius, "candidates": []}
+
+        pairs = DuplicateDetectionService.find_nearby_open_complaints(
+            complaint.latitude,
+            complaint.longitude,
+            radius_meters=radius,
+            exclude_complaint_id=complaint.id,
+            city_id=complaint.city_id,
+        )
+        return {
+            "complaint_id": complaint_id,
+            "radius_meters": radius,
+            "candidates": [
+                {**self._serialize_complaint(candidate), "distance_meters": round(distance, 1)}
+                for distance, candidate in pairs
+            ],
+        }
+
+    def mark_duplicate(
+        self, complaint_id: int, admin_id: int, data: dict, city_id: int = None
+    ) -> dict:
+        """Link a complaint as a duplicate of an existing, still-open report.
+
+        Reuses the existing ``rejected`` status transition rather than adding
+        a new status — ``duplicate_of_id``/``duplicate_reason`` record *why*.
+        The citizen is notified with duplicate-specific wording, and any
+        already-assigned field worker is notified via the same path used for
+        admin-initiated rejections.
+
+        Raises:
+            ValueError: Business rule violations.
+        """
+        complaint = Complaint.query.get(complaint_id)
+        if not complaint or (city_id is not None and complaint.city_id != city_id):
+            raise ValueError("Complaint not found.")
+
+        primary_id = data["duplicate_of_id"]
+        if primary_id == complaint_id:
+            raise ValueError("A complaint cannot be marked as a duplicate of itself.")
+
+        primary = Complaint.query.get(primary_id)
+        if not primary or (city_id is not None and primary.city_id != city_id):
+            raise ValueError("Primary complaint not found.")
+
+        if primary.duplicate_of_id is not None:
+            raise ValueError("Cannot link to a complaint that is itself a duplicate.")
+
+        allowed_from = (
+            Complaint.STATUS_PENDING,
+            Complaint.STATUS_ASSIGNED,
+            Complaint.STATUS_IN_PROGRESS,
+        )
+        if complaint.status not in allowed_from:
+            raise ValueError(
+                "Only pending, assigned, or in-progress complaints can be marked as a "
+                f"duplicate. Current status: '{complaint.status}'."
+            )
+
+        complaint.duplicate_of_id = primary.id
+        complaint.duplicate_reason = (data.get("reason") or "").strip() or None
+        complaint.status = Complaint.STATUS_REJECTED
+        db.session.commit()
+
+        self._notify_citizen_duplicate(complaint, primary)
+        self._notify_worker_status_change(complaint)
+
+        return {"complaint": self._serialize_complaint(complaint, full=True)}
+
+    def _notify_citizen_duplicate(self, complaint: Complaint, primary: Complaint) -> None:
+        """Notify the citizen that their report was linked as a duplicate."""
+        if not SystemSettingsService.notifications_enabled():
+            return
+        self.notifications.send_notification(
+            user_id=complaint.citizen_id,
+            title="Complaint linked as duplicate",
+            message=(
+                f"Your complaint #{complaint.id} '{complaint.title}' is a duplicate of an "
+                f"existing report (#{primary.id}) that is already being addressed."
+            ),
+            notification_type=Notification.TYPE_STATUS_UPDATE,
+            related_complaint_id=complaint.id,
+        )
 
     # ── Users ─────────────────────────────────────────────────────────────
 
@@ -1356,6 +1493,11 @@ class AdminService:
                     == ComplaintAssignment.STATUS_COMPLETED
                     else "not_started"
                 )
+            ),
+            "duplicate_of_id": complaint.duplicate_of_id,
+            "duplicate_reason": complaint.duplicate_reason,
+            "duplicate_of_title": (
+                complaint.duplicate_of.title if complaint.duplicate_of else None
             ),
         }
         if full:

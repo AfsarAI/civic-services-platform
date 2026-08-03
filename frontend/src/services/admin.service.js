@@ -89,6 +89,17 @@ const adminService = {
     const response = await api.get('/admin/dashboard')
     return response.data
   },
+
+  async getDuplicateCandidates(complaintId, radiusMeters) {
+    const params = radiusMeters ? { radius_meters: radiusMeters } : {}
+    const response = await api.get(`/admin/complaints/${complaintId}/duplicates`, { params })
+    return response.data
+  },
+
+  async markDuplicate(complaintId, payload) {
+    const response = await api.post(`/admin/complaints/${complaintId}/mark-duplicate`, payload)
+    return response.data
+  },
 }
 
 export default adminService

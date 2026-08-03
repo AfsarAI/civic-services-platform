@@ -5,7 +5,7 @@ Unit tests for Marshmallow schemas.
 import pytest
 from marshmallow import ValidationError
 from app.schemas.user_schema import UserCreateSchema, MunicipalAdminCreateSchema
-from app.schemas.complaint_schema import ComplaintCreateSchema
+from app.schemas.complaint_schema import ComplaintCreateSchema, MarkDuplicateSchema
 from app.schemas.feedback_schema import FeedbackCreateSchema
 from app.schemas.verification_schema import VerificationDecisionSchema
 from app.schemas.assignment_schema import AssignComplaintBodySchema, FieldWorkerProgressSchema
@@ -261,3 +261,40 @@ class TestSystemSettingUpdateSchema:
         with pytest.raises(ValidationError) as exc:
             schema.load({"support_email": "not-an-email"})
         assert "support_email" in exc.value.messages
+
+    def test_valid_duplicate_radius_passes(self):
+        schema = SystemSettingUpdateSchema()
+        result = schema.load({"duplicate_detection_radius_meters": 75})
+        assert result["duplicate_detection_radius_meters"] == 75
+
+    def test_duplicate_radius_below_minimum_raises(self):
+        schema = SystemSettingUpdateSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load({"duplicate_detection_radius_meters": 5})
+        assert "duplicate_detection_radius_meters" in exc.value.messages
+
+    def test_duplicate_radius_above_maximum_raises(self):
+        schema = SystemSettingUpdateSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load({"duplicate_detection_radius_meters": 5000})
+        assert "duplicate_detection_radius_meters" in exc.value.messages
+
+
+class TestMarkDuplicateSchema:
+    """Unit tests for MarkDuplicateSchema."""
+
+    def test_valid_data_passes(self):
+        schema = MarkDuplicateSchema()
+        result = schema.load({"duplicate_of_id": 12, "reason": "Same pothole reported nearby."})
+        assert result["duplicate_of_id"] == 12
+
+    def test_duplicate_of_id_is_required(self):
+        schema = MarkDuplicateSchema()
+        with pytest.raises(ValidationError) as exc:
+            schema.load({"reason": "Missing duplicate_of_id."})
+        assert "duplicate_of_id" in exc.value.messages
+
+    def test_reason_optional(self):
+        schema = MarkDuplicateSchema()
+        result = schema.load({"duplicate_of_id": 12})
+        assert result["duplicate_of_id"] == 12

@@ -106,6 +106,36 @@ class CitizenComplaintListResource(Resource):
             return error_response(str(exc), status_code=400)
 
 
+@ns.route("/complaints/nearby-duplicates")
+class CitizenNearbyDuplicatesResource(Resource):
+
+    @ns.response(200, "Nearby possible-duplicate complaints", _envelope)
+    @ns.response(400, "Invalid coordinates", _envelope)
+    @jwt_required()
+    @require_citizen
+    def get(self):
+        """Check for still-open reports near a map pin before submitting.
+
+        Advisory only — never blocks submission. Lets the report form warn
+        "a similar report already exists nearby, submit anyway?" with a photo
+        of the existing report for comparison.
+
+        Query params: ``latitude`` and ``longitude`` (required), optional
+        ``radius_meters`` override.
+        """
+        latitude = request.args.get("latitude", type=float)
+        longitude = request.args.get("longitude", type=float)
+        radius_meters = request.args.get("radius_meters", type=int)
+
+        if latitude is None or longitude is None:
+            return error_response("Both 'latitude' and 'longitude' are required.", status_code=400)
+        if not (-90 <= latitude <= 90) or not (-180 <= longitude <= 180):
+            return error_response("Latitude/longitude must be valid coordinate values.", status_code=400)
+
+        data = _svc.check_nearby_duplicates(latitude, longitude, radius_meters)
+        return success_response(data, "Nearby complaints retrieved.")
+
+
 @ns.route("/complaints")
 class CitizenComplaintCreateResource(Resource):
 
