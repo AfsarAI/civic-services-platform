@@ -113,6 +113,17 @@
       </div>
     </div>
 
+    <!-- Your Complaints Map -->
+    <PublicComplaintMap
+      :markers="mapMarkers"
+      :loading="loading"
+      title="Your Complaints Map"
+      subtitle="All your reported issues, pinned by location. Click a pin to view full details."
+      empty-message="None of your complaints have a saved map location yet."
+      show-view-details
+      @pin-click="goToComplaint"
+    />
+
     <!-- Recent Complaints Table -->
     <div class="card space-y-4">
       <div class="flex items-center justify-between">
@@ -152,62 +163,94 @@
         </RouterLink>
       </div>
 
-      <!-- Table / List representation -->
-      <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-100 text-left text-sm">
-          <thead>
-            <tr class="text-slate-400 text-xs font-semibold uppercase tracking-wider">
-              <th class="py-3 px-4">Title</th>
-              <th class="py-3 px-4">Category</th>
-              <th class="py-3 px-4">Priority</th>
-              <th class="py-3 px-4">Status</th>
-              <th class="py-3 px-4">Submitted</th>
-              <th class="py-3 px-4 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
-            <tr v-for="c in recentComplaints" :key="c.id" class="hover:bg-slate-50/50 transition-colors">
-              <td class="py-3 px-4 max-w-xs truncate">
-                <span class="block font-semibold text-slate-900">{{ c.title }}</span>
-                <span class="block text-xs text-slate-400 mt-0.5">Ref: #{{ c.id }}</span>
-              </td>
-              <td class="py-3 px-4 capitalize text-xs text-slate-500">
-                {{ c.category?.replace('_', ' ') }}
-              </td>
-              <td class="py-3 px-4 text-xs">
-                <span :class="priorityClass(c.priority)">{{ c.priority }}</span>
-              </td>
-              <td class="py-3 px-4 text-xs">
-                <span :class="statusBadgeClass(c.status)">
-                  {{ c.status }}
-                </span>
-              </td>
-              <td class="py-3 px-4 text-xs text-slate-500">
-                {{ formatDate(c.created_at) }}
-              </td>
-              <td class="py-3 px-4 text-right">
-                <RouterLink
-                  :to="{ name: 'complaint-details', params: { id: c.id } }"
-                  class="text-xs font-bold text-primary-600 hover:text-primary-700 transition-colors"
-                >
-                  View Details →
-                </RouterLink>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <template v-else>
+        <!-- Card view (mobile / tablet / small laptop screens) -->
+        <div class="lg:hidden space-y-3">
+          <div
+            v-for="c in recentComplaints"
+            :key="c.id"
+            class="rounded-xl border border-slate-100 p-4 space-y-2.5"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="font-semibold text-slate-900 text-sm truncate">{{ c.title }}</p>
+                <p class="text-xs text-slate-400 mt-0.5">Ref: #{{ c.id }}</p>
+              </div>
+              <span :class="statusBadgeClass(c.status)" class="shrink-0">{{ c.status }}</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span class="capitalize text-slate-500">{{ c.category?.replace('_', ' ') }}</span>
+              <span :class="priorityClass(c.priority)">{{ c.priority }}</span>
+              <span class="text-slate-400">{{ formatDate(c.created_at) }}</span>
+            </div>
+            <RouterLink
+              :to="{ name: 'complaint-details', params: { id: c.id } }"
+              class="inline-block text-xs font-bold text-primary-600 hover:text-primary-700 transition-colors"
+            >
+              View Details →
+            </RouterLink>
+          </div>
+        </div>
+
+        <!-- Table view (lg and up) -->
+        <div class="hidden lg:block overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-100 text-left text-sm">
+            <thead>
+              <tr class="text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <th class="py-3 px-4">Title</th>
+                <th class="py-3 px-4">Category</th>
+                <th class="py-3 px-4">Priority</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4">Submitted</th>
+                <th class="py-3 px-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
+              <tr v-for="c in recentComplaints" :key="c.id" class="hover:bg-slate-50/50 transition-colors">
+                <td class="py-3 px-4 max-w-xs truncate">
+                  <span class="block font-semibold text-slate-900">{{ c.title }}</span>
+                  <span class="block text-xs text-slate-400 mt-0.5">Ref: #{{ c.id }}</span>
+                </td>
+                <td class="py-3 px-4 capitalize text-xs text-slate-500">
+                  {{ c.category?.replace('_', ' ') }}
+                </td>
+                <td class="py-3 px-4 text-xs">
+                  <span :class="priorityClass(c.priority)">{{ c.priority }}</span>
+                </td>
+                <td class="py-3 px-4 text-xs">
+                  <span :class="statusBadgeClass(c.status)">
+                    {{ c.status }}
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-xs text-slate-500">
+                  {{ formatDate(c.created_at) }}
+                </td>
+                <td class="py-3 px-4 text-right">
+                  <RouterLink
+                    :to="{ name: 'complaint-details', params: { id: c.id } }"
+                    class="text-xs font-bold text-primary-600 hover:text-primary-700 transition-colors"
+                  >
+                    View Details →
+                  </RouterLink>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import complaintService from '@/services/complaint.service'
+import PublicComplaintMap from '@/components/PublicComplaintMap.vue'
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 const loading = ref(true)
 const error = ref(null)
@@ -224,6 +267,25 @@ const stats = ref({
   }
 })
 const recentComplaints = ref([])
+const allComplaints = ref([])
+
+const mapMarkers = computed(() =>
+  allComplaints.value
+    .filter((c) => c.latitude != null && c.longitude != null)
+    .map((c) => ({
+      id: c.id,
+      latitude: c.latitude,
+      longitude: c.longitude,
+      title: c.title,
+      category: c.category,
+      status: c.status,
+      city_name: c.city_name
+    }))
+)
+
+function goToComplaint(id) {
+  router.push({ name: 'complaint-details', params: { id } })
+}
 
 const statsData = computed(() => [
   {
@@ -262,9 +324,13 @@ async function fetchDashboardData() {
   loading.value = true
   error.value = null
   try {
-    const res = await complaintService.getDashboardSummary()
-    if (res?.success && res?.data) {
-      stats.value.total_complaints = res.data.total_complaints || 0
+    const [summaryRes, listRes] = await Promise.all([
+      complaintService.getDashboardSummary(),
+      complaintService.getMyComplaints({ per_page: 100 })
+    ])
+
+    if (summaryRes?.success && summaryRes?.data) {
+      stats.value.total_complaints = summaryRes.data.total_complaints || 0
       stats.value.by_status = {
         pending: 0,
         assigned: 0,
@@ -273,11 +339,15 @@ async function fetchDashboardData() {
         closed: 0,
         rejected: 0,
         cancelled: 0,
-        ...(res.data.by_status || {})
+        ...(summaryRes.data.by_status || {})
       }
-      recentComplaints.value = res.data.recent_complaints || []
+      recentComplaints.value = summaryRes.data.recent_complaints || []
     } else {
-      throw new Error(res?.message || 'Invalid API response format.')
+      throw new Error(summaryRes?.message || 'Invalid API response format.')
+    }
+
+    if (listRes?.success && listRes?.data) {
+      allComplaints.value = listRes.data.items || []
     }
   } catch (err) {
     error.value = err.message || 'Error occurred while loading citizen dashboard details.'
