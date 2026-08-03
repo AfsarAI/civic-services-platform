@@ -52,6 +52,8 @@ def _parse_date_filters():
     """
     date_from = _svc.parse_date(request.args.get("date_from"))
     date_to = _svc.parse_date(request.args.get("date_to"), end_of_day=True)
+    if date_from and date_to and date_from > date_to:
+        raise ValueError("From date must be on or before to date.")
     return date_from, date_to
 
 
@@ -235,9 +237,9 @@ class WorkerPerformanceReport(Resource):
         admin = _current_admin_user()
         city_id = _scoped_city_id(admin)
         try:
-            date_from, date_to, _status, _priority, location_city_id = _parse_all_filters()
+            date_from, date_to, status, _priority, location_city_id = _parse_all_filters()
             effective_city = location_city_id if location_city_id and city_id is None else city_id
-            data = _svc.get_worker_performance(effective_city, date_from, date_to)
+            data = _svc.get_worker_performance(effective_city, date_from, date_to, status=status)
             return success_response(data, "Worker performance retrieved.")
         except (ValueError, TypeError) as exc:
             return error_response(str(exc), status_code=400)

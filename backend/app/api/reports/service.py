@@ -12,7 +12,7 @@ plus optional ``date_from``/``date_to``/``status``/``priority`` filters
 
 from datetime import datetime, timedelta
 
-from sqlalchemy import func
+from sqlalchemy import case, func
 
 from app.models.city import City
 from app.models.complaint import Complaint
@@ -24,6 +24,13 @@ from app.models.user import User
 
 class ReportsService:
     """Generates statistical reports for administrators."""
+
+    PRIORITIES = ("low", "medium", "high", "urgent")
+    OPEN_STATUSES = (
+        Complaint.STATUS_PENDING,
+        Complaint.STATUS_ASSIGNED,
+        Complaint.STATUS_IN_PROGRESS,
+    )
 
     # ── Shared filtering helpers ─────────────────────────────────────────
 
@@ -89,10 +96,11 @@ class ReportsService:
         base = self._filtered_query(city_id, date_from, date_to, status, priority)
         total = base.count()
 
-        by_status = {
-            s: self._filtered_query(city_id, date_from, date_to).filter(Complaint.status == s).count()
-            for s in Complaint.VALID_STATUSES
-        }
+        status_rows = base.with_entities(
+            Complaint.status, func.count(Complaint.id)
+        ).group_by(Complaint.status).all()
+        by_status = {s: 0 for s in Complaint.VALID_STATUSES}
+        by_status.update(dict(status_rows))
 
         by_category = {}
         for row in (
@@ -101,7 +109,7 @@ class ReportsService:
         ):
             by_category[row[0]] = row[1]
 
-        by_priority = {}
+        by_priority = {priority: 0 for priority in self.PRIORITIES}
         for row in (
             base.with_entities(Complaint.priority, func.count(Complaint.id))
             .group_by(Complaint.priority).all()
@@ -110,10 +118,36 @@ class ReportsService:
 
         resolved_count = base.filter(Complaint.resolved_at.isnot(None)).count()
 
+        # "Completed" means a complaint whose latest assignment has been
+        # completed and is awaiting administrator verification.  Selecting
+        # only the latest assignment prevents rework/reassignment attempts
+        # from double-counting a complaint.
+        latest_assignment = (
+            ComplaintAssignment.query.with_entities(
+                ComplaintAssignment.complaint_id,
+                func.max(ComplaintAssignment.id).label("assignment_id"),
+            )
+            .group_by(ComplaintAssignment.complaint_id)
+            .subquery()
+        )
+        completed_count = (
+            base.join(latest_assignment, latest_assignment.c.complaint_id == Complaint.id)
+            .join(ComplaintAssignment, ComplaintAssignment.id == latest_assignment.c.assignment_id)
+            .filter(
+                Complaint.status == Complaint.STATUS_IN_PROGRESS,
+                ComplaintAssignment.status == ComplaintAssignment.STATUS_COMPLETED,
+            )
+            .count()
+        )
+
         # Average resolution time in hours (SQLite: julianday diff * 24)
         avg_hours = None
-        if resolved_count:
-            result = base.filter(Complaint.resolved_at.isnot(None)).with_entities(
+        valid_resolution = base.filter(
+            Complaint.resolved_at.isnot(None),
+            Complaint.resolved_at >= Complaint.created_at,
+        )
+        if valid_resolution.count():
+            result = valid_resolution.with_entities(
                 func.avg(
                     (func.julianday(Complaint.resolved_at) -
                      func.julianday(Complaint.created_at)) * 24
@@ -124,16 +158,16 @@ class ReportsService:
 
         open_count = sum(
             by_status.get(s, 0)
-            for s in [
-                Complaint.STATUS_PENDING,
-                Complaint.STATUS_ASSIGNED,
-                Complaint.STATUS_IN_PROGRESS,
-            ]
+            for s in self.OPEN_STATUSES
         )
 
         return {
             "total": total,
             "open": open_count,
+            "assigned": by_status[Complaint.STATUS_ASSIGNED],
+            "in_progress": by_status[Complaint.STATUS_IN_PROGRESS],
+            "completed": completed_count,
+            "closed": by_status[Complaint.STATUS_CLOSED],
             "resolved": resolved_count,
             "resolution_rate": round(resolved_count / total * 100, 1) if total else 0,
             "avg_resolution_hours": avg_hours,
@@ -146,9 +180,10 @@ class ReportsService:
 
     def get_complaints_by_status(
         self, city_id: int = None, date_from: datetime = None, date_to: datetime = None,
+        status: str = None,
     ) -> dict:
         """Counts and percentages for each complaint status."""
-        base = self._filtered_query(city_id, date_from, date_to)
+        base = self._filtered_query(city_id, date_from, date_to, status)
         total = base.count()
         rows = (
             base.with_entities(Complaint.status, func.count(Complaint.id))
@@ -214,13 +249,14 @@ class ReportsService:
             .order_by(func.count(Complaint.id).desc())
             .all()
         )
+        counts = dict(rows)
         breakdown = [
             {
                 "priority": priority,
-                "count": cnt,
-                "percentage": round(cnt / total * 100, 1) if total else 0,
+                "count": counts.get(priority, 0),
+                "percentage": round(counts.get(priority, 0) / total * 100, 1) if total else 0,
             }
-            for priority, cnt in rows
+            for priority in self.PRIORITIES
         ]
         return {"total": total, "breakdown": breakdown}
 
@@ -329,13 +365,15 @@ class ReportsService:
         city_id: int = None,
         date_from: datetime = None,
         date_to: datetime = None,
+        status: str = None,
     ) -> dict:
         """Per-field-worker assignment statistics.
 
         Args:
             city_id: When provided (municipal administrators), restricts to
                 field workers belonging to that city.
-            date_from/date_to: Restrict to assignments made within this range.
+            date_from/date_to/status: Restrict by the assigned complaint using
+                the same created-at filter contract as every report section.
         """
         fw_role = Role.query.filter_by(name=Role.FIELD_WORKER).first()
         if not fw_role:
@@ -345,58 +383,68 @@ class ReportsService:
         if city_id is not None:
             worker_query = worker_query.filter(User.city_id == city_id)
         workers = worker_query.all()
-        results = []
+        worker_ids = [worker.id for worker in workers]
+        if not worker_ids:
+            return {"workers": []}
 
-        for worker in workers:
-            base = ComplaintAssignment.query.filter_by(worker_id=worker.id)
-            if date_from is not None:
-                base = base.filter(ComplaintAssignment.assigned_at >= date_from)
-            if date_to is not None:
-                base = base.filter(ComplaintAssignment.assigned_at <= date_to)
-            total = base.count()
-
-            by_status = {
-                s: base.filter(ComplaintAssignment.status == s).count()
-                for s in [
-                    ComplaintAssignment.STATUS_ASSIGNED,
-                    ComplaintAssignment.STATUS_ACCEPTED,
-                    ComplaintAssignment.STATUS_IN_PROGRESS,
-                    ComplaintAssignment.STATUS_COMPLETED,
-                    ComplaintAssignment.STATUS_REJECTED,
-                ]
-            }
-
-            # Avg completion time in hours (accepted_at → completed_at)
-            avg_completion_hours = None
-            completed_with_times = base.filter(
-                ComplaintAssignment.status == ComplaintAssignment.STATUS_COMPLETED,
-                ComplaintAssignment.accepted_at.isnot(None),
-                ComplaintAssignment.completed_at.isnot(None),
+        # Only the latest attempt for each worker/complaint contributes to
+        # performance, preventing rework attempts from inflating counts.
+        latest = (
+            ComplaintAssignment.query.with_entities(
+                ComplaintAssignment.worker_id,
+                ComplaintAssignment.complaint_id,
+                func.max(ComplaintAssignment.id).label("assignment_id"),
             )
-            if completed_with_times.count():
-                result = completed_with_times.with_entities(
-                    func.avg(
-                        (func.julianday(ComplaintAssignment.completed_at) -
-                         func.julianday(ComplaintAssignment.accepted_at)) * 24
+            .filter(ComplaintAssignment.worker_id.in_(worker_ids))
+            .group_by(ComplaintAssignment.worker_id, ComplaintAssignment.complaint_id)
+            .subquery()
+        )
+        filtered_complaints = self._filtered_query(city_id, date_from, date_to, status).with_entities(
+            Complaint.id.label("complaint_id")
+        ).subquery()
+        rows = (
+            ComplaintAssignment.query.join(latest, ComplaintAssignment.id == latest.c.assignment_id)
+            .join(filtered_complaints, filtered_complaints.c.complaint_id == ComplaintAssignment.complaint_id)
+            .with_entities(
+                ComplaintAssignment.worker_id,
+                func.count(ComplaintAssignment.id).label("total"),
+                func.sum(case(
+                    (
+                        ComplaintAssignment.status
+                        == ComplaintAssignment.STATUS_COMPLETED,
+                        1,
+                    ),
+                    else_=0,
+                )).label("completed"),
+                func.avg(case((
+                    (
+                        ComplaintAssignment.status
+                        == ComplaintAssignment.STATUS_COMPLETED
                     )
-                ).scalar()
-                if result is not None:
-                    avg_completion_hours = round(float(result), 1)
-
-            completion_rate = (
-                round(by_status[ComplaintAssignment.STATUS_COMPLETED] / total * 100, 1)
-                if total else 0
+                    & ComplaintAssignment.accepted_at.isnot(None)
+                    & ComplaintAssignment.completed_at.isnot(None),
+                    (
+                        func.julianday(ComplaintAssignment.completed_at)
+                        - func.julianday(ComplaintAssignment.accepted_at)
+                    ) * 24,
+                ), else_=None)).label("avg_hours"),
             )
-
+            .group_by(ComplaintAssignment.worker_id)
+            .all()
+        )
+        metrics = {row.worker_id: row for row in rows}
+        results = []
+        for worker in workers:
+            row = metrics.get(worker.id)
+            total = int(row.total) if row else 0
+            completed = int(row.completed or 0) if row else 0
             results.append({
-                "worker_id": worker.id,
-                "name": worker.full_name,
-                "email": worker.email,
-                "is_active": worker.is_active,
+                "worker_id": worker.id, "name": worker.full_name,
+                "email": worker.email, "is_active": worker.is_active,
                 "total_assignments": total,
-                "by_status": by_status,
-                "completion_rate": completion_rate,
-                "avg_completion_hours": avg_completion_hours,
+                "by_status": {ComplaintAssignment.STATUS_COMPLETED: completed},
+                "completion_rate": round(completed / total * 100, 1) if total else 0,
+                "avg_completion_hours": round(float(row.avg_hours), 1) if row and row.avg_hours is not None else None,
             })
 
         # Sort by total assignments descending
@@ -487,7 +535,7 @@ class ReportsService:
         by_category = self.get_complaints_by_category(city_id, date_from, date_to, status, priority)["breakdown"]
         by_priority = self.get_complaints_by_priority(city_id, date_from, date_to, status, priority)["breakdown"]
         by_location = self.get_complaints_by_location(city_id, date_from, date_to, status, priority)["breakdown"]
-        workers = self.get_worker_performance(city_id, date_from, date_to)["workers"]
+        workers = self.get_worker_performance(city_id, date_from, date_to, status)["workers"]
         feedback = self.get_citizen_feedback_summary(city_id, date_from, date_to)
 
         filters_applied = {
@@ -535,6 +583,10 @@ class ReportsService:
         writer.writerow(["Summary"])
         writer.writerow(["Total Complaints", summary.get("total", 0)])
         writer.writerow(["Open", summary.get("open", 0)])
+        writer.writerow(["Assigned", summary.get("assigned", 0)])
+        writer.writerow(["In Progress", summary.get("in_progress", 0)])
+        writer.writerow(["Completed (Awaiting Verification)", summary.get("completed", 0)])
+        writer.writerow(["Closed", summary.get("closed", 0)])
         writer.writerow(["Resolved", summary.get("resolved", 0)])
         writer.writerow(["Resolution Rate (%)", summary.get("resolution_rate", 0)])
         writer.writerow(["Avg. Resolution (hrs)", summary.get("avg_resolution_hours") or ""])
@@ -631,6 +683,10 @@ class ReportsService:
         style_header_row(ws, ws.max_row, 2)
         ws.append(["Total Complaints", summary.get("total", 0)])
         ws.append(["Open", summary.get("open", 0)])
+        ws.append(["Assigned", summary.get("assigned", 0)])
+        ws.append(["In Progress", summary.get("in_progress", 0)])
+        ws.append(["Completed (Awaiting Verification)", summary.get("completed", 0)])
+        ws.append(["Closed", summary.get("closed", 0)])
         ws.append(["Resolved", summary.get("resolved", 0)])
         ws.append(["Resolution Rate (%)", summary.get("resolution_rate", 0)])
         ws.append(["Avg. Resolution (hrs)", summary.get("avg_resolution_hours") or ""])
@@ -763,6 +819,10 @@ class ReportsService:
         add_section("Summary", ["Metric", "Value"], [
             ["Total Complaints", str(summary.get("total", 0))],
             ["Open", str(summary.get("open", 0))],
+            ["Assigned", str(summary.get("assigned", 0))],
+            ["In Progress", str(summary.get("in_progress", 0))],
+            ["Completed (Awaiting Verification)", str(summary.get("completed", 0))],
+            ["Closed", str(summary.get("closed", 0))],
             ["Resolved", str(summary.get("resolved", 0))],
             ["Resolution Rate (%)", str(summary.get("resolution_rate", 0))],
             ["Avg. Resolution (hrs)", str(summary.get("avg_resolution_hours") or "-")],

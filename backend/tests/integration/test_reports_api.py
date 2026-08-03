@@ -231,6 +231,17 @@ class TestReportsEndpoints:
         )
         assert response.status_code == 400
 
+    def test_reversed_date_range_returns_400(self, app, client):
+        self._ensure_admin("reports-reversed-range@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "reports-reversed-range@example.com")
+        response = client.get(
+            "/api/v1/reports/complaints/summary",
+            headers={"Authorization": f"Bearer {token}"},
+            query_string={"date_from": "2026-08-02", "date_to": "2026-08-01"},
+        )
+        assert response.status_code == 400
+        assert "on or before" in response.get_json()["message"]
+
     def test_summary_includes_priority_breakdown(self, app, client):
         self._ensure_admin("reports-sysadmin7@example.com", AdministratorProfile.SYSTEM)
         token = self._login(client, "reports-sysadmin7@example.com")

@@ -2,18 +2,12 @@
   <div class="space-y-6">
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 mb-1">Reports &amp; Analytics</h1>
+        <h1 class="text-2xl font-bold text-gray-900 mb-1">Administrative Reports</h1>
         <p class="text-gray-500 text-sm">{{ scopeDescription }}</p>
       </div>
       <div class="flex gap-2 shrink-0">
-        <button type="button" class="btn-secondary px-4 py-2 text-sm" :disabled="exporting" @click="exportReport('csv')">
+        <button type="button" class="btn-primary px-4 py-2 text-sm" :disabled="loading || exporting || !hasReportData" @click="exportReport('csv')">
           {{ exporting === 'csv' ? 'Exporting…' : 'Export CSV' }}
-        </button>
-        <button type="button" class="btn-secondary px-4 py-2 text-sm" :disabled="exporting" @click="exportReport('excel')">
-          {{ exporting === 'excel' ? 'Exporting…' : 'Export Excel' }}
-        </button>
-        <button type="button" class="btn-secondary px-4 py-2 text-sm" :disabled="exporting" @click="exportReport('pdf')">
-          {{ exporting === 'pdf' ? 'Exporting…' : 'Export PDF' }}
         </button>
       </div>
     </div>
@@ -23,7 +17,7 @@
     <!-- Filters -->
     <div class="card">
       <h2 class="font-semibold text-gray-900 mb-3 text-sm">Filters</h2>
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
         <div>
           <label class="form-label text-xs" for="date_from">From</label>
           <input id="date_from" v-model="filters.date_from" type="date" class="form-input text-sm" />
@@ -55,7 +49,7 @@
         </div>
         <div class="flex items-end gap-2">
           <button type="button" class="btn-primary flex-1 py-2 text-sm" :disabled="loading" @click="applyFilters">
-            Apply
+            Apply Filters
           </button>
           <button type="button" class="btn-secondary flex-1 py-2 text-sm" :disabled="loading" @click="resetFilters">
             Reset
@@ -64,15 +58,30 @@
       </div>
     </div>
 
+    <div v-if="validationError" class="card border-amber-200 bg-amber-50 text-amber-800 p-4 text-sm">
+      {{ validationError }}
+    </div>
+
+    <div v-if="loading" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-7" aria-label="Loading administrative report">
+      <div v-for="n in 7" :key="n" class="card animate-pulse">
+        <div class="mx-auto h-8 w-16 rounded bg-slate-100"></div>
+        <div class="mx-auto mt-2 h-3 w-24 rounded bg-slate-100"></div>
+      </div>
+    </div>
+
     <!-- Summary cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+    <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-7">
       <div v-for="stat in summaryCards" :key="stat.label" class="card text-center">
         <p class="text-2xl font-bold" :class="stat.color">{{ stat.value }}</p>
         <p class="text-xs text-gray-500 mt-1">{{ stat.label }}</p>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div v-if="!loading && !hasReportData" class="card py-10 text-center text-sm text-gray-500">
+      No complaints match the currently applied filters.
+    </div>
+
+    <div v-if="!loading && hasReportData" class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <!-- By status -->
       <div class="card">
         <h2 class="font-semibold text-gray-900 mb-4">Complaints by Status</h2>
@@ -294,11 +303,9 @@ const trendPeriod = ref('daily')
 const workerPerformance = ref([])
 const feedbackSummary = ref({})
 const exporting = ref(false)
+const validationError = ref('')
 
-// Location options for the dropdown (populated from by-location data)
-const locationOptions = ref([])
-
-const filters = reactive({ date_from: '', date_to: '', status: '', priority: '', location: '' })
+const filters = reactive({ date_from: '', date_to: '', status: '' })
 const statusOptions = ['pending', 'assigned', 'in_progress', 'resolved', 'closed', 'rejected', 'cancelled']
 const priorityOptions = ['low', 'medium', 'high', 'urgent']
 
@@ -313,16 +320,16 @@ const activeFilters = computed(() => {
   if (filters.date_from) applied.date_from = filters.date_from
   if (filters.date_to) applied.date_to = filters.date_to
   if (filters.status) applied.status = filters.status
-  if (filters.priority) applied.priority = filters.priority
-  if (filters.location) applied.location = filters.location
   return applied
 })
 
 const summaryCards = computed(() => [
   { label: 'Total Complaints', value: summary.value.total ?? 0, color: 'text-gray-800' },
   { label: 'Open', value: summary.value.open ?? 0, color: 'text-amber-600' },
-  { label: 'Resolved', value: summary.value.resolved ?? 0, color: 'text-green-600' },
-  { label: 'Resolution Rate', value: `${summary.value.resolution_rate ?? 0}%`, color: 'text-primary-600' },
+  { label: 'Assigned', value: summary.value.assigned ?? 0, color: 'text-sky-600' },
+  { label: 'In Progress', value: summary.value.in_progress ?? 0, color: 'text-blue-600' },
+  { label: 'Completed (Awaiting Verification)', value: summary.value.completed ?? 0, color: 'text-purple-600' },
+  { label: 'Closed', value: summary.value.closed ?? 0, color: 'text-green-600' },
   { label: 'Avg. Resolution (hrs)', value: summary.value.avg_resolution_hours ?? '—', color: 'text-slate-600' },
 ])
 
@@ -431,6 +438,14 @@ async function loadAll() {
 }
 
 function applyFilters() {
+  validationError.value = ''
+  if (filters.date_from && filters.date_to && filters.date_from > filters.date_to) {
+    validationError.value = 'From date must be on or before to date.'
+    return
+  }
+  appliedFilters.value = Object.fromEntries(
+    Object.entries(filters).filter(([, value]) => value),
+  )
   loadAll()
 }
 
@@ -438,8 +453,6 @@ function resetFilters() {
   filters.date_from = ''
   filters.date_to = ''
   filters.status = ''
-  filters.priority = ''
-  filters.location = ''
   loadAll()
 }
 

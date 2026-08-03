@@ -126,6 +126,29 @@ class TestReportsServiceComplaintSummary:
             assert result["total"] == 0
             assert result["resolution_rate"] == 0
 
+    def test_summary_completed_uses_latest_assignment_without_double_counting(self, app):
+        with app.app_context():
+            city = _ensure_city("UnitReportsCompletedCity")
+            citizen = _ensure_citizen("unit.reports.completed.citizen@example.com")
+            worker = _ensure_worker("unit.reports.completed.worker@example.com", city.id)
+            admin = _ensure_citizen("unit.reports.completed.admin@example.com")
+            complaint = _make_complaint(citizen.id, city.id, status=Complaint.STATUS_IN_PROGRESS)
+            db.session.add_all([
+                ComplaintAssignment(
+                    complaint_id=complaint.id, worker_id=worker.id,
+                    assigned_by_id=admin.id, status=ComplaintAssignment.STATUS_REJECTED,
+                ),
+                ComplaintAssignment(
+                    complaint_id=complaint.id, worker_id=worker.id,
+                    assigned_by_id=admin.id, status=ComplaintAssignment.STATUS_COMPLETED,
+                ),
+            ])
+            db.session.commit()
+
+            result = ReportsService().get_complaint_summary(city_id=city.id)
+            assert result["completed"] == 1
+            assert result["closed"] == 0
+
 
 class TestReportsServiceByStatusCategoryPriority:
     """Unit tests for get_complaints_by_status/category/priority."""
@@ -160,7 +183,8 @@ class TestReportsServiceByStatusCategoryPriority:
             service = ReportsService()
             result = service.get_complaints_by_priority(city_id=city.id)
             priorities = {row["priority"] for row in result["breakdown"]}
-            assert "high" in priorities
+            assert priorities == {"low", "medium", "high", "urgent"}
+            assert next(row for row in result["breakdown"] if row["priority"] == "low")["count"] == 0
 
     def test_by_category_rejects_invalid_status_filter(self, app):
         with app.app_context():
