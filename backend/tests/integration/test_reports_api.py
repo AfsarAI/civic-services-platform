@@ -353,3 +353,133 @@ class TestReportsEndpoints:
         )
         assert response.status_code == 200
         assert response.data[:4] == b"%PDF"
+
+    # ── New tests for TPS-96/98 enhancements ────────────────────────────
+
+    def test_feedback_summary_endpoint_accessible_by_admin(self, app, client):
+        self._ensure_admin("feedback-sysadmin@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "feedback-sysadmin@example.com")
+        response = client.get(
+            "/api/v1/reports/feedback/summary",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        data = response.get_json()["data"]
+        assert "total" in data
+        assert "avg_rating" in data
+        assert "distribution" in data
+        assert "recent_comments" in data
+
+    def test_feedback_summary_forbidden_for_citizens(self, app, client):
+        citizen_auth = self._register_and_login_citizen(client, "feedback-citizen@example.com")
+        response = client.get(
+            "/api/v1/reports/feedback/summary",
+            headers={"Authorization": f"Bearer {citizen_auth['access_token']}"},
+        )
+        assert response.status_code == 403
+
+    def test_priority_filter_narrows_summary(self, app, client):
+        self._ensure_admin("priority-sysadmin@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "priority-sysadmin@example.com")
+        city = self._ensure_city("PriorityFilterCity")
+        citizen_auth = self._register_and_login_citizen(client, "priority-citizen@example.com")
+        self._submit_complaint(client, citizen_auth["access_token"], city.id, priority="urgent")
+        self._submit_complaint(client, citizen_auth["access_token"], city.id, priority="low")
+
+        response_urgent = client.get(
+            "/api/v1/reports/complaints/summary",
+            headers={"Authorization": f"Bearer {token}"},
+            query_string={"priority": "urgent"},
+        )
+        assert response_urgent.status_code == 200
+
+        response_all = client.get(
+            "/api/v1/reports/complaints/summary",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response_all.status_code == 200
+        assert response_all.get_json()["data"]["total"] >= response_urgent.get_json()["data"]["total"]
+
+    def test_invalid_priority_filter_returns_400(self, app, client):
+        self._ensure_admin("priority-sysadmin2@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "priority-sysadmin2@example.com")
+        response = client.get(
+            "/api/v1/reports/complaints/summary",
+            headers={"Authorization": f"Bearer {token}"},
+            query_string={"priority": "critical"},
+        )
+        assert response.status_code == 400
+
+    def test_location_filter_scopes_summary_for_system_admin(self, app, client):
+        city_x = self._ensure_city("LocationFilterCityX")
+        city_y = self._ensure_city("LocationFilterCityY")
+        self._ensure_admin("location-sysadmin@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "location-sysadmin@example.com")
+
+        citizen_x = self._register_and_login_citizen(client, "location-citizen-x@example.com")
+        self._submit_complaint(client, citizen_x["access_token"], city_x.id)
+        citizen_y = self._register_and_login_citizen(client, "location-citizen-y@example.com")
+        self._submit_complaint(client, citizen_y["access_token"], city_y.id)
+
+        response = client.get(
+            "/api/v1/reports/complaints/summary",
+            headers={"Authorization": f"Bearer {token}"},
+            query_string={"location": str(city_x.id)},
+        )
+        assert response.status_code == 200
+        # Should have fewer (or equal) complaints than unfiltered
+        response_all = client.get(
+            "/api/v1/reports/complaints/summary",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response_all.get_json()["data"]["total"] >= response.get_json()["data"]["total"]
+
+    def test_csv_export_includes_feedback_section(self, app, client):
+        self._ensure_admin("export-fb-sysadmin@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "export-fb-sysadmin@example.com")
+        response = client.get(
+            "/api/v1/reports/export/csv", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+        text = response.data.decode("utf-8")
+        assert "Citizen Feedback Summary" in text
+
+    def test_excel_export_includes_feedback_sheet(self, app, client):
+        import io
+        from openpyxl import load_workbook
+
+        self._ensure_admin("export-fb-sysadmin2@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "export-fb-sysadmin2@example.com")
+        response = client.get(
+            "/api/v1/reports/export/excel", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+        wb = load_workbook(io.BytesIO(response.data))
+        assert "Citizen Feedback" in wb.sheetnames
+
+    def test_export_with_priority_filter_includes_priority_in_csv(self, app, client):
+        self._ensure_admin("export-prio-sysadmin@example.com", AdministratorProfile.SYSTEM)
+        token = self._login(client, "export-prio-sysadmin@example.com")
+        city = self._ensure_city("ExportPrioCity")
+        citizen_auth = self._register_and_login_citizen(client, "export-prio-citizen@example.com")
+        self._submit_complaint(client, citizen_auth["access_token"], city.id, priority="urgent")
+
+        response = client.get(
+            "/api/v1/reports/export/csv",
+            headers={"Authorization": f"Bearer {token}"},
+            query_string={"priority": "urgent"},
+        )
+        assert response.status_code == 200
+        text = response.data.decode("utf-8")
+        assert "Priority filter" in text
+        assert "urgent" in text
+
+    def test_non_admin_cannot_access_feedback_endpoint(self, app, client):
+        """Verify the feedback endpoint is included in the forbidden-for-citizens set."""
+        citizen_auth = self._register_and_login_citizen(client, "feedback-citizen2@example.com")
+        response = client.get(
+            "/api/v1/reports/feedback/summary",
+            headers={"Authorization": f"Bearer {citizen_auth['access_token']}"},
+        )
+        assert response.status_code == 403
+

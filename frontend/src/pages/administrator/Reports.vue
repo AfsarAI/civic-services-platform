@@ -23,7 +23,7 @@
     <!-- Filters -->
     <div class="card">
       <h2 class="font-semibold text-gray-900 mb-3 text-sm">Filters</h2>
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <div>
           <label class="form-label text-xs" for="date_from">From</label>
           <input id="date_from" v-model="filters.date_from" type="date" class="form-input text-sm" />
@@ -37,6 +37,20 @@
           <select id="status" v-model="filters.status" class="form-input text-sm">
             <option value="">All Statuses</option>
             <option v-for="s in statusOptions" :key="s" :value="s">{{ s.replaceAll('_', ' ') }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label text-xs" for="priority">Priority</label>
+          <select id="priority" v-model="filters.priority" class="form-input text-sm">
+            <option value="">All Priorities</option>
+            <option v-for="p in priorityOptions" :key="p" :value="p">{{ p }}</option>
+          </select>
+        </div>
+        <div v-if="authStore.isSystemAdmin">
+          <label class="form-label text-xs" for="location">Location</label>
+          <select id="location" v-model="filters.location" class="form-input text-sm">
+            <option value="">All Locations</option>
+            <option v-for="loc in locationOptions" :key="loc.city_id" :value="loc.city_id">{{ loc.city_name }}</option>
           </select>
         </div>
         <div class="flex items-end gap-2">
@@ -188,6 +202,75 @@
           </table>
         </div>
       </div>
+
+      <!-- Citizen Feedback Summary (TPS-96) -->
+      <div class="card md:col-span-2">
+        <h2 class="font-semibold text-gray-900 mb-4">Citizen Feedback Summary</h2>
+        <p v-if="!feedbackSummary.total" class="text-gray-400 text-sm italic text-center py-8">No feedback received yet.</p>
+        <template v-else>
+          <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div class="text-center">
+              <p class="text-2xl font-bold text-gray-800">{{ feedbackSummary.total }}</p>
+              <p class="text-xs text-gray-500 mt-1">Total Responses</p>
+            </div>
+            <div class="text-center">
+              <p class="text-2xl font-bold text-amber-500">{{ feedbackSummary.avg_rating ?? '—' }}</p>
+              <p class="text-xs text-gray-500 mt-1">Average Rating</p>
+            </div>
+            <div class="text-center">
+              <div class="flex items-center justify-center gap-0.5">
+                <span
+                  v-for="star in 5"
+                  :key="star"
+                  class="text-lg"
+                  :class="star <= Math.round(feedbackSummary.avg_rating || 0) ? 'text-amber-400' : 'text-gray-300'"
+                >★</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">Rating</p>
+            </div>
+          </div>
+
+          <!-- Rating Distribution -->
+          <h3 class="text-sm font-semibold text-gray-700 mb-3">Rating Distribution</h3>
+          <div class="space-y-2 mb-6">
+            <div v-for="star in [5, 4, 3, 2, 1]" :key="star" class="flex items-center gap-3">
+              <span class="text-xs font-medium text-gray-600 w-12">{{ star }} Star</span>
+              <div class="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div
+                  class="h-full rounded-full bg-amber-400"
+                  :style="{ width: `${ratingPercentage(star)}%` }"
+                ></div>
+              </div>
+              <span class="text-xs text-gray-500 w-8 text-right">{{ feedbackSummary.distribution?.[star] || 0 }}</span>
+            </div>
+          </div>
+
+          <!-- Recent Comments -->
+          <div v-if="feedbackSummary.recent_comments?.length">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">Recent Feedback</h3>
+            <div class="space-y-3 max-h-64 overflow-y-auto">
+              <div
+                v-for="(fb, idx) in feedbackSummary.recent_comments"
+                :key="idx"
+                class="bg-slate-50 rounded-lg p-3"
+              >
+                <div class="flex items-center justify-between mb-1">
+                  <div class="flex items-center gap-0.5">
+                    <span
+                      v-for="s in 5"
+                      :key="s"
+                      class="text-xs"
+                      :class="s <= fb.rating ? 'text-amber-400' : 'text-gray-300'"
+                    >★</span>
+                  </div>
+                  <span class="text-[10px] text-gray-400">{{ fb.created_at }}</span>
+                </div>
+                <p class="text-sm text-gray-700">{{ fb.comment }}</p>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
     </div>
   </div>
 </template>
@@ -209,10 +292,15 @@ const byLocation = ref([])
 const trends = ref([])
 const trendPeriod = ref('daily')
 const workerPerformance = ref([])
+const feedbackSummary = ref({})
 const exporting = ref(false)
 
-const filters = reactive({ date_from: '', date_to: '', status: '' })
+// Location options for the dropdown (populated from by-location data)
+const locationOptions = ref([])
+
+const filters = reactive({ date_from: '', date_to: '', status: '', priority: '', location: '' })
 const statusOptions = ['pending', 'assigned', 'in_progress', 'resolved', 'closed', 'rejected', 'cancelled']
+const priorityOptions = ['low', 'medium', 'high', 'urgent']
 
 const scopeDescription = computed(() => {
   if (authStore.isSystemAdmin) return 'Platform-wide analytics across all cities.'
@@ -225,6 +313,8 @@ const activeFilters = computed(() => {
   if (filters.date_from) applied.date_from = filters.date_from
   if (filters.date_to) applied.date_to = filters.date_to
   if (filters.status) applied.status = filters.status
+  if (filters.priority) applied.priority = filters.priority
+  if (filters.location) applied.location = filters.location
   return applied
 })
 
@@ -239,6 +329,13 @@ const summaryCards = computed(() => [
 function trendBarHeight(count) {
   const max = Math.max(...trends.value.map((p) => p.count), 1)
   return Math.max(4, Math.round((count / max) * 120))
+}
+
+function ratingPercentage(star) {
+  const total = feedbackSummary.value.total || 0
+  if (!total) return 0
+  const count = feedbackSummary.value.distribution?.[star] || 0
+  return Math.round((count / total) * 100)
 }
 
 async function loadSummary() {
@@ -281,6 +378,10 @@ async function loadByLocation() {
   try {
     const response = await reportsService.getByLocation(activeFilters.value)
     byLocation.value = response?.data?.breakdown || []
+    // Populate the location dropdown for system admins (only from unfiltered call)
+    if (authStore.isSystemAdmin && !filters.location) {
+      locationOptions.value = (response?.data?.breakdown || []).filter(r => r.city_id)
+    }
   } catch {
     byLocation.value = []
   }
@@ -304,6 +405,15 @@ async function loadWorkerPerformance() {
   }
 }
 
+async function loadFeedbackSummary() {
+  try {
+    const response = await reportsService.getFeedbackSummary(activeFilters.value)
+    feedbackSummary.value = response?.data || {}
+  } catch {
+    feedbackSummary.value = {}
+  }
+}
+
 async function loadAll() {
   loading.value = true
   error.value = ''
@@ -315,6 +425,7 @@ async function loadAll() {
     loadByLocation(),
     loadTrends(),
     loadWorkerPerformance(),
+    loadFeedbackSummary(),
   ])
   loading.value = false
 }
@@ -327,6 +438,8 @@ function resetFilters() {
   filters.date_from = ''
   filters.date_to = ''
   filters.status = ''
+  filters.priority = ''
+  filters.location = ''
   loadAll()
 }
 
@@ -380,4 +493,3 @@ onMounted(() => {
   loadAll()
 })
 </script>
-

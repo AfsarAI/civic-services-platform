@@ -274,7 +274,7 @@ class TestReportsServiceExportDataset:
             _make_complaint(citizen.id, city.id)
             service = ReportsService()
             dataset = service.build_export_dataset(city_id=city.id)
-            for key in ("summary", "by_status", "by_category", "by_priority", "by_location", "workers"):
+            for key in ("summary", "by_status", "by_category", "by_priority", "by_location", "workers", "feedback"):
                 assert key in dataset
 
     def test_export_csv_produces_valid_csv_text(self, app):
@@ -287,3 +287,131 @@ class TestReportsServiceExportDataset:
             csv_text = service.export_csv(dataset)
             assert "Civic Services Platform" in csv_text
             assert "Summary" in csv_text
+            assert "Citizen Feedback Summary" in csv_text
+
+    def test_export_dataset_includes_priority_filter(self, app):
+        with app.app_context():
+            city = _ensure_city("UnitReportsExportCityPrio")
+            citizen = _ensure_citizen("unit.reports.export.prio@example.com")
+            _make_complaint(citizen.id, city.id, priority="urgent")
+            _make_complaint(citizen.id, city.id, priority="low")
+            service = ReportsService()
+            dataset = service.build_export_dataset(city_id=city.id, priority="urgent")
+            assert dataset["filters"]["priority"] == "urgent"
+
+    def test_export_excel_includes_feedback_sheet(self, app):
+        import io
+        from openpyxl import load_workbook
+
+        with app.app_context():
+            city = _ensure_city("UnitReportsExportExcelFB")
+            citizen = _ensure_citizen("unit.reports.export.excelfb@example.com")
+            _make_complaint(citizen.id, city.id)
+            service = ReportsService()
+            dataset = service.build_export_dataset(city_id=city.id)
+            xlsx_bytes = service.export_excel(dataset)
+            wb = load_workbook(io.BytesIO(xlsx_bytes))
+            assert "Citizen Feedback" in wb.sheetnames
+
+    def test_export_pdf_includes_feedback_section(self, app):
+        with app.app_context():
+            city = _ensure_city("UnitReportsExportPDFFB")
+            citizen = _ensure_citizen("unit.reports.export.pdffb@example.com")
+            _make_complaint(citizen.id, city.id)
+            service = ReportsService()
+            dataset = service.build_export_dataset(city_id=city.id)
+            pdf_bytes = service.export_pdf(dataset)
+            assert pdf_bytes[:4] == b"%PDF"
+
+
+class TestReportsServicePriorityFilter:
+    """Unit tests for priority filtering across service methods."""
+
+    def test_filtered_query_rejects_invalid_priority(self, app):
+        with app.app_context():
+            service = ReportsService()
+            with pytest.raises(ValueError, match="Invalid priority"):
+                service.get_complaint_summary(priority="critical")
+
+    def test_summary_filters_by_priority(self, app):
+        with app.app_context():
+            city = _ensure_city("UnitReportsPrioFilterCity")
+            citizen = _ensure_citizen("unit.reports.priofilter1@example.com")
+            _make_complaint(citizen.id, city.id, priority="urgent")
+            _make_complaint(citizen.id, city.id, priority="low")
+            service = ReportsService()
+            result = service.get_complaint_summary(city_id=city.id, priority="urgent")
+            # Should only see the urgent complaint
+            assert result["by_priority"].get("urgent", 0) >= 1
+            # Total should not include the low-priority complaint
+            result_low = service.get_complaint_summary(city_id=city.id, priority="low")
+            assert result_low["total"] >= 1
+
+    def test_by_category_filters_by_priority(self, app):
+        with app.app_context():
+            city = _ensure_city("UnitReportsPrioCatCity")
+            citizen = _ensure_citizen("unit.reports.priocat1@example.com")
+            _make_complaint(citizen.id, city.id, priority="high", category=Complaint.CATEGORY_POTHOLE)
+            _make_complaint(citizen.id, city.id, priority="low", category=Complaint.CATEGORY_DRAINAGE)
+            service = ReportsService()
+            result = service.get_complaints_by_category(city_id=city.id, priority="high")
+            categories = {row["category"] for row in result["breakdown"]}
+            assert Complaint.CATEGORY_POTHOLE in categories
+
+
+class TestReportsServiceCitizenFeedback:
+    """Unit tests for get_citizen_feedback_summary."""
+
+    def test_feedback_summary_returns_empty_when_no_feedback(self, app):
+        with app.app_context():
+            city = _ensure_city("UnitReportsFBEmptyCity")
+            service = ReportsService()
+            result = service.get_citizen_feedback_summary(city_id=city.id)
+            assert result["total"] == 0
+            assert result["avg_rating"] is None
+            assert all(v == 0 for v in result["distribution"].values())
+            assert result["recent_comments"] == []
+
+    def test_feedback_summary_aggregates_feedback_data(self, app):
+        from app.models.feedback import Feedback
+
+        with app.app_context():
+            city = _ensure_city("UnitReportsFBCity")
+            citizen = _ensure_citizen("unit.reports.fb1@example.com")
+            complaint1 = _make_complaint(citizen.id, city.id, status=Complaint.STATUS_RESOLVED)
+            complaint2 = _make_complaint(citizen.id, city.id, status=Complaint.STATUS_RESOLVED)
+
+            fb1 = Feedback(complaint_id=complaint1.id, citizen_id=citizen.id, rating=5, comment="Excellent work!")
+            fb2 = Feedback(complaint_id=complaint2.id, citizen_id=citizen.id, rating=3, comment="Average response.")
+            db.session.add_all([fb1, fb2])
+            db.session.commit()
+
+            service = ReportsService()
+            result = service.get_citizen_feedback_summary(city_id=city.id)
+            assert result["total"] == 2
+            assert result["avg_rating"] == 4.0
+            assert result["distribution"]["5"] == 1
+            assert result["distribution"]["3"] == 1
+            assert len(result["recent_comments"]) == 2
+
+    def test_feedback_summary_scopes_to_city(self, app):
+        from app.models.feedback import Feedback
+
+        with app.app_context():
+            city_a = _ensure_city("UnitReportsFBCityA")
+            city_b = _ensure_city("UnitReportsFBCityB")
+            citizen = _ensure_citizen("unit.reports.fbscope1@example.com")
+
+            c_a = _make_complaint(citizen.id, city_a.id, status=Complaint.STATUS_RESOLVED)
+            c_b = _make_complaint(citizen.id, city_b.id, status=Complaint.STATUS_RESOLVED)
+
+            fb_a = Feedback(complaint_id=c_a.id, citizen_id=citizen.id, rating=4, comment="Good!")
+            fb_b = Feedback(complaint_id=c_b.id, citizen_id=citizen.id, rating=2, comment="Poor.")
+            db.session.add_all([fb_a, fb_b])
+            db.session.commit()
+
+            service = ReportsService()
+            result = service.get_citizen_feedback_summary(city_id=city_a.id)
+            assert result["total"] == 1
+            assert result["avg_rating"] == 4.0
+

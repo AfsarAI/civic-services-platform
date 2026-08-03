@@ -6,8 +6,8 @@ SQLite-compatible: date grouping uses strftime().
 
 Every report accepts an optional ``city_id`` (municipal administrators are
 scoped to their own city; ``None`` means unscoped, i.e. system administrators)
-plus optional ``date_from``/``date_to``/``status`` filters (TPS-85/96/97/98,
-AC3/AC4).
+plus optional ``date_from``/``date_to``/``status``/``priority`` filters
+(TPS-85/96/97/98, AC3/AC4).
 """
 
 from datetime import datetime, timedelta
@@ -17,6 +17,7 @@ from sqlalchemy import func
 from app.models.city import City
 from app.models.complaint import Complaint
 from app.models.complaint_assignment import ComplaintAssignment
+from app.models.feedback import Feedback
 from app.models.role import Role
 from app.models.user import User
 
@@ -43,12 +44,15 @@ class ReportsService:
             parsed = parsed + timedelta(hours=23, minutes=59, seconds=59)
         return parsed
 
+    VALID_PRIORITIES = ("low", "medium", "high", "urgent")
+
     @staticmethod
     def _filtered_query(
         city_id: int = None,
         date_from: datetime = None,
         date_to: datetime = None,
         status: str = None,
+        priority: str = None,
     ):
         """Return a ``Complaint`` query with the given optional filters applied."""
         query = Complaint.query
@@ -62,6 +66,13 @@ class ReportsService:
             if status not in Complaint.VALID_STATUSES:
                 raise ValueError(f"Invalid status '{status}'.")
             query = query.filter(Complaint.status == status)
+        if priority is not None:
+            if priority not in ReportsService.VALID_PRIORITIES:
+                raise ValueError(
+                    f"Invalid priority '{priority}'. "
+                    f"Choose from: {', '.join(ReportsService.VALID_PRIORITIES)}."
+                )
+            query = query.filter(Complaint.priority == priority)
         return query
 
     # ── Summary ───────────────────────────────────────────────────────────
@@ -72,9 +83,10 @@ class ReportsService:
         date_from: datetime = None,
         date_to: datetime = None,
         status: str = None,
+        priority: str = None,
     ) -> dict:
         """Overall complaint statistics: totals, resolution rate, avg time."""
-        base = self._filtered_query(city_id, date_from, date_to, status)
+        base = self._filtered_query(city_id, date_from, date_to, status, priority)
         total = base.count()
 
         by_status = {
@@ -162,9 +174,10 @@ class ReportsService:
         date_from: datetime = None,
         date_to: datetime = None,
         status: str = None,
+        priority: str = None,
     ) -> dict:
         """Counts and percentages per complaint category."""
-        base = self._filtered_query(city_id, date_from, date_to, status)
+        base = self._filtered_query(city_id, date_from, date_to, status, priority)
         total = base.count()
         rows = (
             base.with_entities(Complaint.category, func.count(Complaint.id))
@@ -190,9 +203,10 @@ class ReportsService:
         date_from: datetime = None,
         date_to: datetime = None,
         status: str = None,
+        priority: str = None,
     ) -> dict:
         """Counts and percentages per complaint priority."""
-        base = self._filtered_query(city_id, date_from, date_to, status)
+        base = self._filtered_query(city_id, date_from, date_to, status, priority)
         total = base.count()
         rows = (
             base.with_entities(Complaint.priority, func.count(Complaint.id))
@@ -218,13 +232,14 @@ class ReportsService:
         date_from: datetime = None,
         date_to: datetime = None,
         status: str = None,
+        priority: str = None,
     ) -> dict:
         """Counts and percentages per city.
 
         For a municipal administrator (``city_id`` provided) this naturally
         collapses to a single row for their own city.
         """
-        base = self._filtered_query(city_id, date_from, date_to, status)
+        base = self._filtered_query(city_id, date_from, date_to, status, priority)
         total = base.count()
         rows = (
             base.join(City, City.id == Complaint.city_id)
@@ -261,6 +276,7 @@ class ReportsService:
         date_from: datetime = None,
         date_to: datetime = None,
         status: str = None,
+        priority: str = None,
     ) -> dict:
         """Complaint submission counts grouped by time period.
 
@@ -285,7 +301,7 @@ class ReportsService:
         }
         fmt = fmt_map[period]
 
-        base = self._filtered_query(city_id, date_from, date_to, status)
+        base = self._filtered_query(city_id, date_from, date_to, status, priority)
         rows = (
             base.with_entities(
                 func.strftime(fmt, Complaint.created_at).label("period"),
@@ -387,6 +403,70 @@ class ReportsService:
         results.sort(key=lambda x: x["total_assignments"], reverse=True)
         return {"workers": results}
 
+    # ── Citizen feedback summary ─────────────────────────────────────────
+
+    def get_citizen_feedback_summary(
+        self,
+        city_id: int = None,
+        date_from: datetime = None,
+        date_to: datetime = None,
+    ) -> dict:
+        """Aggregate citizen feedback statistics.
+
+        Returns total count, average rating, rating distribution (1-5 stars),
+        and the most recent feedback comments.
+        """
+        base = Feedback.query.join(
+            Complaint, Complaint.id == Feedback.complaint_id,
+        )
+        if city_id is not None:
+            base = base.filter(Complaint.city_id == city_id)
+        if date_from is not None:
+            base = base.filter(Feedback.created_at >= date_from)
+        if date_to is not None:
+            base = base.filter(Feedback.created_at <= date_to)
+
+        total = base.count()
+
+        avg_rating = None
+        if total:
+            result = base.with_entities(func.avg(Feedback.rating)).scalar()
+            if result is not None:
+                avg_rating = round(float(result), 1)
+
+        # Rating distribution: count per star level (1-5)
+        distribution = {str(i): 0 for i in range(1, 6)}
+        rows = (
+            base.with_entities(Feedback.rating, func.count(Feedback.id))
+            .group_by(Feedback.rating)
+            .all()
+        )
+        for rating, count in rows:
+            distribution[str(rating)] = count
+
+        # Recent feedback (latest 10 comments that are not empty)
+        recent = (
+            base.filter(Feedback.comment.isnot(None), Feedback.comment != "")
+            .order_by(Feedback.created_at.desc())
+            .limit(10)
+            .all()
+        )
+        recent_comments = [
+            {
+                "rating": fb.rating,
+                "comment": fb.comment,
+                "created_at": fb.created_at.strftime("%Y-%m-%d %H:%M") if fb.created_at else None,
+            }
+            for fb in recent
+        ]
+
+        return {
+            "total": total,
+            "avg_rating": avg_rating,
+            "distribution": distribution,
+            "recent_comments": recent_comments,
+        }
+
     # ── Export (TPS — Report Export) ─────────────────────────────────────
 
     def build_export_dataset(
@@ -395,23 +475,26 @@ class ReportsService:
         date_from: datetime = None,
         date_to: datetime = None,
         status: str = None,
+        priority: str = None,
     ) -> dict:
         """Assemble the full report dataset shared by all export formats.
 
         Mirrors exactly what the Reports screen displays, so PDF/Excel/CSV
         exports always reflect the same filtered data as the UI.
         """
-        summary = self.get_complaint_summary(city_id, date_from, date_to, status)
+        summary = self.get_complaint_summary(city_id, date_from, date_to, status, priority)
         by_status = self.get_complaints_by_status(city_id, date_from, date_to)["breakdown"]
-        by_category = self.get_complaints_by_category(city_id, date_from, date_to, status)["breakdown"]
-        by_priority = self.get_complaints_by_priority(city_id, date_from, date_to, status)["breakdown"]
-        by_location = self.get_complaints_by_location(city_id, date_from, date_to, status)["breakdown"]
+        by_category = self.get_complaints_by_category(city_id, date_from, date_to, status, priority)["breakdown"]
+        by_priority = self.get_complaints_by_priority(city_id, date_from, date_to, status, priority)["breakdown"]
+        by_location = self.get_complaints_by_location(city_id, date_from, date_to, status, priority)["breakdown"]
         workers = self.get_worker_performance(city_id, date_from, date_to)["workers"]
+        feedback = self.get_citizen_feedback_summary(city_id, date_from, date_to)
 
         filters_applied = {
             "date_from": date_from.strftime("%Y-%m-%d") if date_from else None,
             "date_to": date_to.strftime("%Y-%m-%d") if date_to else None,
             "status": status,
+            "priority": priority,
         }
 
         return {
@@ -423,6 +506,7 @@ class ReportsService:
             "by_priority": by_priority,
             "by_location": by_location,
             "workers": workers,
+            "feedback": feedback,
         }
 
     def export_csv(self, dataset: dict) -> str:
@@ -443,6 +527,8 @@ class ReportsService:
             ])
         if filters.get("status"):
             writer.writerow(["Status filter", filters["status"]])
+        if filters.get("priority"):
+            writer.writerow(["Priority filter", filters["priority"]])
         writer.writerow([])
 
         summary = dataset["summary"]
@@ -491,6 +577,15 @@ class ReportsService:
                 w["avg_completion_hours"] if w["avg_completion_hours"] is not None else "",
                 "Yes" if w["is_active"] else "No",
             ])
+        writer.writerow([])
+
+        feedback = dataset.get("feedback", {})
+        writer.writerow(["Citizen Feedback Summary"])
+        writer.writerow(["Total Feedback", feedback.get("total", 0)])
+        writer.writerow(["Average Rating", feedback.get("avg_rating") or ""])
+        writer.writerow(["Rating", "Count"])
+        for star, count in sorted(feedback.get("distribution", {}).items()):
+            writer.writerow([f"{star} Star", count])
 
         return buffer.getvalue()
 
@@ -527,6 +622,8 @@ class ReportsService:
             ws.append(["Date range", f"{filters.get('date_from') or 'any'} to {filters.get('date_to') or 'any'}"])
         if filters.get("status"):
             ws.append(["Status filter", filters["status"]])
+        if filters.get("priority"):
+            ws.append(["Priority filter", filters["priority"]])
         ws.append([])
 
         summary = dataset["summary"]
@@ -586,6 +683,23 @@ class ReportsService:
             ])
         autosize(ws6)
 
+        # ── Feedback sheet ────────────────────────────────────────────────
+        ws7 = wb.create_sheet("Citizen Feedback")
+        feedback = dataset.get("feedback", {})
+        ws7.append(["Citizen Feedback Summary"])
+        ws7["A1"].font = title_font
+        ws7.append([])
+        ws7.append(["Metric", "Value"])
+        style_header_row(ws7, ws7.max_row, 2)
+        ws7.append(["Total Feedback", feedback.get("total", 0)])
+        ws7.append(["Average Rating", feedback.get("avg_rating") or ""])
+        ws7.append([])
+        ws7.append(["Rating", "Count"])
+        style_header_row(ws7, ws7.max_row, 2)
+        for star, count in sorted(feedback.get("distribution", {}).items()):
+            ws7.append([f"{star} Star", count])
+        autosize(ws7)
+
         buffer = io.BytesIO()
         wb.save(buffer)
         buffer.seek(0)
@@ -620,6 +734,8 @@ class ReportsService:
             ))
         if filters.get("status"):
             story.append(Paragraph(f"Status filter: {filters['status']}", styles["Normal"]))
+        if filters.get("priority"):
+            story.append(Paragraph(f"Priority filter: {filters['priority']}", styles["Normal"]))
         story.append(Spacer(1, 0.5 * cm))
 
         table_style = TableStyle([
@@ -683,6 +799,18 @@ class ReportsService:
                 for w in dataset["workers"]
             ],
         )
+
+        # ── Citizen feedback section ─────────────────────────────────────
+        feedback = dataset.get("feedback", {})
+        add_section("Citizen Feedback Summary", ["Metric", "Value"], [
+            ["Total Feedback", str(feedback.get("total", 0))],
+            ["Average Rating", str(feedback.get("avg_rating") or "-")],
+        ])
+        dist = feedback.get("distribution", {})
+        if dist:
+            add_section("Rating Distribution", ["Rating", "Count"], [
+                [f"{star} Star", str(count)] for star, count in sorted(dist.items())
+            ])
 
         doc.build(story)
         buffer.seek(0)
