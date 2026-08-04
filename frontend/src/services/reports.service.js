@@ -44,6 +44,11 @@ const reportsService = {
     return response.data
   },
 
+  async getFeedbackSummary(filters = {}) {
+    const response = await api.get('/reports/feedback/summary', { params: filters })
+    return response.data
+  },
+
   async exportCsv(filters = {}) {
     return api.get('/reports/export/csv', { params: filters, responseType: 'blob' })
   },
