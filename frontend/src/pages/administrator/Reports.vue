@@ -298,6 +298,7 @@ const byStatus = ref([])
 const byCategory = ref([])
 const byPriority = ref([])
 const byLocation = ref([])
+const locationOptions = ref([])
 const trends = ref([])
 const trendPeriod = ref('daily')
 const workerPerformance = ref([])
@@ -305,7 +306,13 @@ const feedbackSummary = ref({})
 const exporting = ref(false)
 const validationError = ref('')
 
-const filters = reactive({ date_from: '', date_to: '', status: '' })
+const filters = reactive({
+  date_from: '',
+  date_to: '',
+  status: '',
+  priority: '',
+  location: '',
+})
 const statusOptions = ['pending', 'assigned', 'in_progress', 'resolved', 'closed', 'rejected', 'cancelled']
 const priorityOptions = ['low', 'medium', 'high', 'urgent']
 
@@ -317,9 +324,13 @@ const scopeDescription = computed(() => {
 
 const activeFilters = computed(() => {
   const applied = {}
+
   if (filters.date_from) applied.date_from = filters.date_from
   if (filters.date_to) applied.date_to = filters.date_to
   if (filters.status) applied.status = filters.status
+  if (filters.priority) applied.priority = filters.priority
+  if (filters.location) applied.location = filters.location
+
   return applied
 })
 
@@ -443,9 +454,6 @@ function applyFilters() {
     validationError.value = 'From date must be on or before to date.'
     return
   }
-  appliedFilters.value = Object.fromEntries(
-    Object.entries(filters).filter(([, value]) => value),
-  )
   loadAll()
 }
 
@@ -453,6 +461,8 @@ function resetFilters() {
   filters.date_from = ''
   filters.date_to = ''
   filters.status = ''
+  filters.priority = ''
+filters.location = ''
   loadAll()
 }
 
