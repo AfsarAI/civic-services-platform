@@ -52,7 +52,26 @@ def _parse_date_filters():
     """
     date_from = _svc.parse_date(request.args.get("date_from"))
     date_to = _svc.parse_date(request.args.get("date_to"), end_of_day=True)
+    if date_from and date_to and date_from > date_to:
+        raise ValueError("From date must be on or before to date.")
     return date_from, date_to
+
+
+def _parse_all_filters():
+    """Parse all shared report filter query params.
+
+    Returns:
+        Tuple of (date_from, date_to, status, priority, location_city_id).
+
+    Raises:
+        ValueError: If any param value is invalid.
+    """
+    date_from, date_to = _parse_date_filters()
+    status = request.args.get("status") or None
+    priority = request.args.get("priority") or None
+    location = request.args.get("location") or None
+    location_city_id = int(location) if location else None
+    return date_from, date_to, status, priority, location_city_id
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────
@@ -69,15 +88,16 @@ class ComplaintSummaryReport(Resource):
         """Overall complaint statistics: totals, status breakdown, avg resolution time (TPS-85).
 
         Municipal administrators see only their own city's figures.
-        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.
+        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``, ``priority``, ``location``.
         """
-        city_id = _scoped_city_id(_current_admin_user())
-        status = request.args.get("status")
+        admin = _current_admin_user()
+        city_id = _scoped_city_id(admin)
         try:
-            date_from, date_to = _parse_date_filters()
-            data = _svc.get_complaint_summary(city_id, date_from, date_to, status)
+            date_from, date_to, status, priority, location_city_id = _parse_all_filters()
+            effective_city = location_city_id if location_city_id and city_id is None else city_id
+            data = _svc.get_complaint_summary(effective_city, date_from, date_to, status, priority)
             return success_response(data, "Complaint summary retrieved.")
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return error_response(str(exc), status_code=400)
 
 
@@ -91,14 +111,16 @@ class ComplaintsByStatusReport(Resource):
     def get(self):
         """Complaint counts and percentages grouped by status (TPS-96).
 
-        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD).
+        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``priority``, ``location``.
         """
-        city_id = _scoped_city_id(_current_admin_user())
+        admin = _current_admin_user()
+        city_id = _scoped_city_id(admin)
         try:
-            date_from, date_to = _parse_date_filters()
-            data = _svc.get_complaints_by_status(city_id, date_from, date_to)
+            date_from, date_to, _status, priority, location_city_id = _parse_all_filters()
+            effective_city = location_city_id if location_city_id and city_id is None else city_id
+            data = _svc.get_complaints_by_status(effective_city, date_from, date_to)
             return success_response(data, "Complaints by status retrieved.")
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return error_response(str(exc), status_code=400)
 
 
@@ -112,15 +134,16 @@ class ComplaintsByCategoryReport(Resource):
     def get(self):
         """Complaint counts and percentages grouped by category (TPS-97).
 
-        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.
+        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``, ``priority``, ``location``.
         """
-        city_id = _scoped_city_id(_current_admin_user())
-        status = request.args.get("status")
+        admin = _current_admin_user()
+        city_id = _scoped_city_id(admin)
         try:
-            date_from, date_to = _parse_date_filters()
-            data = _svc.get_complaints_by_category(city_id, date_from, date_to, status)
+            date_from, date_to, status, priority, location_city_id = _parse_all_filters()
+            effective_city = location_city_id if location_city_id and city_id is None else city_id
+            data = _svc.get_complaints_by_category(effective_city, date_from, date_to, status, priority)
             return success_response(data, "Complaints by category retrieved.")
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return error_response(str(exc), status_code=400)
 
 
@@ -134,15 +157,16 @@ class ComplaintsByPriorityReport(Resource):
     def get(self):
         """Complaint counts and percentages grouped by priority.
 
-        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.
+        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``, ``priority``, ``location``.
         """
-        city_id = _scoped_city_id(_current_admin_user())
-        status = request.args.get("status")
+        admin = _current_admin_user()
+        city_id = _scoped_city_id(admin)
         try:
-            date_from, date_to = _parse_date_filters()
-            data = _svc.get_complaints_by_priority(city_id, date_from, date_to, status)
+            date_from, date_to, status, priority, location_city_id = _parse_all_filters()
+            effective_city = location_city_id if location_city_id and city_id is None else city_id
+            data = _svc.get_complaints_by_priority(effective_city, date_from, date_to, status, priority)
             return success_response(data, "Complaints by priority retrieved.")
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return error_response(str(exc), status_code=400)
 
 
@@ -158,15 +182,16 @@ class ComplaintsByLocationReport(Resource):
 
         A municipal administrator is already scoped to a single city, so this
         naturally returns one row for them; system administrators see every
-        city. Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.
+        city. Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``, ``priority``, ``location``.
         """
-        city_id = _scoped_city_id(_current_admin_user())
-        status = request.args.get("status")
+        admin = _current_admin_user()
+        city_id = _scoped_city_id(admin)
         try:
-            date_from, date_to = _parse_date_filters()
-            data = _svc.get_complaints_by_location(city_id, date_from, date_to, status)
+            date_from, date_to, status, priority, location_city_id = _parse_all_filters()
+            effective_city = location_city_id if location_city_id and city_id is None else city_id
+            data = _svc.get_complaints_by_location(effective_city, date_from, date_to, status, priority)
             return success_response(data, "Complaints by location retrieved.")
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return error_response(str(exc), status_code=400)
 
 
@@ -181,16 +206,18 @@ class ComplaintTrendsReport(Resource):
         """Complaint submission trends over time (TPS-98).
 
         Query params: ``period`` — one of ``daily`` (default), ``weekly``, ``monthly``;
-        ``date_from``, ``date_to`` (YYYY-MM-DD, overrides the default window); ``status``.
+        ``date_from``, ``date_to`` (YYYY-MM-DD, overrides the default window);
+        ``status``, ``priority``, ``location``.
         """
-        city_id = _scoped_city_id(_current_admin_user())
+        admin = _current_admin_user()
+        city_id = _scoped_city_id(admin)
         period = request.args.get("period", "daily")
-        status = request.args.get("status")
         try:
-            date_from, date_to = _parse_date_filters()
-            data = _svc.get_complaint_trends(period, city_id, date_from, date_to, status)
+            date_from, date_to, status, priority, location_city_id = _parse_all_filters()
+            effective_city = location_city_id if location_city_id and city_id is None else city_id
+            data = _svc.get_complaint_trends(period, effective_city, date_from, date_to, status, priority)
             return success_response(data, "Complaint trends retrieved.")
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return error_response(str(exc), status_code=400)
 
 
@@ -205,14 +232,40 @@ class WorkerPerformanceReport(Resource):
         """Field worker performance: assignment counts, completion rate, avg time.
 
         Municipal administrators only see field workers belonging to their
-        own city. Query params: ``date_from``, ``date_to`` (YYYY-MM-DD).
+        own city. Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``location``.
         """
-        city_id = _scoped_city_id(_current_admin_user())
+        admin = _current_admin_user()
+        city_id = _scoped_city_id(admin)
         try:
-            date_from, date_to = _parse_date_filters()
-            data = _svc.get_worker_performance(city_id, date_from, date_to)
+            date_from, date_to, status, _priority, location_city_id = _parse_all_filters()
+            effective_city = location_city_id if location_city_id and city_id is None else city_id
+            data = _svc.get_worker_performance(effective_city, date_from, date_to, status=status)
             return success_response(data, "Worker performance retrieved.")
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
+            return error_response(str(exc), status_code=400)
+
+
+@ns.route("/feedback/summary")
+class FeedbackSummaryReport(Resource):
+
+    @ns.response(200, "Citizen feedback summary", _envelope)
+    @ns.response(400, "Invalid filter", _envelope)
+    @ns.response(403, "Forbidden", _envelope)
+    @jwt_required()
+    @require_admin
+    def get(self):
+        """Citizen feedback summary: average rating, distribution, recent comments (TPS-96).
+
+        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``location``.
+        """
+        admin = _current_admin_user()
+        city_id = _scoped_city_id(admin)
+        try:
+            date_from, date_to, _status, _priority, location_city_id = _parse_all_filters()
+            effective_city = location_city_id if location_city_id and city_id is None else city_id
+            data = _svc.get_citizen_feedback_summary(effective_city, date_from, date_to)
+            return success_response(data, "Citizen feedback summary retrieved.")
+        except (ValueError, TypeError) as exc:
             return error_response(str(exc), status_code=400)
 
 
@@ -231,15 +284,16 @@ class ExportCsvReport(Resource):
     def get(self):
         """Export the current filtered report data as a CSV file.
 
-        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.
+        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``, ``priority``, ``location``.
         """
-        city_id = _scoped_city_id(_current_admin_user())
-        status = request.args.get("status")
+        admin = _current_admin_user()
+        city_id = _scoped_city_id(admin)
         try:
-            date_from, date_to = _parse_date_filters()
-            dataset = _svc.build_export_dataset(city_id, date_from, date_to, status)
+            date_from, date_to, status, priority, location_city_id = _parse_all_filters()
+            effective_city = location_city_id if location_city_id and city_id is None else city_id
+            dataset = _svc.build_export_dataset(effective_city, date_from, date_to, status, priority)
             csv_text = _svc.export_csv(dataset)
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return error_response(str(exc), status_code=400)
 
         return Response(
@@ -261,15 +315,16 @@ class ExportExcelReport(Resource):
     def get(self):
         """Export the current filtered report data as an XLSX workbook.
 
-        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.
+        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``, ``priority``, ``location``.
         """
-        city_id = _scoped_city_id(_current_admin_user())
-        status = request.args.get("status")
+        admin = _current_admin_user()
+        city_id = _scoped_city_id(admin)
         try:
-            date_from, date_to = _parse_date_filters()
-            dataset = _svc.build_export_dataset(city_id, date_from, date_to, status)
+            date_from, date_to, status, priority, location_city_id = _parse_all_filters()
+            effective_city = location_city_id if location_city_id and city_id is None else city_id
+            dataset = _svc.build_export_dataset(effective_city, date_from, date_to, status, priority)
             xlsx_bytes = _svc.export_excel(dataset)
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return error_response(str(exc), status_code=400)
 
         return Response(
@@ -291,15 +346,16 @@ class ExportPdfReport(Resource):
     def get(self):
         """Export the current filtered report data as a PDF document.
 
-        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``.
+        Query params: ``date_from``, ``date_to`` (YYYY-MM-DD), ``status``, ``priority``, ``location``.
         """
-        city_id = _scoped_city_id(_current_admin_user())
-        status = request.args.get("status")
+        admin = _current_admin_user()
+        city_id = _scoped_city_id(admin)
         try:
-            date_from, date_to = _parse_date_filters()
-            dataset = _svc.build_export_dataset(city_id, date_from, date_to, status)
+            date_from, date_to, status, priority, location_city_id = _parse_all_filters()
+            effective_city = location_city_id if location_city_id and city_id is None else city_id
+            dataset = _svc.build_export_dataset(effective_city, date_from, date_to, status, priority)
             pdf_bytes = _svc.export_pdf(dataset)
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return error_response(str(exc), status_code=400)
 
         return Response(

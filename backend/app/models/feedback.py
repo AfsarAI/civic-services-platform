@@ -4,6 +4,7 @@ Feedback model — citizen feedback on resolved complaints.
 
 from datetime import datetime, timezone
 from app.extensions import db
+from app.utils.db_types import UTCDateTime
 
 
 class Feedback(db.Model):
@@ -16,7 +17,7 @@ class Feedback(db.Model):
     citizen_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     rating = db.Column(db.Integer, nullable=False)  # 1–5
     comment = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(UTCDateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     complaint = db.relationship("Complaint", back_populates="feedback")

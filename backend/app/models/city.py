@@ -5,6 +5,7 @@ City model — administrative city boundary for municipal administrators.
 from datetime import datetime, timezone
 
 from app.extensions import db
+from app.utils.db_types import UTCDateTime
 
 
 class City(db.Model):
@@ -16,9 +17,9 @@ class City(db.Model):
     name = db.Column(db.String(120), unique=True, nullable=False, index=True)
     state = db.Column(db.String(120), nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(UTCDateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
-        db.DateTime,
+        UTCDateTime,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )

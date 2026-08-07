@@ -307,21 +307,99 @@
                 <p class="text-xs text-slate-400">
                   Created {{ formatDate(admin.created_at) }}
                 </p>
-                <button
-                  v-if="admin.is_active"
-                  type="button"
-                  class="btn-danger px-4 py-2 text-sm"
-                  :disabled="deactivatingIds.has(admin.id)"
-                  @click="handleDeactivate(admin)"
-                >
-                  <svg v-if="deactivatingIds.has(admin.id)" class="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                  </svg>
-                  {{ deactivatingIds.has(admin.id) ? 'Deactivating...' : 'Deactivate' }}
-                </button>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    class="btn-secondary px-4 py-2 text-sm"
+                    @click="toggleEditDetails(admin)"
+                  >
+                    {{ editingId === admin.id ? 'Cancel' : 'Edit Details' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-secondary px-4 py-2 text-sm"
+                    @click="toggleResetPassword(admin)"
+                  >
+                    {{ resettingId === admin.id ? 'Cancel' : 'Reset Password' }}
+                  </button>
+                  <button
+                    v-if="admin.is_active"
+                    type="button"
+                    class="btn-danger px-4 py-2 text-sm"
+                    :disabled="deactivatingIds.has(admin.id)"
+                    @click="handleDeactivate(admin)"
+                  >
+                    <svg v-if="deactivatingIds.has(admin.id)" class="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    {{ deactivatingIds.has(admin.id) ? 'Deactivating...' : 'Deactivate' }}
+                  </button>
+                </div>
               </div>
             </div>
+
+            <form
+              v-if="editingId === admin.id"
+              class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2"
+              @submit.prevent="handleSaveDetails(admin)"
+            >
+              <div>
+                <label class="form-label" :for="`edit-first-${admin.id}`">First Name</label>
+                <input :id="`edit-first-${admin.id}`" v-model.trim="detailsForm.first_name" class="form-input" />
+              </div>
+              <div>
+                <label class="form-label" :for="`edit-last-${admin.id}`">Last Name</label>
+                <input :id="`edit-last-${admin.id}`" v-model.trim="detailsForm.last_name" class="form-input" />
+              </div>
+              <div>
+                <label class="form-label" :for="`edit-email-${admin.id}`">Email</label>
+                <input :id="`edit-email-${admin.id}`" v-model.trim="detailsForm.email" type="email" class="form-input" />
+              </div>
+              <div>
+                <label class="form-label" :for="`edit-phone-${admin.id}`">Phone</label>
+                <input :id="`edit-phone-${admin.id}`" v-model.trim="detailsForm.phone" class="form-input" />
+              </div>
+              <div class="sm:col-span-2 flex justify-end gap-2">
+                <button type="button" class="btn-secondary px-4 py-2 text-sm" @click="editingId = null">Cancel</button>
+                <button type="submit" class="btn-primary px-4 py-2 text-sm" :disabled="isSavingDetails">
+                  {{ isSavingDetails ? 'Saving...' : 'Save details' }}
+                </button>
+              </div>
+            </form>
+
+            <form
+              v-if="resettingId === admin.id"
+              class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2"
+              @submit.prevent="handleResetPassword(admin)"
+            >
+              <div>
+                <label class="form-label" :for="`reset-password-${admin.id}`">New Password</label>
+                <input
+                  :id="`reset-password-${admin.id}`"
+                  v-model="passwordResetForm.password"
+                  type="password"
+                  class="form-input"
+                  placeholder="NewSecret@123"
+                />
+              </div>
+              <div>
+                <label class="form-label" :for="`reset-confirm-${admin.id}`">Confirm New Password</label>
+                <input
+                  :id="`reset-confirm-${admin.id}`"
+                  v-model="passwordResetForm.confirm_password"
+                  type="password"
+                  class="form-input"
+                  placeholder="Re-enter new password"
+                />
+              </div>
+              <div class="sm:col-span-2 flex justify-end gap-2">
+                <button type="button" class="btn-secondary px-4 py-2 text-sm" @click="cancelResetPassword">Cancel</button>
+                <button type="submit" class="btn-primary px-4 py-2 text-sm" :disabled="isResettingPassword">
+                  {{ isResettingPassword ? 'Saving...' : 'Save new password' }}
+                </button>
+              </div>
+            </form>
           </article>
         </div>
       </section>
@@ -364,6 +442,12 @@ const isPincodeSuggesting = ref(false)
 const isSubmitting = ref(false)
 const isLoadingList = ref(false)
 const deactivatingIds = reactive(new Set())
+const editingId = ref(null)
+const detailsForm = reactive({ first_name: '', last_name: '', email: '', phone: '' })
+const isSavingDetails = ref(false)
+const resettingId = ref(null)
+const passwordResetForm = reactive({ password: '', confirm_password: '' })
+const isResettingPassword = ref(false)
 let filterDebounce = null
 let pincodeSuggestDebounce = null
 
@@ -652,6 +736,75 @@ async function handleDeactivate(admin) {
     serverError.value = error?.response?.data?.message || 'Unable to deactivate municipal administrator.'
   } finally {
     deactivatingIds.delete(admin.id)
+  }
+}
+
+function toggleEditDetails(admin) {
+  serverError.value = ''
+  resettingId.value = null
+  if (editingId.value === admin.id) {
+    editingId.value = null
+    return
+  }
+  editingId.value = admin.id
+  Object.assign(detailsForm, {
+    first_name: admin.first_name,
+    last_name: admin.last_name,
+    email: admin.email,
+    phone: admin.phone || '',
+  })
+}
+
+async function handleSaveDetails(admin) {
+  isSavingDetails.value = true
+  serverError.value = ''
+  try {
+    await adminService.updateMunicipalAdministrator(admin.id, { ...detailsForm })
+    successMessage.value = `${admin.full_name}'s details were updated.`
+    editingId.value = null
+    await loadMunicipalAdministrators()
+  } catch (error) {
+    serverError.value = error?.response?.data?.message || 'Unable to update municipal administrator details.'
+  } finally {
+    isSavingDetails.value = false
+  }
+}
+
+function toggleResetPassword(admin) {
+  serverError.value = ''
+  editingId.value = null
+  if (resettingId.value === admin.id) {
+    resettingId.value = null
+    return
+  }
+  resettingId.value = admin.id
+  passwordResetForm.password = ''
+  passwordResetForm.confirm_password = ''
+}
+
+function cancelResetPassword() {
+  resettingId.value = null
+}
+
+async function handleResetPassword(admin) {
+  serverError.value = ''
+  if (passwordResetForm.password !== passwordResetForm.confirm_password) {
+    serverError.value = 'Confirm password must match the new password.'
+    return
+  }
+
+  isResettingPassword.value = true
+  try {
+    await adminService.updateMunicipalAdministrator(admin.id, {
+      password: passwordResetForm.password,
+      confirm_password: passwordResetForm.confirm_password,
+    })
+    successMessage.value = `${admin.full_name}'s password was reset.`
+    resettingId.value = null
+  } catch (error) {
+    serverError.value = error?.response?.data?.message || 'Unable to reset password.'
+  } finally {
+    isResettingPassword.value = false
   }
 }
 

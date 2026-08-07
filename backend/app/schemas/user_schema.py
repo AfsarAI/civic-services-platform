@@ -73,10 +73,13 @@ class UserUpdateSchema(Schema):
 
     first_name = fields.Str(validate=validate.Length(min=1, max=80))
     last_name = fields.Str(validate=validate.Length(min=1, max=80))
+    email = fields.Email()
     phone = fields.Str(allow_none=True)
     city_id = fields.Int(allow_none=True)
     pincode = fields.Str(allow_none=True)
     is_active = fields.Bool()
+    password = fields.Str(load_only=True)
+    confirm_password = fields.Str(load_only=True)
 
     @pre_load
     def normalize_fields(self, data: dict, **_) -> dict:
@@ -84,6 +87,8 @@ class UserUpdateSchema(Schema):
             data["first_name"] = normalize_string(data.get("first_name"))
         if "last_name" in data:
             data["last_name"] = normalize_string(data.get("last_name"))
+        if "email" in data:
+            data["email"] = normalize_email(data.get("email"))
         if "phone" in data:
             data["phone"] = normalize_optional_string(data.get("phone"))
         if "pincode" in data:
@@ -97,6 +102,16 @@ class UserUpdateSchema(Schema):
     @validates("pincode")
     def validate_postal_code(self, value: str | None) -> None:
         validate_pincode(value)
+
+    @validates("password")
+    def validate_password(self, value: str) -> None:
+        validate_password_strength(value)
+
+    @validates_schema
+    def validate_password_match(self, data: dict, **_) -> None:
+        if "password" in data or "confirm_password" in data:
+            if data.get("password") != data.get("confirm_password"):
+                raise ValidationError({"confirm_password": ["Confirm password must match password."]})
 
 
 class MunicipalAdminCreateSchema(Schema):
@@ -151,18 +166,23 @@ class MunicipalAdminUpdateSchema(Schema):
 
     first_name = fields.Str(validate=validate.Length(min=1, max=80))
     last_name = fields.Str(validate=validate.Length(min=1, max=80))
+    email = fields.Email()
     phone = fields.Str(allow_none=True)
     is_active = fields.Bool()
     pincode = fields.Str(allow_none=True)
     city_id = fields.Int(allow_none=True)
     city_name = fields.Str(allow_none=True, validate=validate.Length(max=120))
     city_state = fields.Str(allow_none=True, validate=validate.Length(max=120))
+    password = fields.Str(load_only=True)
+    confirm_password = fields.Str(load_only=True)
 
     @pre_load
     def normalize_fields(self, data: dict, **_) -> dict:
         for field in ("first_name", "last_name", "city_name", "city_state"):
             if field in data:
                 data[field] = normalize_optional_string(data.get(field))
+        if "email" in data:
+            data["email"] = normalize_email(data.get("email"))
         if "phone" in data:
             data["phone"] = normalize_optional_string(data.get("phone"))
         if "pincode" in data:
@@ -176,6 +196,16 @@ class MunicipalAdminUpdateSchema(Schema):
     @validates("pincode")
     def validate_postal_code(self, value: str | None) -> None:
         validate_pincode(value)
+
+    @validates("password")
+    def validate_password(self, value: str) -> None:
+        validate_password_strength(value)
+
+    @validates_schema
+    def validate_password_match(self, data: dict, **_) -> None:
+        if "password" in data or "confirm_password" in data:
+            if data.get("password") != data.get("confirm_password"):
+                raise ValidationError({"confirm_password": ["Confirm password must match password."]})
 
 
 class FieldWorkerCreateSchema(Schema):
@@ -224,14 +254,19 @@ class FieldWorkerUpdateSchema(Schema):
 
     first_name = fields.Str(validate=validate.Length(min=1, max=80))
     last_name = fields.Str(validate=validate.Length(min=1, max=80))
+    email = fields.Email()
     phone = fields.Str(allow_none=True)
     is_active = fields.Bool()
+    password = fields.Str(load_only=True)
+    confirm_password = fields.Str(load_only=True)
 
     @pre_load
     def normalize_fields(self, data: dict, **_) -> dict:
         for field in ("first_name", "last_name"):
             if field in data:
                 data[field] = normalize_string(data.get(field))
+        if "email" in data:
+            data["email"] = normalize_email(data.get("email"))
         if "phone" in data:
             data["phone"] = normalize_optional_string(data.get("phone"))
         return data
@@ -239,3 +274,13 @@ class FieldWorkerUpdateSchema(Schema):
     @validates("phone")
     def validate_phone(self, value: str | None) -> None:
         validate_phone_number(value)
+
+    @validates("password")
+    def validate_password(self, value: str) -> None:
+        validate_password_strength(value)
+
+    @validates_schema
+    def validate_password_match(self, data: dict, **_) -> None:
+        if "password" in data or "confirm_password" in data:
+            if data.get("password") != data.get("confirm_password"):
+                raise ValidationError({"confirm_password": ["Confirm password must match password."]})

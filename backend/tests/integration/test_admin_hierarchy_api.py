@@ -80,13 +80,48 @@ class TestAdminHierarchyEndpoints:
         assert payload["data"]["user"]["admin_level"] == AdministratorProfile.MUNICIPAL
         assert payload["data"]["user"]["city_name"] == "Lucknow"
 
-    def test_municipal_admin_cannot_access_system_admin_user_list(self, app, client):
+    def test_municipal_admin_user_list_scoped_to_own_city_citizens(self, app, client):
         with app.app_context():
-            self._ensure_admin(
+            admin = self._ensure_admin(
                 "municipal2@civicservices.local",
                 AdministratorProfile.MUNICIPAL,
                 city_name="Delhi",
             )
+            other_city = City.query.filter_by(name="Mumbai").first()
+            if not other_city:
+                other_city = City(name="Mumbai", is_active=True)
+                db.session.add(other_city)
+                db.session.flush()
+
+            citizen_role = Role.query.filter_by(name=Role.CITIZEN).first()
+            own_city_citizen = User.query.filter_by(email="delhi-citizen@example.com").first()
+            if not own_city_citizen:
+                own_city_citizen = User(
+                    username="delhicitizen",
+                    email="delhi-citizen@example.com",
+                    first_name="Delhi",
+                    last_name="Citizen",
+                    role_id=citizen_role.id,
+                    city_id=admin.admin_city_id,
+                    is_active=True,
+                )
+                own_city_citizen.set_password("Citizen@123")
+                db.session.add(own_city_citizen)
+
+            other_city_citizen = User.query.filter_by(email="mumbai-citizen@example.com").first()
+            if not other_city_citizen:
+                other_city_citizen = User(
+                    username="mumbaicitizen",
+                    email="mumbai-citizen@example.com",
+                    first_name="Mumbai",
+                    last_name="Citizen",
+                    role_id=citizen_role.id,
+                    city_id=other_city.id,
+                    is_active=True,
+                )
+                other_city_citizen.set_password("Citizen@123")
+                db.session.add(other_city_citizen)
+            db.session.commit()
 
         token = self._login(client, "municipal2@civicservices.local")
         response = client.get(
@@ -94,8 +129,12 @@ class TestAdminHierarchyEndpoints:
             headers={"Authorization": f"Bearer {token}"},
         )
 
-        assert response.status_code == 403
-        assert "access denied" in response.get_json()["message"].lower()
+        assert response.status_code == 200
+        payload = response.get_json()
+        emails = [item["email"] for item in payload["data"]["items"]]
+        assert "delhi-citizen@example.com" in emails
+        assert "mumbai-citizen@example.com" not in emails
+        assert all(item["role"] == "citizen" for item in payload["data"]["items"])
 
     def test_citizen_cannot_create_municipal_administrator(self, app, client):
         with app.app_context():

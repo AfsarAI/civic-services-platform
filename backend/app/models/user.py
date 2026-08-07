@@ -5,6 +5,7 @@ User model — platform users with role-based access.
 from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.extensions import db
+from app.utils.db_types import UTCDateTime
 
 
 class User(db.Model):
@@ -24,9 +25,9 @@ class User(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False)
     city_id = db.Column(db.Integer, db.ForeignKey("cities.id"), nullable=True, index=True)
     pincode = db.Column(db.String(6), nullable=True, index=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(UTCDateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
-        db.DateTime,
+        UTCDateTime,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )

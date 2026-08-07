@@ -40,6 +40,21 @@ const adminService = {
     return response.data
   },
 
+  async updateMunicipalAdministrator(userId, payload) {
+    const response = await api.put(`/admin/municipal-administrators/${userId}`, payload)
+    return response.data
+  },
+
+  async getUsers(params = {}) {
+    const response = await api.get('/admin/users', { params })
+    return response.data
+  },
+
+  async updateUser(userId, payload) {
+    const response = await api.put(`/admin/users/${userId}`, payload)
+    return response.data
+  },
+
   async getFieldWorkers(params = {}) {
     const response = await api.get('/admin/field-workers', { params })
     return response.data
