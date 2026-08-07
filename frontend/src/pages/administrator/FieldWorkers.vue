@@ -132,8 +132,11 @@
               </div>
 
               <div class="flex flex-wrap items-center gap-2">
-                <button type="button" class="btn-secondary px-4 py-2 text-sm" @click="startEdit(worker)">
-                  Edit
+                <button type="button" class="btn-secondary px-4 py-2 text-sm" @click="toggleEditDetails(worker)">
+                  {{ editingId === worker.id ? 'Cancel' : 'Edit Details' }}
+                </button>
+                <button type="button" class="btn-secondary px-4 py-2 text-sm" @click="toggleResetPassword(worker)">
+                  {{ resettingId === worker.id ? 'Cancel' : 'Reset Password' }}
                 </button>
                 <button
                   type="button"
@@ -147,7 +150,7 @@
               </div>
             </div>
 
-            <form v-if="editingId === worker.id" class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-3" @submit.prevent="handleSaveEdit(worker)">
+            <form v-if="editingId === worker.id" class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2" @submit.prevent="handleSaveEdit(worker)">
               <div>
                 <label class="form-label" :for="`edit-first-${worker.id}`">First Name</label>
                 <input :id="`edit-first-${worker.id}`" v-model.trim="editForm.first_name" class="form-input" />
@@ -157,13 +160,34 @@
                 <input :id="`edit-last-${worker.id}`" v-model.trim="editForm.last_name" class="form-input" />
               </div>
               <div>
+                <label class="form-label" :for="`edit-email-${worker.id}`">Email</label>
+                <input :id="`edit-email-${worker.id}`" v-model.trim="editForm.email" type="email" class="form-input" />
+              </div>
+              <div>
                 <label class="form-label" :for="`edit-phone-${worker.id}`">Phone</label>
                 <input :id="`edit-phone-${worker.id}`" v-model.trim="editForm.phone" class="form-input" />
               </div>
-              <div class="sm:col-span-3 flex justify-end gap-2">
-                <button type="button" class="btn-secondary px-4 py-2 text-sm" @click="cancelEdit">Cancel</button>
+              <div class="sm:col-span-2 flex justify-end gap-2">
+                <button type="button" class="btn-secondary px-4 py-2 text-sm" @click="editingId = null">Cancel</button>
                 <button type="submit" class="btn-primary px-4 py-2 text-sm" :disabled="isSavingEdit">
-                  {{ isSavingEdit ? 'Saving...' : 'Save changes' }}
+                  {{ isSavingEdit ? 'Saving...' : 'Save details' }}
+                </button>
+              </div>
+            </form>
+
+            <form v-if="resettingId === worker.id" class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2" @submit.prevent="handleResetPassword(worker)">
+              <div>
+                <label class="form-label" :for="`reset-password-${worker.id}`">New Password</label>
+                <input :id="`reset-password-${worker.id}`" v-model="passwordResetForm.password" type="password" class="form-input" placeholder="NewSecret@123" />
+              </div>
+              <div>
+                <label class="form-label" :for="`reset-confirm-${worker.id}`">Confirm New Password</label>
+                <input :id="`reset-confirm-${worker.id}`" v-model="passwordResetForm.confirm_password" type="password" class="form-input" placeholder="Re-enter new password" />
+              </div>
+              <div class="sm:col-span-2 flex justify-end gap-2">
+                <button type="button" class="btn-secondary px-4 py-2 text-sm" @click="resettingId = null">Cancel</button>
+                <button type="submit" class="btn-primary px-4 py-2 text-sm" :disabled="isResettingPassword">
+                  {{ isResettingPassword ? 'Saving...' : 'Save new password' }}
                 </button>
               </div>
             </form>
@@ -199,8 +223,11 @@ const successMessage = ref('')
 const serverError = ref('')
 
 const editingId = ref(null)
-const editForm = reactive({ first_name: '', last_name: '', phone: '' })
+const editForm = reactive({ first_name: '', last_name: '', email: '', phone: '' })
 const isSavingEdit = ref(false)
+const resettingId = ref(null)
+const passwordResetForm = reactive({ password: '', confirm_password: '' })
+const isResettingPassword = ref(false)
 const togglingIds = reactive(new Set())
 
 const stats = computed(() => {
@@ -254,17 +281,20 @@ async function handleCreate() {
   }
 }
 
-function startEdit(worker) {
+function toggleEditDetails(worker) {
+  serverError.value = ''
+  resettingId.value = null
+  if (editingId.value === worker.id) {
+    editingId.value = null
+    return
+  }
   editingId.value = worker.id
   Object.assign(editForm, {
     first_name: worker.first_name,
     last_name: worker.last_name,
+    email: worker.email,
     phone: worker.phone || '',
   })
-}
-
-function cancelEdit() {
-  editingId.value = null
 }
 
 async function handleSaveEdit(worker) {
@@ -279,6 +309,40 @@ async function handleSaveEdit(worker) {
     serverError.value = err?.response?.data?.message || 'Unable to update field worker.'
   } finally {
     isSavingEdit.value = false
+  }
+}
+
+function toggleResetPassword(worker) {
+  serverError.value = ''
+  editingId.value = null
+  if (resettingId.value === worker.id) {
+    resettingId.value = null
+    return
+  }
+  resettingId.value = worker.id
+  passwordResetForm.password = ''
+  passwordResetForm.confirm_password = ''
+}
+
+async function handleResetPassword(worker) {
+  serverError.value = ''
+  if (passwordResetForm.password !== passwordResetForm.confirm_password) {
+    serverError.value = 'Confirm password must match the new password.'
+    return
+  }
+
+  isResettingPassword.value = true
+  try {
+    await adminService.updateFieldWorker(worker.id, {
+      password: passwordResetForm.password,
+      confirm_password: passwordResetForm.confirm_password,
+    })
+    successMessage.value = `${worker.full_name}'s password was reset.`
+    resettingId.value = null
+  } catch (err) {
+    serverError.value = err?.response?.data?.message || 'Unable to reset password.'
+  } finally {
+    isResettingPassword.value = false
   }
 }
 

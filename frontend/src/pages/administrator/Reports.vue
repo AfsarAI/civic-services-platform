@@ -334,6 +334,8 @@ const activeFilters = computed(() => {
   return applied
 })
 
+const hasReportData = computed(() => (summary.value.total ?? 0) > 0)
+
 const summaryCards = computed(() => [
   { label: 'Total Complaints', value: summary.value.total ?? 0, color: 'text-gray-800' },
   { label: 'Open', value: summary.value.open ?? 0, color: 'text-amber-600' },

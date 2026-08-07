@@ -135,6 +135,12 @@ const router = createRouter({
               meta: { requiresAuth: true, role: 'administrator', adminLevel: 'system' },
             },
             {
+              path: 'citizens',
+              name: 'admin-citizens',
+              component: () => import('@/pages/administrator/Citizens.vue'),
+              meta: { requiresAuth: true, role: 'administrator' },
+            },
+            {
               path: 'field-workers',
               name: 'admin-field-workers',
               component: () => import('@/pages/administrator/FieldWorkers.vue'),
