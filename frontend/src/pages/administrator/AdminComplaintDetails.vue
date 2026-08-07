@@ -161,7 +161,7 @@
                 </transition>
 
                 <!-- Priority (TPS-81) -->
-                <div class="space-y-2">
+                <div v-if="!isTerminalStatus" class="space-y-2">
                   <label class="form-label" for="priority">Priority</label>
                   <select id="priority" v-model="priorityForm" class="form-input">
                     <option value="low">Low</option>
@@ -259,8 +259,8 @@
                   Reject Complaint
                 </button>
 
-                <p v-if="['closed', 'rejected'].includes(complaint.status)" class="text-sm text-slate-500">
-                  This complaint is {{ complaint.status }}. No further status changes are possible.
+                <p v-if="isTerminalStatus" class="text-sm text-slate-500">
+                  This complaint is {{ complaint.status }}. No further status or priority changes are possible.
                 </p>
               </div>
             </aside>
@@ -312,6 +312,9 @@ const statusLabel = computed(() => {
   if (awaitingVerification.value) return 'Pending Verification'
   return complaint.value?.status?.replaceAll('_', ' ')
 })
+
+// Rejected/closed complaints are terminal — no further status or priority changes are allowed.
+const isTerminalStatus = computed(() => ['closed', 'rejected'].includes(complaint.value?.status))
 
 const statusSteps = [
   { key: 'pending', label: 'Pending', description: 'Awaiting review by the municipal team.' },

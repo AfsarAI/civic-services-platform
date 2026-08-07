@@ -4,6 +4,7 @@ Role model — defines user roles in the system.
 
 from datetime import datetime, timezone
 from app.extensions import db
+from app.utils.db_types import UTCDateTime
 
 
 class Role(db.Model):
@@ -14,9 +15,9 @@ class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
     description = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(UTCDateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
-        db.DateTime,
+        UTCDateTime,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )

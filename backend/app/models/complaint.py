@@ -4,6 +4,7 @@ Complaint model — civic complaints submitted by citizens.
 
 from datetime import datetime, timezone
 from app.extensions import db
+from app.utils.db_types import UTCDateTime
 
 
 class Complaint(db.Model):
@@ -51,11 +52,11 @@ class Complaint(db.Model):
     city_id = db.Column(db.Integer, db.ForeignKey("cities.id"), nullable=True, index=True)
     pincode = db.Column(db.String(6), nullable=True, index=True)
     citizen_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
-    resolved_at = db.Column(db.DateTime, nullable=True)
-    closed_at = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    resolved_at = db.Column(UTCDateTime, nullable=True)
+    closed_at = db.Column(UTCDateTime, nullable=True)
+    created_at = db.Column(UTCDateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
-        db.DateTime,
+        UTCDateTime,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )

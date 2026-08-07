@@ -4,6 +4,7 @@ AuditLog model — immutable system audit trail.
 
 from datetime import datetime, timezone
 from app.extensions import db
+from app.utils.db_types import UTCDateTime
 
 
 class AuditLog(db.Model):
@@ -19,7 +20,7 @@ class AuditLog(db.Model):
     details = db.Column(db.JSON, nullable=True)
     ip_address = db.Column(db.String(45), nullable=True)
     user_agent = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    created_at = db.Column(UTCDateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
     def __repr__(self) -> str:
         return f"<AuditLog {self.action} by user={self.user_id}>"

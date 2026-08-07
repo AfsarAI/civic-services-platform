@@ -4,6 +4,7 @@ Notification model — system notifications for users.
 
 from datetime import datetime, timezone
 from app.extensions import db
+from app.utils.db_types import UTCDateTime
 
 
 class Notification(db.Model):
@@ -30,8 +31,8 @@ class Notification(db.Model):
         nullable=True,
         index=True,
     )
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    read_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(UTCDateTime, default=lambda: datetime.now(timezone.utc))
+    read_at = db.Column(UTCDateTime, nullable=True)
 
     # Relationships
     user = db.relationship("User", back_populates="notifications")

@@ -4,6 +4,7 @@ SystemSetting model — singleton row storing platform-wide configuration.
 
 from datetime import datetime, timezone
 from app.extensions import db
+from app.utils.db_types import UTCDateTime
 
 
 class SystemSetting(db.Model):
@@ -22,7 +23,7 @@ class SystemSetting(db.Model):
     notify_on_status_change = db.Column(db.Boolean, nullable=False, default=True)
     default_complaint_priority = db.Column(db.String(20), nullable=False, default="medium")
     updated_at = db.Column(
-        db.DateTime,
+        UTCDateTime,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
