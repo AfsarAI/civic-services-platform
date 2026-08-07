@@ -5,6 +5,7 @@ ComplaintVerification model — administrator repair-review decisions.
 from datetime import datetime, timezone
 
 from app.extensions import db
+from app.utils.db_types import UTCDateTime
 
 
 class ComplaintVerification(db.Model):
@@ -44,9 +45,9 @@ class ComplaintVerification(db.Model):
     )
     decision = db.Column(db.String(30), nullable=False)
     remarks = db.Column(db.Text, nullable=True)
-    repair_completed_at = db.Column(db.DateTime, nullable=False)
+    repair_completed_at = db.Column(UTCDateTime, nullable=False)
     created_at = db.Column(
-        db.DateTime,
+        UTCDateTime,
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
         index=True,

@@ -5,6 +5,7 @@ Administrator profile model — subtype metadata for administrator users.
 from datetime import datetime, timezone
 
 from app.extensions import db
+from app.utils.db_types import UTCDateTime
 
 
 class AdministratorProfile(db.Model):
@@ -31,9 +32,9 @@ class AdministratorProfile(db.Model):
     admin_level = db.Column(db.String(20), nullable=False, index=True)
     city_id = db.Column(db.Integer, db.ForeignKey("cities.id"), nullable=True, index=True)
     created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(UTCDateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
-        db.DateTime,
+        UTCDateTime,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
