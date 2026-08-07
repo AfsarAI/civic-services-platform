@@ -555,10 +555,20 @@ class AdminService:
         per_page: int = 20,
         role: str = None,
         is_active: bool = None,
+        acting_admin: User = None,
     ) -> dict:
-        """Return paginated users, optionally filtered by role or active flag."""
+        """Return paginated users, optionally filtered by role or active flag.
+
+        Municipal administrators may only browse citizens in their own city;
+        the ``role`` filter is forced to ``citizen`` for them regardless of
+        what was requested.
+        """
         per_page = min(per_page, 100)
         query = User.query
+
+        if acting_admin is not None and acting_admin.is_municipal_admin:
+            role = Role.CITIZEN
+            query = query.filter_by(city_id=acting_admin.admin_city_id)
 
         if role:
             role_obj = Role.query.filter_by(name=role).first()
@@ -579,25 +589,46 @@ class AdminService:
             "per_page": pagination.per_page,
         }
 
-    def get_user(self, user_id: int) -> dict:
-        """Return user details."""
+    def get_user(self, user_id: int, acting_admin: User = None) -> dict:
+        """Return user details.
+
+        Municipal administrators may only view citizens in their own city.
+        """
         user = User.query.get(user_id)
         if not user:
             raise ValueError("User not found.")
+        self._ensure_user_in_admin_scope(user, acting_admin)
         return {"user": self._serialize_user(user)}
 
-    def update_user(self, user_id: int, admin_id: int, data: dict) -> dict:
-        """Update a user's profile fields or active status."""
+    def update_user(self, user_id: int, admin_id: int, data: dict, acting_admin: User = None) -> dict:
+        """Update a user's profile fields, active status, or reset their password.
+
+        Municipal administrators may only update citizens in their own city.
+        """
         user = User.query.get(user_id)
         if not user:
             raise ValueError("User not found.")
+        self._ensure_user_in_admin_scope(user, acting_admin)
 
         if "is_active" in data and not data["is_active"] and user_id == admin_id:
             raise ValueError("You cannot deactivate your own account.")
 
+        if "email" in data:
+            self._ensure_email_available(data["email"], exclude_user_id=user.id)
+            user.email = data["email"]
+
         for field in ("first_name", "last_name", "phone", "is_active"):
             if field in data:
                 setattr(user, field, data[field])
+
+        if "password" in data:
+            user.set_password(data["password"])
+            AuditLogService.record_action(
+                user_id=admin_id,
+                action="password_reset",
+                resource_type="user",
+                resource_id=user.id,
+            )
 
         db.session.commit()
         return {"user": self._serialize_user(user)}
@@ -677,12 +708,19 @@ class AdminService:
         return {"user": self._serialize_user(worker)}
 
     def update_field_worker(self, user_id: int, acting_admin: User, data: dict) -> dict:
-        """Edit or activate/deactivate a field worker owned by the acting administrator's city."""
+        """Edit, activate/deactivate, or reset the password of a field worker in the admin's city."""
         worker = self._get_owned_field_worker(user_id, acting_admin)
+
+        if "email" in data:
+            self._ensure_email_available(data["email"], exclude_user_id=worker.id)
+            worker.email = data["email"]
 
         for field in ("first_name", "last_name", "phone", "is_active"):
             if field in data:
                 setattr(worker, field, data[field])
+
+        if "password" in data:
+            worker.set_password(data["password"])
 
         AuditLogService.record_action(
             user_id=acting_admin.id,
@@ -713,6 +751,30 @@ class AdminService:
         if acting_admin.is_municipal_admin and worker.city_id != acting_admin.admin_city_id:
             raise ValueError("Field worker not found.")
         return worker
+
+    @staticmethod
+    def _ensure_user_in_admin_scope(user: User, acting_admin: User = None) -> None:
+        """Restrict a municipal administrator to citizens within their own city.
+
+        System administrators (``acting_admin`` unscoped or ``None``) may act
+        on any user via the generic ``/admin/users`` endpoints.
+
+        Raises:
+            ValueError: If a municipal administrator targets a non-citizen or
+                a citizen outside their own city.
+        """
+        if acting_admin is None or not acting_admin.is_municipal_admin:
+            return
+        citizen_role = Role.query.filter_by(name=Role.CITIZEN).first()
+        if not citizen_role or user.role_id != citizen_role.id or user.city_id != acting_admin.admin_city_id:
+            raise ValueError("User not found.")
+
+    @staticmethod
+    def _ensure_email_available(email: str, exclude_user_id: int) -> None:
+        """Raise if ``email`` is already used by a different account."""
+        existing = User.query.filter_by(email=email).first()
+        if existing and existing.id != exclude_user_id:
+            raise ValueError("An account with this email already exists.")
 
     # ── Admin hierarchy ───────────────────────────────────────────────────
 
@@ -821,9 +883,16 @@ class AdminService:
         if "is_active" in data and not data["is_active"] and user_id == acting_admin_id:
             raise ValueError("You cannot deactivate your own account.")
 
+        if "email" in data:
+            self._ensure_email_available(data["email"], exclude_user_id=user.id)
+            user.email = data["email"]
+
         for field in ("first_name", "last_name", "phone", "is_active"):
             if field in data:
                 setattr(user, field, data[field])
+
+        if "password" in data:
+            user.set_password(data["password"])
 
         if "pincode" in data or "city_id" in data:
             city = self._resolve_city_from_pincode(data.get("pincode"), data.get("city_id"))

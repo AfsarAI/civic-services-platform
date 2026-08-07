@@ -74,8 +74,11 @@ _verification_body = ns.model("RepairVerification", {
 _user_update = ns.model("AdminUserUpdate", {
     "first_name": fields.String,
     "last_name": fields.String,
+    "email": fields.String(example="john.new@example.com"),
     "phone": fields.String,
     "is_active": fields.Boolean(example=True),
+    "password": fields.String(example="NewSecret@123"),
+    "confirm_password": fields.String(example="NewSecret@123"),
 })
 
 _municipal_admin_create = ns.model("MunicipalAdminCreate", {
@@ -95,12 +98,15 @@ _municipal_admin_create = ns.model("MunicipalAdminCreate", {
 _municipal_admin_update = ns.model("MunicipalAdminUpdate", {
     "first_name": fields.String,
     "last_name": fields.String,
+    "email": fields.String(example="lucknow.admin.new@example.com"),
     "phone": fields.String,
     "is_active": fields.Boolean,
     "pincode": fields.String(example="226001"),
     "city_id": fields.Integer(example=42),
     "city_name": fields.String(example="Varanasi"),
     "city_state": fields.String(example="Uttar Pradesh"),
+    "password": fields.String(example="NewSecret@123"),
+    "confirm_password": fields.String(example="NewSecret@123"),
 })
 
 _field_worker_create = ns.model("FieldWorkerCreate", {
@@ -116,8 +122,11 @@ _field_worker_create = ns.model("FieldWorkerCreate", {
 _field_worker_update = ns.model("FieldWorkerUpdate", {
     "first_name": fields.String,
     "last_name": fields.String,
+    "email": fields.String(example="ravi.new@example.com"),
     "phone": fields.String,
     "is_active": fields.Boolean(example=True),
+    "password": fields.String(example="NewSecret@123"),
+    "confirm_password": fields.String(example="NewSecret@123"),
 })
 
 _system_settings_update = ns.model("SystemSettingsUpdate", {
@@ -308,9 +317,14 @@ class AdminUserListResource(Resource):
 
     @ns.response(200, "Paginated users", _envelope)
     @jwt_required()
-    @require_system_admin
+    @require_admin
     def get(self):
-        """List all platform users. Restricted to system administrators."""
+        """List platform users.
+
+        System administrators see every user and may filter by any role.
+        Municipal administrators only see citizens registered in their own
+        city (the ``role`` filter is ignored for them).
+        """
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 20, type=int)
         role = request.args.get("role")
@@ -320,7 +334,7 @@ class AdminUserListResource(Resource):
             is_active = is_active_str.lower() == "true"
 
         try:
-            result = _svc.get_all_users(page, per_page, role, is_active)
+            result = _svc.get_all_users(page, per_page, role, is_active, acting_admin=_current_admin_user())
             return paginated_response(
                 result["items"], result["total"],
                 result["page"], result["per_page"],
@@ -337,29 +351,42 @@ class AdminUserResource(Resource):
     @ns.response(200, "User details", _envelope)
     @ns.response(404, "Not found", _envelope)
     @jwt_required()
-    @require_system_admin
+    @require_admin
     def get(self, user_id):
-        """Get a specific user's details. Restricted to system administrators."""
+        """Get a specific user's details.
+
+        Municipal administrators may only view citizens in their own city.
+        """
         try:
-            data = _svc.get_user(user_id)
+            data = _svc.get_user(user_id, acting_admin=_current_admin_user())
             return success_response(data, "User retrieved.")
         except ValueError as exc:
             return error_response(str(exc), status_code=404)
 
     @ns.expect(_user_update)
     @ns.response(200, "User updated", _envelope)
+    @ns.response(409, "Conflict", _envelope)
     @ns.response(422, "Validation error", _envelope)
     @jwt_required()
-    @require_system_admin
+    @require_admin
     @validate_body(UserUpdateSchema)
     def put(self, body, user_id):
-        """Update a user's profile or active status. Restricted to system administrators."""
+        """Update a user's profile, active status, or password.
+
+        Municipal administrators may only update citizens in their own city.
+        """
         admin_id = int(get_jwt_identity())
         try:
-            data = _svc.update_user(user_id, admin_id, body)
+            data = _svc.update_user(user_id, admin_id, body, acting_admin=_current_admin_user())
             return success_response(data, "User updated successfully.")
         except ValueError as exc:
-            code = 404 if "not found" in str(exc).lower() else 400
+            message = str(exc).lower()
+            if "not found" in message:
+                code = 404
+            elif "already exists" in message:
+                code = 409
+            else:
+                code = 400
             return error_response(str(exc), status_code=code)
 
 
@@ -433,6 +460,7 @@ class MunicipalAdministratorResource(Resource):
     @ns.expect(_municipal_admin_update)
     @ns.response(200, "Municipal administrator updated", _envelope)
     @ns.response(404, "Not found", _envelope)
+    @ns.response(409, "Conflict", _envelope)
     @ns.response(400, "Business rule violation", _envelope)
     @ns.response(422, "Validation error", _envelope)
     @jwt_required()
@@ -448,7 +476,13 @@ class MunicipalAdministratorResource(Resource):
             )
             return success_response(data, "Municipal administrator updated.")
         except ValueError as exc:
-            code = 404 if "not found" in str(exc).lower() else 400
+            message = str(exc).lower()
+            if "not found" in message:
+                code = 404
+            elif "already exists" in message:
+                code = 409
+            else:
+                code = 400
             return error_response(str(exc), status_code=code)
 
     @ns.response(200, "Municipal administrator deactivated", _envelope)
@@ -537,17 +571,25 @@ class AdminFieldWorkerResource(Resource):
     @ns.expect(_field_worker_update)
     @ns.response(200, "Field worker updated", _envelope)
     @ns.response(404, "Not found", _envelope)
+    @ns.response(409, "Conflict", _envelope)
     @ns.response(422, "Validation error", _envelope)
     @jwt_required()
     @require_municipal_admin
     @validate_body(FieldWorkerUpdateSchema)
     def put(self, body, user_id):
-        """Edit or activate/deactivate a field worker in the acting administrator's city."""
+        """Edit, activate/deactivate, or reset the password of a field worker in the acting administrator's city."""
         try:
             data = _svc.update_field_worker(user_id, _current_admin_user(), body)
             return success_response(data, "Field worker updated.")
         except ValueError as exc:
-            return error_response(str(exc), status_code=404)
+            message = str(exc).lower()
+            if "not found" in message:
+                code = 404
+            elif "already exists" in message:
+                code = 409
+            else:
+                code = 400
+            return error_response(str(exc), status_code=code)
 
     @ns.response(200, "Field worker deactivated", _envelope)
     @ns.response(404, "Not found", _envelope)
