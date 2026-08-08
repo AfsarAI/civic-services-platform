@@ -43,6 +43,22 @@
         </select>
       </div>
 
+      <div>
+        <label class="form-label" for="duplicate_radius">Duplicate Detection Radius (meters)</label>
+        <input
+          id="duplicate_radius"
+          v-model.number="form.duplicate_detection_radius_meters"
+          type="number"
+          min="10"
+          max="2000"
+          class="form-input sm:w-64"
+        />
+        <p class="mt-1 text-xs text-slate-500">
+          Complaints reported within this distance of each other are flagged as possible duplicates
+          (citizen submission warning + administrator review panel).
+        </p>
+      </div>
+
       <div class="space-y-4 border-t border-slate-100 pt-5">
         <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
           <div>
@@ -88,6 +104,7 @@ const form = reactive({
   maintenance_mode: false,
   notify_on_status_change: true,
   default_complaint_priority: 'medium',
+  duplicate_detection_radius_meters: 50,
 })
 
 async function loadSettings() {
@@ -101,8 +118,7 @@ async function loadSettings() {
         support_email: settings.value.support_email || '',
         maintenance_mode: !!settings.value.maintenance_mode,
         notify_on_status_change: !!settings.value.notify_on_status_change,
-        default_complaint_priority: settings.value.default_complaint_priority || 'medium',
-      })
+        default_complaint_priority: settings.value.default_complaint_priority || 'medium',        duplicate_detection_radius_meters: settings.value.duplicate_detection_radius_meters || 50,      })
     }
   } catch (err) {
     serverError.value = err?.response?.data?.message || 'Could not load system settings.'

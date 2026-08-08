@@ -422,6 +422,31 @@ class TestAdminServiceComplaints:
             with pytest.raises(ValueError, match="Invalid status"):
                 service.get_all_complaints(status="not-a-status")
 
+    def test_get_all_complaints_flags_duplicate_candidates_in_list(self, app):
+        with app.app_context():
+            city = _mgmt_ensure_city("MgmtComplaintsCityDup")
+            citizen = _mgmt_ensure_citizen("mgmt.complaints.citizen.dup@example.com")
+            target = _mgmt_make_complaint(citizen.id, city.id)
+            target.latitude, target.longitude = 26.8467, 80.9462
+            nearby = _mgmt_make_complaint(citizen.id, city.id)
+            nearby.latitude, nearby.longitude = 26.8467 + 0.0001, 80.9462
+            db.session.commit()
+
+            service = AdminService()
+            result = service.get_all_complaints(city_id=city.id)
+            by_id = {item["id"]: item for item in result["items"]}
+            assert by_id[target.id]["duplicate_candidate_count"] >= 1
+            assert by_id[nearby.id]["duplicate_candidate_count"] >= 1
+
+    def test_get_all_complaints_zero_duplicate_count_without_coordinates(self, app):
+        with app.app_context():
+            citizen = _mgmt_ensure_citizen("mgmt.complaints.citizen.nodup@example.com")
+            complaint = _mgmt_make_complaint(citizen.id)
+            service = AdminService()
+            result = service.get_all_complaints()
+            item = next(i for i in result["items"] if i["id"] == complaint.id)
+            assert item["duplicate_candidate_count"] == 0
+
     def test_get_complaint_returns_full_details(self, app):
         with app.app_context():
             citizen = _mgmt_ensure_citizen("mgmt.complaints.citizen2@example.com")
@@ -691,6 +716,53 @@ class TestAdminServiceUsers:
             with pytest.raises(ValueError, match="cannot deactivate your own account"):
                 service.update_user(admin.id, admin.id, {"is_active": False})
 
+    def test_update_user_resets_password(self, app):
+        with app.app_context():
+            citizen = _mgmt_ensure_citizen("mgmt.users.citizen.pwreset@example.com")
+            admin = _mgmt_ensure_admin("mgmt.users.admin.pwreset@example.com", AdministratorProfile.SYSTEM)
+            service = AdminService()
+            service.update_user(citizen.id, admin.id, {"password": "NewSecret@123"})
+            refreshed = User.query.get(citizen.id)
+            assert refreshed.check_password("NewSecret@123")
+            assert not refreshed.check_password("Citizen@123")
+
+    def test_update_user_updates_email(self, app):
+        with app.app_context():
+            citizen = _mgmt_ensure_citizen("mgmt.users.citizen.email1@example.com")
+            admin = _mgmt_ensure_admin("mgmt.users.admin.email1@example.com", AdministratorProfile.SYSTEM)
+            service = AdminService()
+            result = service.update_user(citizen.id, admin.id, {"email": "mgmt.users.citizen.email1.new@example.com"})
+            assert result["user"]["email"] == "mgmt.users.citizen.email1.new@example.com"
+
+    def test_update_user_rejects_duplicate_email(self, app):
+        with app.app_context():
+            citizen_a = _mgmt_ensure_citizen("mgmt.users.citizen.dupa@example.com")
+            _mgmt_ensure_citizen("mgmt.users.citizen.dupb@example.com")
+            admin = _mgmt_ensure_admin("mgmt.users.admin.dup@example.com", AdministratorProfile.SYSTEM)
+            service = AdminService()
+            with pytest.raises(ValueError, match="already exists"):
+                service.update_user(citizen_a.id, admin.id, {"email": "mgmt.users.citizen.dupb@example.com"})
+
+    def test_update_user_municipal_admin_scoped_to_own_city_citizen(self, app):
+        with app.app_context():
+            city = _mgmt_ensure_city("MgmtUsersScopedCity")
+            citizen = _mgmt_ensure_citizen("mgmt.users.scoped.citizen@example.com", city_id=city.id)
+            muni_admin = _mgmt_ensure_admin("mgmt.users.scoped.admin@example.com", AdministratorProfile.MUNICIPAL, "MgmtUsersScopedCity")
+            service = AdminService()
+            result = service.update_user(citizen.id, muni_admin.id, {"first_name": "Scoped"}, acting_admin=muni_admin)
+            assert result["user"]["first_name"] == "Scoped"
+
+    def test_update_user_municipal_admin_rejects_other_city_citizen(self, app):
+        with app.app_context():
+            own_city = _mgmt_ensure_city("MgmtUsersOwnCity")
+            other_city = _mgmt_ensure_city("MgmtUsersOtherCity")
+            citizen = _mgmt_ensure_citizen("mgmt.users.othercity.citizen@example.com", city_id=other_city.id)
+            muni_admin = _mgmt_ensure_admin("mgmt.users.owncity.admin@example.com", AdministratorProfile.MUNICIPAL, "MgmtUsersOwnCity")
+            service = AdminService()
+            with pytest.raises(ValueError, match="not found"):
+                service.update_user(citizen.id, muni_admin.id, {"first_name": "Nope"}, acting_admin=muni_admin)
+            assert own_city.id != other_city.id
+
 
 class TestAdminServiceFieldWorkers:
     """Unit tests for get_field_workers, create_field_worker, get_field_worker,
@@ -749,6 +821,36 @@ class TestAdminServiceFieldWorkers:
             service = AdminService()
             result = service.update_field_worker(worker.id, admin, {"is_active": False})
             assert result["user"]["is_active"] is False
+
+    def test_update_field_worker_resets_password(self, app):
+        with app.app_context():
+            city = _mgmt_ensure_city("MgmtFwPwResetCity")
+            admin = _mgmt_ensure_admin("mgmt.fw.pwreset.admin@example.com", AdministratorProfile.MUNICIPAL, "MgmtFwPwResetCity")
+            worker = _mgmt_ensure_worker("mgmt.fw.pwreset.worker@example.com", city.id)
+            service = AdminService()
+            service.update_field_worker(worker.id, admin, {"password": "NewWorker@123"})
+            refreshed = User.query.get(worker.id)
+            assert refreshed.check_password("NewWorker@123")
+            assert not refreshed.check_password("Worker@123")
+
+    def test_update_field_worker_updates_email(self, app):
+        with app.app_context():
+            city = _mgmt_ensure_city("MgmtFwEmailCity")
+            admin = _mgmt_ensure_admin("mgmt.fw.email.admin@example.com", AdministratorProfile.MUNICIPAL, "MgmtFwEmailCity")
+            worker = _mgmt_ensure_worker("mgmt.fw.email.worker@example.com", city.id)
+            service = AdminService()
+            result = service.update_field_worker(worker.id, admin, {"email": "mgmt.fw.email.worker.new@example.com"})
+            assert result["user"]["email"] == "mgmt.fw.email.worker.new@example.com"
+
+    def test_update_field_worker_rejects_duplicate_email(self, app):
+        with app.app_context():
+            city = _mgmt_ensure_city("MgmtFwDupEmailCity")
+            admin = _mgmt_ensure_admin("mgmt.fw.dupemail.admin@example.com", AdministratorProfile.MUNICIPAL, "MgmtFwDupEmailCity")
+            worker_a = _mgmt_ensure_worker("mgmt.fw.dupa@example.com", city.id)
+            _mgmt_ensure_worker("mgmt.fw.dupb@example.com", city.id)
+            service = AdminService()
+            with pytest.raises(ValueError, match="already exists"):
+                service.update_field_worker(worker_a.id, admin, {"email": "mgmt.fw.dupb@example.com"})
 
 
 class TestAdminServiceHierarchyAndSettings:
@@ -816,6 +918,55 @@ class TestAdminServiceHierarchyAndSettings:
             )
             assert result["user"]["first_name"] == "Renamed"
 
+    def test_update_municipal_administrator_resets_password(self, app):
+        with app.app_context():
+            system_admin = _mgmt_ensure_admin("mgmt.hierarchy.sysadmin.pwreset@example.com", AdministratorProfile.SYSTEM)
+            service = AdminService()
+            created = service.create_municipal_administrator(system_admin.id, {
+                "username": "mgmt_hierarchy_muni_pwreset", "email": "mgmt.hierarchy.muni.pwreset@example.com",
+                "password": "Municipal@123", "confirm_password": "Municipal@123",
+                "first_name": "Muni", "last_name": "Admin", "pincode": "226001",
+            })
+            service.update_municipal_administrator(
+                created["user"]["id"], system_admin.id, {"password": "NewMunicipal@123"}
+            )
+            refreshed = User.query.get(created["user"]["id"])
+            assert refreshed.check_password("NewMunicipal@123")
+            assert not refreshed.check_password("Municipal@123")
+
+    def test_update_municipal_administrator_updates_email(self, app):
+        with app.app_context():
+            system_admin = _mgmt_ensure_admin("mgmt.hierarchy.sysadmin.email@example.com", AdministratorProfile.SYSTEM)
+            service = AdminService()
+            created = service.create_municipal_administrator(system_admin.id, {
+                "username": "mgmt_hierarchy_muni_email", "email": "mgmt.hierarchy.muni.email@example.com",
+                "password": "Municipal@123", "confirm_password": "Municipal@123",
+                "first_name": "Muni", "last_name": "Admin", "pincode": "226001",
+            })
+            result = service.update_municipal_administrator(
+                created["user"]["id"], system_admin.id, {"email": "mgmt.hierarchy.muni.email.new@example.com"}
+            )
+            assert result["user"]["email"] == "mgmt.hierarchy.muni.email.new@example.com"
+
+    def test_update_municipal_administrator_rejects_duplicate_email(self, app):
+        with app.app_context():
+            system_admin = _mgmt_ensure_admin("mgmt.hierarchy.sysadmin.dupemail@example.com", AdministratorProfile.SYSTEM)
+            service = AdminService()
+            created_a = service.create_municipal_administrator(system_admin.id, {
+                "username": "mgmt_hierarchy_muni_dupA", "email": "mgmt.hierarchy.muni.dupA@example.com",
+                "password": "Municipal@123", "confirm_password": "Municipal@123",
+                "first_name": "Muni", "last_name": "Admin", "pincode": "226001",
+            })
+            service.create_municipal_administrator(system_admin.id, {
+                "username": "mgmt_hierarchy_muni_dupB", "email": "mgmt.hierarchy.muni.dupB@example.com",
+                "password": "Municipal@123", "confirm_password": "Municipal@123",
+                "first_name": "Muni", "last_name": "Admin", "pincode": "226001",
+            })
+            with pytest.raises(ValueError, match="already exists"):
+                service.update_municipal_administrator(
+                    created_a["user"]["id"], system_admin.id, {"email": "mgmt.hierarchy.muni.dupB@example.com"}
+                )
+
     def test_get_system_settings_returns_singleton(self, app):
         with app.app_context():
             service = AdminService()
@@ -830,3 +981,100 @@ class TestAdminServiceHierarchyAndSettings:
             assert result["settings"]["default_complaint_priority"] == "high"
             # Reset for other tests sharing the singleton settings row.
             service.update_system_settings({"default_complaint_priority": "medium"}, admin.id)
+
+    def test_update_system_settings_persists_duplicate_radius(self, app):
+        with app.app_context():
+            admin = _mgmt_ensure_admin("mgmt.hierarchy.sysadmin6@example.com", AdministratorProfile.SYSTEM)
+            service = AdminService()
+            result = service.update_system_settings({"duplicate_detection_radius_meters": 75}, admin.id)
+            assert result["settings"]["duplicate_detection_radius_meters"] == 75
+            # Reset for other tests relying on the default 50m radius.
+            service.update_system_settings({"duplicate_detection_radius_meters": 50}, admin.id)
+
+
+class TestAdminServiceDuplicateDetection:
+    """Unit tests for get_duplicate_candidates and mark_duplicate."""
+
+    BASE_LAT, BASE_LON = 26.8467, 80.9462
+
+    def test_get_duplicate_candidates_returns_nearby_open_complaints(self, app):
+        with app.app_context():
+            city = _mgmt_ensure_city("MgmtDupCity1")
+            citizen = _mgmt_ensure_citizen("mgmt.dup.citizen1@example.com")
+            target = _mgmt_make_complaint(citizen.id, city.id)
+            target.latitude, target.longitude = self.BASE_LAT, self.BASE_LON
+            nearby = _mgmt_make_complaint(citizen.id, city.id)
+            nearby.latitude, nearby.longitude = self.BASE_LAT + 0.0001, self.BASE_LON
+            db.session.commit()
+
+            service = AdminService()
+            result = service.get_duplicate_candidates(target.id, radius_meters=50)
+            ids = [c["id"] for c in result["candidates"]]
+            assert nearby.id in ids
+            assert target.id not in ids
+
+    def test_get_duplicate_candidates_returns_empty_without_coordinates(self, app):
+        with app.app_context():
+            citizen = _mgmt_ensure_citizen("mgmt.dup.citizen2@example.com")
+            target = _mgmt_make_complaint(citizen.id)
+            service = AdminService()
+            result = service.get_duplicate_candidates(target.id)
+            assert result["candidates"] == []
+
+    def test_get_duplicate_candidates_rejects_missing_complaint(self, app):
+        with app.app_context():
+            service = AdminService()
+            with pytest.raises(ValueError, match="not found"):
+                service.get_duplicate_candidates(999999)
+
+    def test_mark_duplicate_links_and_rejects_complaint(self, app):
+        with app.app_context():
+            city = _mgmt_ensure_city("MgmtDupCity2")
+            citizen = _mgmt_ensure_citizen("mgmt.dup.citizen3@example.com")
+            admin = _mgmt_ensure_admin("mgmt.dup.admin1@example.com", AdministratorProfile.SYSTEM)
+            primary = _mgmt_make_complaint(citizen.id, city.id)
+            duplicate = _mgmt_make_complaint(citizen.id, city.id)
+
+            service = AdminService()
+            result = service.mark_duplicate(
+                duplicate.id, admin.id, {"duplicate_of_id": primary.id, "reason": "Same pothole"}
+            )
+            assert result["complaint"]["status"] == Complaint.STATUS_REJECTED
+            assert result["complaint"]["duplicate_of_id"] == primary.id
+            assert result["complaint"]["duplicate_reason"] == "Same pothole"
+
+    def test_mark_duplicate_rejects_self_reference(self, app):
+        with app.app_context():
+            citizen = _mgmt_ensure_citizen("mgmt.dup.citizen4@example.com")
+            admin = _mgmt_ensure_admin("mgmt.dup.admin2@example.com", AdministratorProfile.SYSTEM)
+            complaint = _mgmt_make_complaint(citizen.id)
+            service = AdminService()
+            with pytest.raises(ValueError, match="cannot be marked as a duplicate of itself"):
+                service.mark_duplicate(complaint.id, admin.id, {"duplicate_of_id": complaint.id})
+
+    def test_mark_duplicate_rejects_chained_duplicate(self, app):
+        with app.app_context():
+            citizen = _mgmt_ensure_citizen("mgmt.dup.citizen5@example.com")
+            admin = _mgmt_ensure_admin("mgmt.dup.admin3@example.com", AdministratorProfile.SYSTEM)
+            root = _mgmt_make_complaint(citizen.id)
+            already_duplicate = _mgmt_make_complaint(citizen.id)
+            already_duplicate.duplicate_of_id = root.id
+            db.session.commit()
+            new_complaint = _mgmt_make_complaint(citizen.id)
+
+            service = AdminService()
+            with pytest.raises(ValueError, match="itself a duplicate"):
+                service.mark_duplicate(
+                    new_complaint.id, admin.id, {"duplicate_of_id": already_duplicate.id}
+                )
+
+    def test_mark_duplicate_rejects_terminal_status_complaint(self, app):
+        with app.app_context():
+            citizen = _mgmt_ensure_citizen("mgmt.dup.citizen6@example.com")
+            admin = _mgmt_ensure_admin("mgmt.dup.admin4@example.com", AdministratorProfile.SYSTEM)
+            primary = _mgmt_make_complaint(citizen.id)
+            resolved = _mgmt_make_complaint(citizen.id, status=Complaint.STATUS_RESOLVED)
+
+            service = AdminService()
+            with pytest.raises(ValueError, match="Only pending, assigned, or in-progress"):
+                service.mark_duplicate(resolved.id, admin.id, {"duplicate_of_id": primary.id})

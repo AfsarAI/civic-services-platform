@@ -1,6 +1,6 @@
 # UI / UX Documentation
 
-> Last reviewed: 2026-07-21
+> Last reviewed: 2026-08-08
 
 This folder contains UI design documentation, wireframes, and component guidelines for the Civic Services Platform frontend.
 
@@ -20,6 +20,7 @@ This folder contains UI design documentation, wireframes, and component guidelin
 | Reports | `/admin/reports` | Administrator |
 | System Settings | `/admin/settings` | System Administrator |
 | Municipal Administrators | `/admin/municipal-administrators` | System Administrator |
+| Citizens | `/admin/citizens` | System Administrator, Municipal Administrator (own city, scoped) |
 | Field Workers | `/admin/field-workers` | Municipal Administrator |
 | Field Worker Dashboard | `/fieldworker/dashboard` | Field Worker |
 | Field Worker Assignment Details | `/fieldworker/assignments/:id` | Field Worker |

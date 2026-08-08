@@ -1,6 +1,6 @@
 # Database Documentation
 
-> Last reviewed: 2026-07-21
+> Last reviewed: 2026-08-08
 
 This folder contains the database schema, ERD, and migration history for the Civic Services Platform.
 
@@ -123,6 +123,16 @@ erDiagram
 - `complaints.city_id → cities.id` stores the routing snapshot used when the complaint was filed.
 - `administrator_profiles.city_id → cities.id` scopes municipal administrators to a single city.
 - `city_pincodes.city_id → cities.id` maps one pincode to one or more city records.
+
+### Column Types — Timezone Handling
+
+Every `datetime`-typed column above (`created_at`, `updated_at`, `completed_at`,
+etc.) is declared with a custom `UTCDateTime` SQLAlchemy type
+(`backend/app/utils/db_types.py`) instead of plain `db.DateTime`. The
+underlying SQL column type is unchanged (still `DATETIME`, no migration
+needed) — `UTCDateTime` only guarantees that Python always sees a
+timezone-aware UTC value on read, fixing a bug where API responses omitted
+the UTC offset and the frontend misparsed timestamps as local time.
 
 ### Core relationship summary
 
