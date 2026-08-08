@@ -1,6 +1,6 @@
 # Civic Services Platform
 
-> Last reviewed: 2026-07-21
+> Last reviewed: 2026-08-08
 
 A university Scrum project — an enterprise-grade web platform that lets **citizens** report potholes with a photo and map location, **administrators** manage and assign complaints, and **field workers** update repair progress in real time.
 
@@ -189,8 +189,6 @@ python3 -m flake8 app/ --max-line-length=120 --count --statistics
 
 **Status:** ✅ 0 violations with `--max-line-length=120` | ⚠️ 149 E501 violations with PEP 8 default (79 chars)
 
-See [Software_Metrics_Report_Flake8.md](Software_Metrics_Report_Flake8.md) for detailed analysis.
-
 ### Database setup order
 
 Run these backend commands in order after creating `.env`:
@@ -221,12 +219,14 @@ The administrator role is now split internally using an administrator profile:
   - can create, manage, and disable Municipal Administrators
   - can view all cities
   - can access global reports and platform-wide user management
+  - can reset the password or update the email of any user (Municipal Administrator, Field Worker, or Citizen) via `/admin/users`, `/admin/field-workers`, or `/admin/municipal-administrators`
 - **Municipal Administrator**
   - belongs to exactly one city
   - cannot self-register
   - is created only by the System Administrator
   - logs in through the same `/auth/login` endpoint and is still returned as role `administrator`
   - can be managed from the System Administrator UI at `/admin/municipal-administrators`
+  - can view, edit, and reset the password of Citizens registered in their own city via `/admin/citizens` (`GET`/`PUT /admin/users`, scoped server-side)
 
 Implementation summary:
 - `users.role_id` remains unchanged
@@ -245,6 +245,9 @@ Implementation summary:
 - Added the `flask import-pincodes` command for loading `city_pincodes` from `database/pincode.csv`.
 - Expanded assignment notifications so field workers immediately receive complaint ID, assignment date/time, location, priority, expected completion, and optional administrator remarks; notification links now route role-wise (citizen/admin/field-worker views).
 - Updated the documentation set to match the current setup order and database seeding flow.
+- Fixed a timezone display bug where every date/time in the app showed 5:30 hours behind (IST) due to naive (offset-less) datetime serialization; all `DateTime` columns now use a `UTCDateTime` type that guarantees a proper UTC offset on every response, with no database migration required.
+- Added administrator-driven password reset and email update (no SMTP required): System Administrators can reset/update any user; Municipal Administrators can reset/update their own Field Workers and the Citizens registered in their city. New `/admin/citizens` page and separate "Edit Details"/"Reset Password" actions across all admin management screens.
+- Fixed `AdminComplaintDetails.vue` allowing priority changes on already-rejected/closed complaints, and fixed `Reports.vue` showing "No complaints match filters" even when report data existed.
 
 ---
 
@@ -367,13 +370,13 @@ Step 4  After Sprint:
 
 ## Milestones
 
-| # | Milestone | Due Date | Focus |
-|---|---|---|---|
-| 1 | User Identification & User Stories | 28 June 2026 | Requirements |
-| 2 | Scheduling & Design | 22 July 2026 | Design + UI |
-| 3 | Sprint 1 — API Development | 2 August 2026 | Backend APIs |
-| 4 | Sprint 2 — Testing & Integration | 12 August 2026 | Tests + Integration |
-| 5 | Final Submission | 23 August 2026 | Complete project |
+| # | Milestone | Due Date | Focus | Status |
+|---|---|---|---|---|
+| 1 | User Identification & User Stories | 28 June 2026 | Requirements | ✅ Complete |
+| 2 | Scheduling & Design | 22 July 2026 | Design + UI | ✅ Complete |
+| 3 | Sprint 1 — API Development | 2 August 2026 | Backend APIs | ✅ Complete (`docs/milestone3/`) |
+| 4 | Sprint 2 — Testing & Integration | 12 August 2026 | Tests + Integration | ✅ Complete (`docs/milestone4/`) |
+| 5 | Final Submission | 23 August 2026 | Complete project | ⏳ Upcoming |
 
 ---
 
@@ -381,12 +384,12 @@ Step 4  After Sprint:
 
 This project follows a **2-week Scrum sprint** cycle with **4 sprints**.
 
-| Sprint | Dates | Focus |
-|---|---|---|
-| Sprint 1 | 29 June – 12 July 2026 | Project setup, authentication, core models |
-| Sprint 2 | 13 July – 26 July 2026 | Citizen complaint submission & tracking |
-| Sprint 3 | 27 July – 9 August 2026 | Admin management, field worker progress |
-| Sprint 4 | 10 August – 23 August 2026 | Reports, notifications, testing & polish |
+| Sprint | Dates | Focus | Status |
+|---|---|---|---|
+| Sprint 1 | 29 June – 12 July 2026 | Project setup, authentication, core models | ✅ Complete |
+| Sprint 2 | 13 July – 26 July 2026 | Citizen complaint submission & tracking | ✅ Complete |
+| Sprint 3 | 27 July – 9 August 2026 | Admin management, field worker progress | ✅ Complete |
+| Sprint 4 | 10 August – 23 August 2026 | Reports, notifications, testing & polish | 🔄 In Progress |
 
 | Scrum Ceremony | Frequency | Duration |
 |---|---|---|

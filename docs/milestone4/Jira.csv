@@ -1,0 +1,2858 @@
+Summary,Issue key,Description
+Final Project Demonstration,TPS-108,"h2. Objective
+
+Prepare and deliver the final demonstration of the Civic Services Platform, showcasing all implemented features, project deliverables, and Scrum artifacts.
+
+----
+
+h2. Description
+
+Conduct the final project demonstration to present the completed Civic Services Platform to stakeholders, evaluators, or instructors.
+
+The demonstration should highlight the complete software development lifecycle followed during the project, including requirements gathering, design, implementation, testing, deployment, and project management using Scrum.
+
+The demonstration should include:
+
+��������� Project Overview
+
+��������� Problem Statement
+
+��������� User Roles
+
+��������� System Architecture
+
+��������� Major Features
+
+��������� Live Application Demonstration
+
+��������� Jira Project (Epics, Stories, Tasks, Sprints)
+
+��������� Sprint Planning Summary
+
+������� feedback from the project reviewers.
+
+----
+
+h2. Deliverables
+
+��������� Project Presentation (PPT)
+
+��������� Live System Demonstration
+
+��������� Final Source Code
+
+��������� Final Project Report
+
+��������� User Manual
+
+��������� Technical Documentation
+
+----
+
+h2. Acceptance Criteria
+
+# All planned project features are demonstrated successfully.
+# Scrum artifacts are presented.
+# Jira project is demonstrated.
+# Live application works correctly.
+# Team members present their assigned contributions.
+# Final project documentation is submitted.
+
+----
+
+h2. Definition of Done
+
+��������� Presentation completed.
+
+�����"
+Prepare Technical Documentation,TPS-107,"h2. Objective
+
+Prepare comprehensive technical documentation for the Civic Services Platform to support future development, maintenance, deployment, and troubleshooting.
+
+----
+
+h2. Description
+
+Develop technical documentation that describes the system architecture, software design, database structure, APIs, deployment process, and development environment.
+
+The documentation should enable new developers to understand, maintain, and enhance the application with minimal onboarding effort.
+
+The technical documentation should include:
+
+��������� System Overview
+
+��������� Software Architecture
+
+��������� Technology Stack
+
+��������� Component Diagram
+
+��������� Database Design (ER Diagram)
+
+��������� API Documentation
+
+��������� Project Folder Structure
+
+��������� Installation Guide
+
+��������� Deployment Guide
+
+��������� Configuration Settecture Document
+
+----
+
+h2. Acceptance Criteria
+
+# Technical documentation covers all major system components.
+# Architecture and database diagrams are included.
+# API endpoints are documented.
+# Installation and deployment procedures are documented.
+# Documentation is reviewed for technical accuracy.
+# Final documentation is approved by the project team.
+
+----
+
+h2. Definition of Done
+
+��������� Technical documentation completed.
+
+��������� Architecture diagrams included.
+
+��������� API documentation completed.
+
+��������� Deployment guide comple"
+Prepare User Manual,TPS-106,"h2. Objective
+
+Prepare a comprehensive User Manual to help citizens, administrators, and field workers effectively use the Civic Services Platform.
+
+----
+
+h2. Description
+
+Develop a User Manual that provides clear instructions for using the major features of the Civic Services Platform.
+
+The manual should include step-by-step guidance with screenshots where applicable.
+
+The User Manual should cover:
+
+��������� System Overview
+
+��������� User Login
+
+��������� Citizen Functions
+    - Report a Pothole
+    - Track Complaint Status
+    - View Complaint History
+    - Submit Feedback
+
+��������� Administrator Functions
+    - View Complaints
+    - Assign Field Workers
+    - Monitor Progress
+    - Verify and Close Complaints
+    - Generate Reports
+
+��������� Field Worker Functions
+    - View Assigned Complaints
+    - Accept Assignment
+    - Update Repair Progress
+    - Complete Repair Work
+
+��������� Frequently Ats
+
+----
+
+h2. Acceptance Criteria
+
+# User Manual covers all major system features.
+# Instructions are clear and easy to follow.
+# Screenshots are included where appropriate.
+# Manual is reviewed for accuracy.
+# PDF version is prepared.
+# Manual is approved by the project team.
+
+----
+
+h2. Definition of Done
+
+��������� User Manual completed.
+
+��������� Screenshots included.
+
+��������� PDF generated.
+
+��"
+Deploy to Production,TPS-105,"h2. Objective
+
+Deploy the Civic Services Platform to the production environment and verify that the application is fully operational for end users.
+
+----
+
+h2. Description
+
+Deploy the finalized and tested Civic Services Platform to the production environment after successful completion of testing and bug fixing.
+
+The deployment process should ensure that all application components are correctly configured and functioning.
+
+The deployment activities include:
+
+��������� Deploy Frontend Application
+
+��������� Deploy Backend API
+
+��������� Configure Database
+
+��������� Configure Application Settings
+
+��������� Verify User Authentication
+
+��������� Verify Complaint Management Workflow
+
+��������� Verify Notification Services
+
+��������� Verify Reports & Analytics
+
+A post-deployment verification should be performed to confirm that all critical system functionalities are workind application is successfully deployed.
+# Backend API is successfully deployed.
+# Database is configured and operational.
+# All critical business workflows are functioning correctly.
+# No critical production issues are detected after deployment.
+# Deployment report is completed and approved.
+
+----
+
+h2. Definition of Done
+
+��������� Frontend deployed successfully.
+
+��������� Backend deployed successfully.
+
+��������� Database configured.
+
+��������� Production verifica"
+Fix Reported Bugs,TPS-104,"h2. Objective
+
+Analyze, prioritize, fix, and verify all reported defects identified during testing to ensure the Civic Services Platform is stable, reliable, and ready for deployment.
+
+----
+
+h2. Description
+
+Review all defects reported during Unit Testing, Integration Testing, and User Acceptance Testing (UAT).
+
+Each defect should be analyzed, assigned a priority, corrected, retested, and documented before the final release.
+
+Bug severity may include:
+
+��������� Critical
+
+��������� High
+
+��������� Medium
+
+��������� Low
+
+After fixing each defect, regression testing should be performed to ensure that the fix does not introduce new issues into the system.
+
+----
+
+h2. Deliverables
+
+��������� Defect Log
+
+��������� Bug Fix Report
+
+��������� Regression Test Report
+
+��������� Updated Source Code
+
+----
+
+h2. Acceptance Criteria
+
+# All Critical defects are resolved.
+# All High prix Report is completed and reviewed.
+
+----
+
+h2. Definition of Done
+
+��������� Defects analyzed and prioritized.
+
+��������� Bug fixes implemented.
+
+��������� Regression testing completed.
+
+��������� Jira defec"
+Perform User Acceptance Testing (UAT),TPS-103,"h2. Objective
+
+Perform User Acceptance Testing (UAT) to verify that the Civic Services Platform satisfies the functional and business requirements defined by stakeholders before final deployment.
+
+----
+
+h2. Description
+
+Conduct User Acceptance Testing using predefined business scenarios that simulate real-world usage of the Civic Services Platform.
+
+The testing should involve representative users such as citizens, administrators, and field workers to validate that the implemented system meets their expectations.
+
+The UAT scope includes:
+
+��������� User Registration and Login
+
+��������� Report a Pothole
+
+��������� Complaint Tracking
+
+��������� Complaint Assignment
+
+��������� Repair Progress Updates
+
+��������� Repair Completion
+
+��������� Complaint Verification and Closure
+
+��������� Notifications
+
+��������� Reports and Dashboard
+
+All issues identified. Acceptance Criteria
+
+# UAT test cases are executed successfully.
+# All critical business workflows are validated.
+# Users confirm that the system meets functional requirements.
+# Issues identified during UAT are documented.
+# Critical defects are resolved and retested.
+# UAT sign-off is approved by the project team.
+
+----
+
+h2. Definition of Done
+
+��������� UAT test plan prepared.
+
+��������� UAT completed successfully.
+
+��������� User feedback documented.
+
+��������� Critica"
+Perform Integration Testing,TPS-102,"h2. Objective
+
+Perform integration testing to verify that all modules of the Civic Services Platform work together correctly and exchange data as expected.
+
+----
+
+h2. Description
+
+Execute integration testing after successful completion of unit testing to validate interactions between the frontend, backend APIs, database, and external services.
+
+The testing should ensure seamless communication between all major components of the system.
+
+The integration testing scope includes:
+
+��������� Authentication and Authorization
+
+��������� Citizen Complaint Management
+
+��������� Administrator Management
+
+��������� Field Worker Management
+
+��������� Notification Services
+
+��������� Reports & Analytics
+
+��������� Database Integration
+
+The testing process should identify interface issues, data inconsistencies, and workflow failures before user acceptance testing.
+
+----
+
+h2. Deliverables
+
+���dsfully integrated.
+# Data flows correctly between frontend, backend, and database.
+# APIs return expected responses.
+# Workflow execution is validated end-to-end.
+# Integration defects are identified, resolved, and retested.
+# Integration testing report is reviewed and approved by the project team.
+
+----
+
+h2. Definition of Done
+
+��������� Integration test cases prepared.
+
+��������� Integration testing completed.
+
+��������� Defects resolved and retested.
+
+��������� End-to-end workflows va"
+Perform Unit Testing,TPS-101,"h2. Objective
+
+Perform unit testing to verify that individual components of the Civic Services Platform function correctly and meet the specified requirements.
+
+----
+
+h2. Description
+
+Develop and execute unit test cases for the frontend, backend, and business logic components of the Civic Services Platform.
+
+Unit testing should validate each module independently before integration.
+
+The testing scope includes:
+
+��������� Authentication Module
+
+��������� Citizen Complaint Management Module
+
+��������� Administrator Management Module
+
+��������� Field Worker Management Module
+
+��������� Notification Module
+
+��������� Reports & Analytics Module
+
+��������� Database Operations
+
+All identified defects should be documented and resolved before integration testing begins.
+
+----
+
+h2. Deliverables
+
+��������� Unit Test Cases
+
+��������� Unit Test Execution Report
+
+ved.
+# Code coverage meets the project target.
+# Test execution results are documented.
+# Unit testing is reviewed and approved by the project team.
+
+----
+
+h2. Definition of Done
+
+��������� Unit test cases prepared.
+
+��������� Unit tests executed successfully.
+
+��������� Defects resolved.
+
+��������� Tes"
+Configure CI/CD Pipeline,TPS-100,"h2. Objective
+
+Configure a Continuous Integration and Continuous Deployment (CI/CD) pipeline to automate the build, testing, and deployment process of the Civic Services Platform.
+
+----
+
+h2. Description
+
+Set up an automated CI/CD pipeline that integrates with the project's Git repository to streamline software delivery.
+
+The pipeline should automate:
+
+��������� Source Code Checkout
+
+��������� Build Process
+
+��������� Code Quality Checks
+
+��������� Unit Test Execution
+
+��������� Integration Test Execution
+
+��������� Deployment to Target Environment
+
+��������� Deployment Verification
+
+The pipeline should ensure that only successfully validated code is deployed.
+
+----
+
+h2. Deliverables
+
+��������� CI/CD Pipeline Configuration
+
+��������� Build Automation
+
+��������� Automated Test Execution
+
+��������� Deployment Automatiloyable.
+# Pipeline execution logs are available.
+
+----
+
+h2. Definition of Done
+
+��������� CI/CD pipeline configured.
+
+��������� Build automation completed.
+
+��������� Automated testing configured.
+
+��������� Deployment automation "
+Configure System Settings,TPS-99,"h2. User Story
+
+As an administrator,
+
+I want to configure system settings,
+
+So that the Civic Services Platform operates according to organizational requirements.
+
+----
+
+h2. Description
+
+Provide configuration options for administrators to manage application settings including notification preferences, complaint priorities, and system parameters.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can access system settings.
+# Configuration changes are saved.
+# Updated settings take effect immediately where applicable.
+# Unauthorized users cannot modify settings.
+# Configuration changes are logged.
+# Settings are validated before saving.
+
+----
+
+h2. Definition of Done
+
+��������� Configuration page implemented.
+
+��������� Settings saved successfully.
+
+��������� Validation completed.
+
+������"
+Export Reports,TPS-98,"h2. User Story
+
+As an administrator,
+
+I want to export generated reports,
+
+So that I can share, archive, and analyze complaint data outside the Civic Services Platform.
+
+----
+
+h2. Description
+
+Allow administrators to export generated reports in commonly used file formats for reporting and record-keeping purposes.
+
+The system should support exporting reports in the following formats:
+
+��������� PDF
+
+��������� Microsoft Excel (.xlsx)
+
+��������� CSV
+
+The exported reports should contain the same filtered data currently displayed on the report screen.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can export reports as PDF.
+# Administrator can export reports as Excel (.xlsx).
+# Administrator can export reports as CSV.
+# Exported reports contain the selected filters.
+# Exported reports maintain proper formatting.
+# Report export completes successfully.
+
+----
+
+h2. Definition of Done
+
+��������� PDF export implemented.
+
+��������ti�� Code reviewed.
+
+��� Approved by the Product Owner (Team)."
+View Performance Metrics,TPS-97,"h2. User Story
+
+As an administrator,
+
+I want to view key performance metrics,
+
+So that I can evaluate the efficiency of complaint handling, monitor service quality, and identify opportunities for improvement.
+
+----
+
+h2. Description
+
+Provide a performance metrics dashboard that displays key performance indicators (KPIs) for monitoring the effectiveness of the Civic Services Platform.
+
+The dashboard should provide real-time performance metrics to support operational monitoring and strategic decision-making.
+
+The performance metrics should include:
+
+��������� Total Complaints Received
+
+��������� Average Complaint Resolution Time
+
+��������� Average Assignment Time
+
+��������� Number of Open Complaints
+
+��������� Number of Closed Complaints
+
+��������� Field Worker Productivity
+
+��������� Complaint Closure Rate
+
+��������� Citizen Satisfaction Rating
+
+��������e metrics are calculated accurately.
+# Dashboard displays charts and KPI cards.
+# Dashboard updates automatically when complaint data changes.
+# Performance metrics can be filtered by date range.
+# Dashboard loads successfully.
+
+----
+
+h2. Definition of Done
+
+��������� Performance dashboard implemented.
+
+��������� KPI calculations verified.
+
+��������� Charts displayed correctly.
+
+��������� Auto-refresh implemen"
+Generate Analytics Reports,TPS-96,"h2. User Story
+
+As an administrator,
+
+I want to generate analytical reports,
+
+So that I can analyze complaint trends, evaluate system performance, and support informed decision-making.
+
+----
+
+h2. Description
+
+Provide analytical reporting capabilities that summarize complaint data and operational performance over a selected period.
+
+The reports should help administrators identify trends and improve resource planning.
+
+The analytics reports should include:
+
+��������� Complaint Trends by Month
+
+��������� Complaints by Location
+
+��������� Complaints by Priority
+
+��������� Average Resolution Time
+
+��������� Complaint Closure Rate
+
+��������� Field Worker Performance Summary
+
+��������� Citizen Feedback Summary
+
+Reports should support filtering by:
+
+��������� Date Range
+
+��������� Complaint Status
+
+��������� Priority
+
+��������play charts and summary statistics.
+# Reports load successfully.
+
+----
+
+h2. Definition of Done
+
+��������� Analytics reports implemented.
+
+��������� Filters implemented.
+
+��������� Charts displayed correctly.
+
+��������� Data accuracy verif"
+View Dashboard,TPS-95,"h2. User Story
+
+As an administrator,
+
+I want to view a dashboard showing key complaint statistics,
+
+So that I can quickly monitor the overall performance of the Civic Services Platform and identify areas requiring attention.
+
+----
+
+h2. Description
+
+Provide an interactive dashboard that presents key performance indicators (KPIs) and complaint statistics in graphical and tabular formats.
+
+The dashboard should provide a real-time overview of complaint activities and operational performance.
+
+The dashboard should display:
+
+��������� Total Complaints
+
+��������� Open Complaints
+
+��������� Assigned Complaints
+
+��������� In Progress Complaints
+
+��������� Completed Complaints
+
+��������� Closed Complaints
+
+��������� High Priority Complaints
+
+��������� Average Resolution Time
+
+��������� Number of Active Field Workers
+
+��������� Recent Complainisplays charts and summary cards.
+# Dashboard data is updated automatically.
+# Dashboard loads successfully.
+# Dashboard is responsive on different screen sizes.
+
+----
+
+h2. Definition of Done
+
+��������� Dashboard implemented.
+
+��������� Statistics displayed correctly.
+
+��������� Charts rendered successfully.
+
+��������� Data refreshed correc"
+Receive Complaint Closure Notifications,TPS-94,"h2. User Story
+
+As a citizen,
+
+I want to receive a notification when my complaint is officially closed,
+
+So that I know the repair has been verified, completed successfully, and no further action is required.
+
+----
+
+h2. Description
+
+The system shall automatically notify citizens when their complaint has been verified by the administrator and officially closed.
+
+The notification should confirm that the repair work has been completed successfully and provide a summary of the completed complaint.
+
+The notification should include:
+
+��������� Complaint ID
+
+��������� Complaint Location
+
+��������� Complaint Closure Date
+
+��������� Final Complaint Status
+
+��������� Administrator Remarks (if available)
+
+��������� Link to submit feedback and rate the completed repair
+
+The notification should be available in the Notification Center.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen receives a notification after the complaa link to submit feedback.
+# Notification appears in the Notification Center.
+# Notification can be marked as read.
+
+----
+
+h2. Definition of Done
+
+��������� Complaint closure notification implemented.
+
+��������� Notification displayed correctly.
+
+��������� Feedback link included.
+
+��������� Read/Unread functionality implemen"
+Receive Assignment Notifications,TPS-93,"h2. User Story
+
+As a field worker,
+
+I want to receive notifications when a complaint is assigned to me,
+
+So that I can promptly review the assignment and begin the repair work.
+
+----
+
+h2. Description
+
+The system shall automatically notify field workers whenever a new complaint is assigned to them by an administrator.
+
+Each notification should provide sufficient information for the field worker to identify the assigned complaint and begin the repair process.
+
+The notification should include:
+
+��������� Complaint ID
+
+��������� Assignment Date and Time
+
+��������� Location
+
+��������� Complaint Priority
+
+��������� Expected Completion Date
+
+��������� Administrator Remarks (if available)
+
+The notification should appear in the Notification Center immediately after the assignment is made.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker receives a notification immediately after a complaint is assigned.
+# Notificatars in the Notification Center.
+# Notification can be marked as read.
+
+----
+
+h2. Definition of Done
+
+��������� Assignment notification implemented.
+
+��������� Notification displayed correctly.
+
+��������� Notification history maintained.
+
+��������� Read/Unread functionality implemen"
+Receive Complaint Status Notifications,TPS-92,"h2. User Story
+
+As a citizen,
+
+I want to receive notifications whenever the status of my complaint changes,
+
+So that I am informed about the progress of my complaint without having to check the application frequently.
+
+----
+
+h2. Description
+
+The system shall automatically generate notifications whenever the status of a complaint changes.
+
+Notifications should be sent for the following events:
+
+��������� Complaint Submitted
+
+��������� Under Review
+
+��������� Assigned to Field Worker
+
+��������� Repair Work Started
+
+��������� Repair Progress Updated
+
+��������� Repair Completed
+
+��������� Complaint Closed
+
+The notification should clearly indicate the complaint reference and the latest status update.
+
+----
+
+h2. Acceptance Criteria
+
+# Notifications are automatically generated when complaint status changes.
+# Notifications contain the Complaint ID and latest status.
+# Notifications are deliveas read.
+
+----
+
+h2. Definition of Done
+
+��������� Complaint status notifications implemented.
+
+��������� Notification history maintained.
+
+��������� Notifications displayed correctly.
+
+������"
+View Notifications,TPS-91,"h2. User Story
+
+As a registered user,
+
+I want to view all my notifications,
+
+So that I can stay informed about important updates related to my account and complaint activities.
+
+----
+
+h2. Description
+
+Provide a notification center where users can view all notifications generated by the Civic Services Platform.
+
+Notifications should include important system events such as:
+
+��������� Complaint Submitted
+
+��������� Complaint Assigned
+
+��������� Repair Work Started
+
+��������� Repair Progress Updated
+
+��������� Repair Completed
+
+��������� Complaint Closed
+
+Each notification should display:
+
+��������� Notification Title
+
+��������� Notification Message
+
+��������� Date and Time
+
+��������� Read/Unread Status
+
+Users should be able to view notification details and mark notifications as read.
+
+----
+
+h2. Acceptance Criteria
+
+# User can access tsuccessfully.
+
+----
+
+h2. Definition of Done
+
+��������� Notification Center implemented.
+
+��������� Notifications displayed correctly.
+
+��������� Read/Unread functionality implemented.
+
+������"
+View Work History,TPS-90,"h2. User Story
+
+As a field worker,
+
+I want to view my work history,
+
+So that I can review my assigned, completed, and pending repair tasks and monitor my work performance.
+
+----
+
+h2. Description
+
+Provide a work history page where field workers can view all complaints assigned to them, including completed, ongoing, and pending repair tasks.
+
+The work history should display:
+
+��������� Complaint ID
+
+��������� Assignment Date
+
+��������� Location
+
+��������� Priority
+
+��������� Current Status
+
+��������� Completion Date (if completed)
+
+��������� Repair Remarks
+
+The system should allow field workers to search, filter, and sort their work history for easy reference.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker can view all assigned and completed work.
+# Work history displays complete complaint information.
+# Field worker can search work history.
+# Field worker can filter work history by comp developed.
+
+��������� Search functionality implemented.
+
+��������� Filtering implemented.
+
+��������� Sorting implemented.
+
+������"
+Complete Repair Work,TPS-89,"h2. User Story
+
+As a field worker,
+
+I want to complete the assigned repair work and submit completion details,
+
+So that the administrator can verify the repair and close the complaint.
+
+----
+
+h2. Description
+
+Allow field workers to mark an assigned repair as completed after finishing the pothole repair work.
+
+The field worker should provide sufficient evidence to support the completion of the repair.
+
+The completion details should include:
+
+��������� Completion Date
+
+��������� Completion Time
+
+��������� Repair Remarks
+
+��������� One or More Completion Photographs
+
+��������� Final Repair Status
+
+After successful submission, the system should notify the administrator that the complaint is ready for verification.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker can mark an assigned complaint as completed.
+# Field worker can upload one or more completion photographs.
+# Field worker can enter repair remarks.
+# Completion date as to ""Completed"".
+
+----
+
+h2. Definition of Done
+
+��������� Repair completion implemented.
+
+��������� Completion photographs uploaded successfully.
+
+��������� Repair remarks stored.
+
+��������� Completion date and time recorded.
+
+��������� Administr"
+Update Repair Progress,TPS-88,"h2. User Story
+
+As a field worker,
+
+I want to update the progress of repair work,
+
+So that administrators and citizens can monitor the current status of the assigned complaint.
+
+----
+
+h2. Description
+
+Allow field workers to update the progress of assigned repair work throughout its lifecycle.
+
+The system should enable field workers to record progress updates whenever significant work has been completed.
+
+Progress updates may include:
+
+��������� Work Started
+
+��������� Repair In Progress
+
+��������� Temporary Delay (with reason)
+
+��������� Estimated Completion Date
+
+��������� Progress Remarks
+
+Each progress update should be recorded with the corresponding date and time.
+
+The latest progress should be visible to administrators and reflected in the citizen's complaint tracking page.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker can update the repair progress of assigned complaints.
+# Progress updates are successfully saved.ed complaint status.
+# Date and time of each update are recorded.
+
+----
+
+h2. Definition of Done
+
+��������� Progress update functionality implemented.
+
+��������� Progress history maintained.
+
+��������� Complaint status updated successfully.
+
+��������� Administrator and Citizen views upda"
+Accept Assigned Complaint,TPS-87,"h2. User Story
+
+As a field worker,
+
+I want to accept an assigned complaint,
+
+So that I can acknowledge responsibility for the repair work and begin resolving the reported pothole.
+
+----
+
+h2. Description
+
+Allow field workers to review newly assigned complaints and accept responsibility for carrying out the repair work.
+
+The system should record the acceptance along with the date and time. Once accepted, the complaint status should be updated and visible to the administrator.
+
+If necessary, the field worker may reject the assignment with a valid reason, allowing the administrator to reassign the complaint.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker can view newly assigned complaints.
+# Field worker can accept an assigned complaint.
+# System records the acceptance date and time.
+# Complaint status changes to ""Accepted"".
+# Administrator is notified when the complaint is accepted.
+# If the assignment is rejected, the reason is recorded and the administrator is notified.
+
+----
+
+h2. Definition of Done
+
+��������� Assignment acceptance implemented.
+
+��������� Complaint status updated successfully.
+
+��������� Acceptance history recorded.
+
+��������� Administrator notification implemen"
+View Assigned Complaints,TPS-86,"h2. User Story
+
+As a field worker,
+
+I want to view all complaints assigned to me,
+
+So that I can plan my work efficiently and begin repair activities on assigned potholes.
+
+----
+
+h2. Description
+
+Provide a dashboard where field workers can view all complaints assigned to them.
+
+The dashboard should display relevant information for each assigned complaint to help field workers prioritize and organize their daily work.
+
+The complaint list should include:
+
+��������� Complaint ID
+
+��������� Reported Date
+
+��������� Location
+
+��������� Road/Street Name
+
+��������� Complaint Priority
+
+��������� Current Status
+
+��������� Expected Completion Date
+
+The dashboard should allow field workers to search, filter, and sort assigned complaints.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker can view all assigned complaints.
+# Complaint list displays all required information.
+# Field worker can search ascessfully.
+
+----
+
+h2. Definition of Done
+
+��������� Assigned complaints dashboard implemented.
+
+��������� Search functionality implemented.
+
+��������� Filtering implemented.
+
+��������� Sorting implemen"
+Generate Administrative Reports,TPS-85,"h2. User Story
+
+As an administrator,
+
+I want to generate administrative reports,
+
+So that I can monitor complaint statistics, evaluate operational performance, and support informed decision-making.
+
+----
+
+h2. Description
+
+Provide reporting capabilities that allow administrators to generate reports on complaint management and repair activities.
+
+The system should generate reports based on complaint data and operational performance.
+
+The reports should include:
+
+��������� Total Complaints
+
+��������� Open Complaints
+
+��������� Assigned Complaints
+
+��������� In Progress Complaints
+
+��������� Completed Complaints
+
+��������� Closed Complaints
+
+��������� Average Resolution Time
+
+��������� Complaints by Priority
+
+��������� Complaints by Location
+
+��������� Field Worker Performance
+
+The system should allow reports to be filtered by date rang
+# Reports can be viewed on-screen.
+# Reports can be exported for future reference.
+
+----
+
+h2. Definition of Done
+
+��������� Report generation implemented.
+
+��������� Filters implemented.
+
+��������� Report export functionality implemented.
+
+��������� Report accuracy verif"
+Close Complaint,TPS-84,"h2. User Story
+
+As an administrator,
+
+I want to close a verified complaint,
+
+So that completed complaints are officially resolved and removed from the active work queue.
+
+----
+
+h2. Description
+
+Allow administrators to officially close a complaint after verifying that the repair work has been completed successfully.
+
+Only complaints that have been approved during the verification process should be eligible for closure.
+
+When a complaint is closed, the system should:
+
+��������� Update ""Closed""
+
+��������� Record the closure date and time
+
+��������� Notify the citizen that the complaint has been successfully resolved
+
+��������� Archive the complaint for future reference and reporting
+
+Closed complaints should become read-only and should not allow further operational updates.
+
+----
+
+h2. Acceptance Criteria
+
+# Administ""Closed"".
+# Closure date and time are recorded.
+# Citizen receives a complaint closure notification.
+# Closed complaints become read-only.
+# Closed complaints remain available for reporting and historical reference.
+
+----
+
+h2. Definition of Done
+
+��������� Complaint successfully closed.
+
+��������� Closure information recorded.
+
+��������� Citizen notification sent.
+
+��������� Complaint archi"
+Verify Complaint Resolution,TPS-83,"h2. User Story
+
+As an administrator,
+
+I want to verify that the reported pothole has been repaired successfully,
+
+So that I can ensure the complaint has been resolved according to municipal standards before closing it.
+
+----
+
+h2. Description
+
+Allow administrators to review completed repair work submitted by field workers before officially closing the complaint.
+
+The administrator should verify that the repair work meets quality standards using the completion details provided by the field worker.
+
+The verification should include:
+
+��������� Complaint ID
+
+��������� Repair Completion Date
+
+��������� Completion Photograph(s)
+
+��������� Field Worker's Remarks
+
+��������� Repair Status
+
+��������� Verification Status
+
+The administrator may either approve the repair or request additional work if the repair is unsatisfactory.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can review completed repair details.
+# And request rework.
+# Verification decision is recorded.
+# Complaint status is updated after verification.
+
+----
+
+h2. Definition of Done
+
+��������� Verification functionality implemented.
+
+��������� Completion details displayed.
+
+��������� Approval/Rejection process implemented.
+
+��������� Verification history recor"
+Monitor Complaint Progress,TPS-82,"h2. User Story
+
+As an administrator,
+
+I want to monitor the progress of assigned complaints,
+
+So that I can ensure repair work is progressing as planned and take timely action if delays occur.
+
+----
+
+h2. Description
+
+Provide administrators with the ability to monitor the progress of all assigned complaints throughout their lifecycle.
+
+The system should display real-time information about complaint progress, including assignment details, repair status, and expected completion dates.
+
+The monitoring dashboard should include:
+
+��������� Complaint ID
+
+��������� Complaint Status
+
+��������� Priority
+
+��������� Assigned Field Worker
+
+��������� Assignment Date
+
+��������� Expected Completion Date
+
+��������� Last Progress Update
+
+��������� Current Repair Status
+
+Administrators should be able to quickly identify overdue or delayed complaints and take corrective action.
+
+----
+
+h2 or delayed complaints are clearly identified.
+# Progress updates are refreshed whenever complaint status changes.
+# Monitoring dashboard loads successfully.
+
+----
+
+h2. Definition of Done
+
+��������� Complaint progress dashboard implemented.
+
+��������� Progress information displayed correctly.
+
+��������� Delayed complaints identified.
+
+������"
+Prioritize Complaints,TPS-81,"h2. User Story
+
+As an administrator,
+
+I want to prioritize reported complaints,
+
+So that urgent pothole issues are addressed first and municipal resources are utilized effectively.
+
+----
+
+h2. Description
+
+Allow administrators to assign a priority level to each complaint based on severity, location, public safety risk, and impact.
+
+The system should support the following priority levels:
+
+��������� High
+
+��������� Medium
+
+��������� Low
+
+The assigned priority should be visible to administrators and field workers and should assist in planning repair work.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can assign a priority to a complaint.
+# Administrator can modify the priority when necessary.
+# Priority is successfully saved.
+# Priority is displayed on complaint dashboards.
+# Field workers can view the assigned priority.
+# Priority changes are recorded in the complaint history.
+
+----
+
+h2. Definition of Done
+
+��������� Priority assignment iAudit history updated.
+
+��������� Unit testing completed.
+
+��������� Code revi"
+Assign Complaint to Field Worker,TPS-80,"h2. User Story
+
+As an administrator,
+
+I want to assign a reported complaint to a field worker,
+
+So that the repair work can be initiated and completed within the expected timeframe.
+
+----
+
+h2. Description
+
+Allow administrators to assign reported pothole complaints to available field workers based on workload, location, and availability.
+
+The system should display available field workers and allow the administrator to assign one to the selected complaint.
+
+The assignment information should include:
+
+��������� Complaint ID
+
+��������� Field Worker Name
+
+��������� Assignment Date
+
+��������� Estimated Completion Date
+
+��������� Assignment Status
+
+The assigned field worker should be notified immediately after the assignment.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can view available field workers.
+# Administrator ""Assigned"".
+# Assigned field worker receives a notification.
+# Assignment history is recorded.
+
+----
+
+h2. Definition of Done
+
+��������� Assignment functionality implemented.
+
+��������� Assignment stored successfully.
+
+��������� Notification triggered.
+
+��������� Complaint status upda"
+View Complaint Details,TPS-79,"h2. User Story
+
+As an administrator,
+
+I want to view the complete details of a reported complaint,
+
+So that I can verify the complaint information, assess its severity, and make appropriate decisions for further action.
+
+----
+
+h2. Description
+
+Provide administrators with a detailed view of every reported complaint.
+
+The complaint details should display all information submitted by the citizen along with administrative information required for complaint processing.
+
+The complaint details should include:
+
+��������� Complaint ID
+
+��������� Citizen Name
+
+��������� Complaint Date
+
+��������� Road/Street Name
+
+��������� Location
+
+��������� Complaint Description
+
+��������� Uploaded Photograph
+
+��������� Current Status
+
+��������� Priority
+
+��������� Assigned Field Worker (if assigned)
+
+��������� Complaint History
+
+���Uploaded photographs are displayed correctly.
+# Complaint history is visible.
+# Current complaint status and priority are displayed.
+# Complaint details load successfully without errors.
+
+----
+
+h2. Definition of Done
+
+��������� Complaint Details page developed.
+
+��������� Complaint information displayed correctly.
+
+��������� Complaint history displayed.
+
+������"
+View All Reported Complaints,TPS-78,"h2. User Story
+
+As an administrator,
+
+I want to view all reported complaints,
+
+So that I can monitor civic issues and manage complaint resolution efficiently.
+
+----
+
+h2. Description
+
+Provide a centralized complaint management dashboard where administrators can view all reported pothole complaints submitted by citizens.
+
+The dashboard should display complaint information in a structured manner and allow administrators to monitor complaint status and identify pending work.
+
+The complaint list should include:
+
+��������� Complaint ID
+
+��������� Reported Date
+
+��������� Citizen Name
+
+��������� Location
+
+��������� Current Status
+
+��������� Priority
+
+��������� Assigned Field Worker (if assigned)
+
+The system should support searching, filtering, and sorting complaints based on different criteria.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can view all reported complaints.
+# Complaint list nts.
+# Complaint data loads successfully.
+
+----
+
+h2. Definition of Done
+
+��������� Complaint dashboard implemented.
+
+��������� Search functionality implemented.
+
+��������� Filtering implemented.
+
+��������� Sorting implemen"
+Submit Feedback and Rate Repair,TPS-77,"h2. User Story
+
+As a citizen,
+
+I want to provide feedback and rate the completed repair work,
+
+So that I can share my satisfaction with the quality and timeliness of the service provided.
+
+----
+
+h2. Description
+
+Allow citizens to submit feedback and provide a rating after a pothole complaint has been marked as completed.
+
+The feedback helps the municipal authority evaluate the quality of repair work and improve future service delivery.
+
+The feedback form should include:
+
+��������� Rating (1 to 5 Stars)
+
+��������� Feedback Comments
+
+��������� Date of Submission
+
+Only completed complaints should allow feedback submission.
+
+Each complaint should accept feedback only once.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can submit feedback only for completed complaints.
+# Citizen can provide a rating between 1 and 5 stars.
+# Citizen can enter optional feedback comments.
+# Feedback is successfully saved.
+# Citizen cannot submit feedback more than once for the same co
+
+h2. Definition of Done
+
+��������� Feedback page developed.
+
+��������� Rating functionality implemented.
+
+��������� Feedback stored successfully.
+
+��������� Duplicate feedback preven"
+Receive Complaint Status Notifications,TPS-76,"h2. User Story
+
+As a citizen,
+
+I want to receive notifications whenever the status of my complaint changes,
+
+So that I remain informed about the progress of my complaint without having to check the system frequently.
+
+----
+
+h2. Description
+
+The system shall automatically notify citizens whenever there is a significant update to their complaint.
+
+Notifications should be generated when:
+
+��������� Complaint is successfully submitted.
+
+��������� Complaint is under review.
+
+��������� Complaint is assigned to a field worker.
+
+��������� Repair work has started.
+
+��������� Repair work has been completed.
+
+��������� Complaint has been closed.
+
+Notifications may be delivered through the application and may also support email or SMS if implemented.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen receives a notification after complaint submission.
+# Citizen receives notifications whenever the complaint status changes.
+#er receives notifications.
+# Notifications are displayed in chronological order.
+
+----
+
+h2. Definition of Done
+
+��������� Notification functionality implemented.
+
+��������� Notification history available.
+
+��������� Notification triggered for all status changes.
+
+������"
+Cancel Complaint,TPS-75,"h2. User Story
+
+As a citizen,
+
+I want to cancel my submitted complaint,
+
+So that I can withdraw complaints that are no longer valid or have been resolved before repair work begins.
+
+----
+
+h2. Description
+
+Allow citizens to cancel a complaint if it has not yet been assigned to a field worker.
+
+The system should verify the complaint status before allowing cancellation. Once cancelled, the complaint should no longer be considered for assignment or repair.
+
+Only the citizen who created the complaint can cancel it.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can cancel only their own complaints.
+# Complaint can be cancelled only before it is assigned to a field worker.
+# System asks for confirmation before cancellation.
+# Complaint status is updated to ""Cancelled"".
+# Cancelled complaints cannot be assigned for repair.
+# Citizen receives a confirmation message after successful cancellation.
+
+----
+
+h2. Definition of Done
+
+��������� Complaint cancellation implemented.
+
+��������� Business rules validated.
+
+��������� Complaint status updated successfully.
+
+��������� Authorization verif"
+Edit Complaint (Before Assignment),TPS-74,"h2. User Story
+
+As a citizen,
+
+I want to edit my submitted complaint before it is assigned to a field worker,
+
+So that I can correct any incorrect or incomplete information.
+
+----
+
+h2. Description
+
+Allow citizens to update the details of a submitted complaint as long as it has not been assigned to a field worker.
+
+The citizen should be able to modify:
+
+��������� Complaint Description
+
+��������� Road/Street Name
+
+��������� Pothole Location
+
+��������� Uploaded Photograph
+
+The system should prevent editing once the complaint has been assigned or work has started.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can edit only their own complaints.
+# Complaint can be edited only before assignment.
+# Updated information is saved successfully.
+# System records the last updated date and time.
+# Editing is disabled once the complaint is assigned.
+# Citizen receives a confirmation message after successful update.
+
+----
+
+h2. Definition of Done
+
+���
+#Audit information updated.
+
+��������� Unit testing completed.
+
+��������� Code revi"
+View Complaint Details,TPS-73,"h2. User Story
+
+As a citizen,
+
+I want to view the complete details of a reported complaint,
+
+So that I can verify the submitted information and monitor the progress of my complaint.
+
+----
+
+h2. Description
+
+Provide a detailed complaint information page that displays all information related to a selected complaint.
+
+The complaint details should include:
+
+��������� Complaint ID
+
+��������� Complaint Date
+
+��������� Road/Street Name
+
+��������� Location
+
+��������� Description
+
+��������� Uploaded Photograph
+
+��������� Complaint Status
+
+��������� Assigned Field Worker (if assigned)
+
+��������� Last Updated Date
+
+��������� Repair Completion Date (if completed)
+
+The system should ensure that only the owner of the complaint can access its complete details.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can open a complaint from the Complaint Historynition of Done
+
+��������� Complaint Details page developed.
+
+��������� Complaint information retrieved successfully.
+
+��������� Images displayed correctly.
+
+��������� Authorization verif"
+View Complaint History,TPS-72,"h2. User Story
+
+As a citizen,
+
+I want to view the history of all my submitted complaints,
+
+So that I can monitor my previous reports and their current status without submitting duplicate complaints.
+
+----
+
+h2. Description
+
+Provide a complaint history page where citizens can view all the complaints they have submitted through the Civic Services Platform.
+
+The complaint history should display important information for each complaint, allowing citizens to quickly identify the complaint and monitor its progress.
+
+The complaint history should display:
+
+��������� Complaint ID
+
+��������� Reported Date
+
+��������� Location
+
+��������� Complaint Status
+
+��������� Last Updated Date
+
+The complaint list should support sorting and filtering by complaint status.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can view all submitted complaints.
+# Complaint history displays Complaint ID, Location, Reported Date, Status and Last Updated Date.
+#  Only complaints belonging to the logged-in citizen are displayed.
+# Complaint history loads successfully without errors.
+
+----
+
+h2. Definition of Done
+
+��������� Complaint history page developed.
+
+��������� Complaint list displayed correctly.
+
+��������� Filtering implemented.
+
+��������� Authorization verif"
+Track Complaint Status,TPS-71,"h2. User Story
+
+As a citizen,
+
+I want to track the status of my reported complaint,
+
+So that I know the progress of the repair work and when the issue is expected to be resolved.
+
+----
+
+h2. Description
+
+Provide a complaint tracking facility that allows citizens to monitor the current status of their reported pothole complaints.
+
+The system should display the latest information about each complaint, including the current processing stage and important updates.
+
+The complaint status may include:
+
+��������� Submitted
+
+��������� Under Review
+
+��������� Assigned
+
+��������� In Progress
+
+��������� Completed
+
+��������� Closed
+
+The citizen should also be able to view important information related to the complaint, such as the complaint ID, submission date, assigned field worker (if applicable), and completion date.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can view all submitted complaints.
+# Citizen can select nt history is available until the complaint is closed.
+# Only the complaint owner can view the complaint details.
+
+----
+
+h2. Definition of Done
+
+��������� Complaint tracking page implemented.
+
+��������� Status information displayed correctly.
+
+��������� Complaint details retrieved successfully.
+
+��������� Access control verif"
+Report a Pothole,TPS-70,"h2. User Story
+
+As a citizen,
+
+I want to report a pothole by submitting its details,
+
+So that the municipal authority can repair it promptly and improve road safety.
+
+----
+
+h2. Description
+
+Provide a complaint reporting facility that allows citizens to submit pothole complaints through the Civic Services Platform.
+
+The complaint should capture all necessary information required for municipal authorities to verify, prioritize, and assign repair work.
+
+The complaint should include:
+
+��������� Pothole Location
+
+��������� Road/Street Name
+
+��������� Description
+
+��������� Photograph
+
+��������� Date and Time
+
+��������� GPS Coordinates (if available)
+
+After successful submission, the system should generate a unique Complaint ID for future tracking.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can access the Report Pothole page.
+# Citizen can enter all mandatory complaint details.
+# System validates mandatory fieccessful submission.
+
+----
+
+h2. Definition of Done
+
+��������� Complaint form developed.
+
+��������� Complaint successfully stored.
+
+��������� Complaint ID generated.
+
+��������� Validation comple"
+User Logout,TPS-69,"h2. User Story
+
+As a registered user,
+
+I want to securely log out of the Civic Services Platform,
+
+So that my account remains protected and unauthorized users cannot access my session.
+
+----
+
+h2. Description
+
+Implement a secure logout functionality for all authenticated users of the Civic Services Platform.
+
+The logout functionality should terminate the active user session and redirect the user to the login page. After logout, users must not be able to access protected pages using the browser's Back button or previously stored session information.
+
+This functionality should be available to:
+
+��������� Citizen
+
+��������� Administrator
+
+��������� Field Worker
+
+----
+
+h2. Acceptance Criteria
+
+# Authenticated users can log out successfully.
+# User session is terminated after logout.
+# User is redirected to the login page.
+# Protected pages cannot be accessed after logout.
+# Browser back navigation does not restore an authenticated session.
+# Logout functionalitnctionality implemented.
+
+��������� Session termination verified.
+
+��������� Redirect to login page implemented.
+
+��������� Security testing completed.
+
+������"
+Implement Role-Based Access Control (RBAC),TPS-68,"h2. User Story
+
+As a system administrator,
+
+I want the system to enforce role-based access control,
+
+So that citizens, administrators, and field workers can access only the features and information that are authorized for their roles.
+
+----
+
+h2. Description
+
+Implement Role-Based Access Control (RBAC) for the Civic Services Platform to ensure secure and controlled access to application features based on user roles.
+
+The system shall support the following roles:
+
+��������� Citizen
+
+��������� Administrator
+
+��������� Field Worker
+
+The system shall verify user roles after successful authentication and allow access only to authorized pages and operations.
+
+Role permissions include:
+
+Citizen
+��������� Register
+��������� Login
+��������� Report potholes
+��������� Track complaint status
+��������� View complaint history
+��������� Submit feedback
+
+Administrator repair progress
+��������� Upload repair completion details
+��������� Mark assigned work as completed
+
+Unauthorized users must not be allowed to access restricted pages or perform unauthorized operations.
+
+----
+
+h2. Acceptance Criteria
+
+# System supports Citizen, Administrator, and Field Worker roles.
+# Users are assigned the correct role after successful login.
+# Each role can access only its authorized features.
+# Unauthorized page access is blocked.
+# Role-based navigation menus are displayed correctly.
+# Role permissions are verified for protected operations.
+
+----
+
+h2. Definition of Done
+
+��������� User roles implemented.
+
+��������� Authorization rules configured.
+
+��������� Protected pages secured.
+
+��������� Role-based navi"
+Field Worker Login,TPS-67,"h2. User Story
+
+As a field worker,
+
+I want to log into the Civic Services Platform,
+
+So that I can view my assigned repair tasks, update repair progress, and mark completed work efficiently.
+
+----
+
+h2. Description
+
+Develop a secure login functionality for field workers. The system should authenticate field workers using their authorized credentials and provide access to the Field Worker Dashboard upon successful authentication.
+
+The login process should ensure that only authorized field workers can access assigned repair tasks and update complaint statuses.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker can access the login page.
+# Field worker can log in using valid credentials.
+# Invalid login credentials display an appropriate error message.
+# Authenticated field workers are redirected to the Field Worker Dashboard.
+# Unauthorized users cannot access field worker functions.
+# Field worker session is created after successful authentication.
+
+----
+
+h2. Definition of Done
+
+��������� Field wo implemented.
+
+��������� Authentication validated.
+
+��������� Session management implemented.
+
+��������� Role-based authorization verified.
+
+������"
+Administrator Login,TPS-66,"h2. User Story
+
+As an administrator,
+
+I want to log into the Civic Services Platform,
+
+So that I can manage complaints, assign repair tasks, monitor complaint progress, generate reports, and administer the platform securely.
+
+----
+
+h2. Description
+
+Develop a secure login functionality for administrators. The system should authenticate administrators using their authorized credentials and provide access to the Administrator Dashboard upon successful authentication.
+
+The login process should ensure that only authorized administrators can access administrative features and sensitive system information.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can access the login page.
+# Administrator can log in using valid credentials.
+# Invalid login credentials display an appropriate error message.
+# Authenticated administrators are redirected to the Administrator Dashboard.
+# Unauthorized users cannot access administrator functions.
+# Administrator session is created after successful authentication.
+
+----
+
+h2. Definition of Done
+
+��������� Administrator login functionality implemented.
+
+��������� Authentication validated.
+
+��������� Session management implemented.
+
+��������� Role-based authorization verif"
+Citizen Login,TPS-65,"h2. User Story
+
+As a citizen,
+
+I want to log into the Civic Services Platform,
+
+So that I can securely access my dashboard, submit complaints, track complaint status, and manage my account.
+
+----
+
+h2. Description
+
+Develop a secure login functionality for registered citizens. The system should authenticate users using their registered credentials and provide access to the citizen dashboard upon successful authentication.
+
+The login process should support secure authentication and provide appropriate error messages for invalid login attempts.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can access the login page.
+# Citizen can log in using a valid email address and password.
+# Invalid login credentials display an appropriate error message.
+# Authenticated users are redirected to the Citizen Dashboard.
+# Unauthorized users cannot access protected pages.
+# User session is created after successful authentication.
+
+----
+
+h2. Definition of Done
+
+��������� Login functionality implemented.
+
+����rror handling completed.
+
+��������� Session management implemented.
+
+��������� Unit testing completed.
+
+�����"
+Citizen Registration,TPS-64,"h2. User Story
+
+As a citizen,
+
+I want to create an account,
+
+So that I can securely access the platform and manage my complaints.
+
+----
+
+h2. Description
+
+Develop the citizen registration functionality that allows new users to create an account in the Civic Services Platform.
+
+The registration process should collect the necessary user information and validate the entered data before creating the account.
+
+The registration form should include:
+
+��������� Full Name
+
+��������� Email Address
+
+��������� Mobile Number
+
+��������� Password
+
+��������� Confirm Password
+
+The system should validate user input and prevent duplicate registrations using the same email address.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can access the registration page.
+# Mandatory fields are validated.
+# Email address must be unique.
+# Password and Confirm Password must match.
+# Citizen account is successfully created.
+# Success message is displayed afted.
+
+��������� Database table updated.
+
+��������� Input validation completed.
+
+��������� Unit testing completed.
+
+�������"
+Set Up Backend Project,TPS-63,"h2. User Story
+
+As a development team,
+
+I want to set up the backend project for the Civic Services Platform,
+
+So that the team has a standardized, scalable, and maintainable backend foundation for implementing business functionality.
+
+----
+
+h2. Description
+
+Initialize the backend application using the selected technology stack and configure the project structure according to the agreed architecture.
+
+The backend setup should include:
+
+��������� Project initialization
+
+��������� Layered project structure
+
+��������� REST API configuration
+
+��������� Database connectivity configuration
+
+��������� Environment configuration
+
+��������� Logging configuration
+
+��������� Global exception handling
+
+��������� API documentation framework
+
+��������� Source code version control
+
+The project structure should support future development of authentication, complaint igured.
+# REST API framework is configured.
+# API documentation is enabled.
+# Project builds and runs successfully.
+# Source code is committed to the Git repository.
+
+----
+
+h2. Definition of Done
+
+��������� Backend project initialized.
+
+��������� Project structure completed.
+
+��������� Database connectivity configured.
+
+��������� API documentat"
+Set Up Frontend Project,TPS-62,"h2. User Story
+
+As a development team,
+
+I want to set up the frontend project for the Civic Services Platform,
+
+So that the team has a standardized and scalable foundation for developing the user interface.
+
+----
+
+h2. Description
+
+Initialize the frontend application using the selected framework and configure the project structure for future development.
+
+The frontend setup should include:
+
+��������� React project initialization
+
+��������� Project folder structure
+
+��������� React Router configuration
+
+��������� Bootstrap or CSS framework setup
+
+��������� Common layout components
+
+��������� Environment configuration
+
+��������� Code formatting and linting
+
+��������� Basic navigation structure
+
+The project should be structured to support Citizens, Administrators, and Field Workers while following modular development practices.
+
+----
+
+h2. Acceptance Criteria
+
+# Frontend pccessfully without errors.
+# Source code is committed to the Git repository.
+
+----
+
+h2. Definition of Done
+
+��������� Frontend project initialized.
+
+��������� Folder structure completed.
+
+��������� Navigation configured.
+
+��������� Project builds successf"
+Set Up Git Repository and Branch Strategy,TPS-61,"h2. User Story
+
+As a development team,
+
+I want to establish a Git repository and define a branch management strategy,
+
+So that team members can collaborate efficiently, manage source code consistently, and reduce merge conflicts during development.
+
+----
+
+h2. Description
+
+Set up the Git repository for the Civic Services Platform and establish a branching strategy for collaborative development.
+
+The repository should include:
+
+��������� Main branch
+
+��������� Develop branch
+
+��������� Feature branches
+
+��������� Bugfix branches
+
+��������� Project folder structure
+
+��������� README file
+
+��������� .gitignore file
+
+The branching strategy should define how developers create, review, merge, and maintain code throughout the project lifecycle.
+
+----
+
+h2. Acceptance Criteria
+
+# Git repository is created.
+# Branching strategy is documented.
+# Initial project folder structure is created.
+# READMranch strategy documented.
+
+��������� README committed.
+
+��������� Repository shared with all team members.
+
+��"
+Design Application Navigation Flow,TPS-60,"h2. User Story
+
+As a development team,
+
+I want to design the navigation flow of the Civic Services Platform,
+
+So that users can navigate between pages efficiently and developers have a clear roadmap for implementing the application's user interface.
+
+----
+
+h2. Description
+
+Design the navigation flow for the Civic Services Platform by defining how users move between different screens based on their roles and permissions.
+
+The navigation design should include separate navigation flows for:
+
+��������� Citizen
+��������� Administrator
+��������� Field Worker
+
+The navigation flow should cover:
+
+��������� Login
+��������� Dashboard
+��������� Report Complaint
+��������� Complaint History
+��������� Complaint Details
+��������� Assigned Complaints
+��������� Complaint Management
+��������� Reports
+��������� Feedbavigation design is reviewed by all team members.
+# Navigation flow is approved before frontend development begins.
+
+----
+
+h2. Definition of Done
+
+��������� Navigation flow diagrams completed.
+
+��������� Page transitions documented.
+
+��������� Reviewed by all team members.
+
+����"
+Design User Interface (UI) Wireframes,TPS-59,"h2. User Story
+
+As a development team,
+
+I want to design user interface wireframes for the Civic Services Platform,
+
+So that all stakeholders have a clear understanding of the application's layout, navigation, and user interactions before frontend development begins.
+
+----
+
+h2. Description
+
+Design low-fidelity wireframes for all major screens of the Civic Services Platform.
+
+The wireframes should define the layout, navigation flow, and user interactions for each type of user.
+
+The wireframes should include:
+
+��������� Login Page
+
+��������� Citizen Dashboard
+
+��������� Report Pothole Page
+
+��������� Complaint History Page
+
+��������� Complaint Details Page
+
+��������� Administrator Dashboard
+
+��������� Complaint Management Page
+
+��������� Field Worker Dashboard
+
+��������� Assigned Complaint Page
+
+��������� Feedback Page
+
+The wireframesface layouts are consistent.
+# Wireframes are reviewed by all team members.
+# Wireframes are approved before frontend development begins.
+
+----
+
+h2. Definition of Done
+
+��������� Wireframes completed.
+
+��������� Navigation flow documented.
+
+��������� Reviewed by all team members.
+
+����"
+Design UML Class Diagram,TPS-58,"h2. User Story
+
+As a development team,
+
+I want to design the UML class diagram for the Civic Services Platform,
+
+So that the structure of the software, including classes, attributes, methods, and relationships, is clearly defined before implementation begins.
+
+----
+
+h2. Description
+
+Design the UML class diagram for the Civic Services Platform based on the functional requirements, user stories, and database design.
+
+The class diagram should represent the major classes of the system, including their attributes, methods, and relationships.
+
+The diagram should include the following major classes:
+
+��������� Citizen
+��������� Administrator
+��������� FieldWorker
+��������� Complaint
+��������� ComplaintAssignment
+��������� ComplaintStatus
+��������� Feedback
+��������� Notification
+��������� UserAuthentication
+
+The class diagram should clearly represent:
+
+�s system architecture.
+
+----
+
+h2. Acceptance Criteria
+
+# Major classes are identified.
+# Attributes and methods are defined for each class.
+# Relationships between classes are represented correctly.
+# Multiplicity is specified wherever applicable.
+# The class diagram is reviewed and approved by all team members.
+
+----
+
+h2. Definition of Done
+
+��������� UML Class Diagram completed.
+
+��������� Class relationships verified.
+
+��������� Reviewed by all team members.
+
+����"
+Create Entity Relationship (ER) Diagram,TPS-57,"h2. User Story
+
+As a development team,
+
+I want to create an Entity Relationship (ER) diagram for the Civic Services Platform,
+
+So that all database entities, relationships, and constraints are clearly visualized before database implementation.
+
+----
+
+h2. Description
+
+Create a comprehensive Entity Relationship (ER) diagram representing the database structure of the Civic Services Platform.
+
+The ER diagram should include:
+
+��������� User Entity
+��������� Complaint Entity
+��������� Field Worker Entity
+��������� Administrator Entity
+��������� Complaint Assignment Entity
+��������� Complaint Status Entity
+��������� Feedback Entity
+��������� Notification Entity
+
+The diagram should clearly represent:
+
+��������� Primary Keys
+��������� Foreign Keys
+��������� One-to-One Relationships
+��������� One-to-Many Reied.
+# Relationships between entities are clearly defined.
+# Primary and foreign keys are shown.
+# Relationship cardinalities are correctly represented.
+# ER diagram is reviewed and approved by all team members.
+
+----
+
+h2. Definition of Done
+
+��������� ER Diagram completed.
+
+��������� Entity relationships validated.
+
+��������� Reviewed by all team members.
+
+����"
+Design Database Schema,TPS-56,"h2. User Story
+
+As a development team,
+
+I want to design the database schema for the Civic Services Platform,
+
+So that all application data is stored efficiently, maintains data integrity, and supports future system scalability.
+
+----
+
+h2. Description
+
+Design the logical database schema for the Civic Services Platform based on the identified user requirements and system components.
+
+The database schema should define:
+
+��������� Tables
+��������� Primary Keys
+��������� Foreign Keys
+��������� Relationships
+��������� Constraints
+��������� Indexes
+
+The schema should support all major system modules including:
+
+��������� User Management
+��������� Complaint Management
+��������� Field Worker Management
+��������� Complaint Assignment
+��������� Complaint Status Tracking
+��������� Feedback Management
+��e# Constraints and indexes are documented.
+# Database schema is reviewed and approved by the project team.
+
+----
+
+h2. Definition of Done
+
+��������� Database schema completed.
+
+��������� Table relationships documented.
+
+��������� Keys and constraints defined.
+
+��������� Reviewed by all t"
+Design Component Architecture,TPS-55,"h2. User Story
+
+As a development team,
+
+I want to design the major software components of the Civic Services Platform,
+
+So that each module has clearly defined responsibilities and interactions, enabling independent development, testing, and future maintenance.
+
+----
+
+h2. Description
+
+Design the major components of the Civic Services Platform and define their responsibilities, interfaces, and interactions.
+
+The component design should include:
+
+��������� User Interface Component
+��������� Authentication Component
+��������� Complaint Management Component
+��������� Administrator Component
+��������� Field Worker Component
+��������� Notification Component
+��������� Reporting Component
+��������� Database Component
+
+The component architecture should clearly define communication between modules and ensure loose coupling and high cohesion.
+
+----
+
+h2. Acceptance Criteria
+
+# Coent dependencies are documented.
+# Component design is reviewed and approved by all team members.
+
+----
+
+h2. Definition of Done
+
+��������� Component diagram completed.
+
+��������� Component documentation prepared.
+
+��������� Reviewed by all team members.
+
+����"
+Design Overall System Architecture,TPS-53,"h2. User Story
+
+As a development team,
+
+I want to design the overall system architecture of the Civic Services Platform,
+
+So that all team members have a clear technical blueprint for developing a scalable, maintainable, and well-integrated application.
+
+----
+
+h2. Description
+
+The overall architecture will define the major software components, their responsibilities, communication mechanisms, and deployment structure.
+
+The architecture should include:
+
+��������� Frontend Application
+��������� Backend REST API
+��������� Database
+��������� Authentication Module
+��������� Complaint Management Module
+��������� Administrator Module
+��������� Field Worker Module
+��������� Notification Module
+��������� Reporting Module
+
+----
+
+h2. Acceptance Criteria
+
+# High-level architecture diagram is completed.
+# Major software components are identified.
+# Component intempleted.
+
+��������� Architecture diagram prepared.
+
+��������� Reviewed by all team members.
+
+��������� Upload"
+Administrator Hierarchy: System & Municipal Administrators,TPS-ADD-1,"h2. Objective
+
+Split the single ""administrator"" role into two operating levels so a platform-wide System Administrator and a city-scoped Municipal Administrator can both manage complaints without a new database role.
+
+----
+
+h2. Description
+
+As a System Administrator,
+I want to create, view, and disable Municipal Administrator accounts and see complaints/reports across every city,
+So that I can delegate day-to-day complaint handling to city-level staff while retaining global oversight.
+
+As a Municipal Administrator,
+I want to be scoped to exactly one city for complaints, field workers, and reports,
+So that I only see and act on the data relevant to my own municipality.
+
+Implemented via a new administrator_profiles table (admin_level: system|municipal, city_id, created_by_id) composed onto the existing User model — no 4th role was added. Backed by require_admin_level/require_system_admin/require_municipal_admin RBAC decorators.
+
+----
+
+h2. Deliverables
+
+* administrator_profiles table + migration
+* GET/POST /admin/municipal-administrators, GET/PUT/DELETE /admin/municipal-administrators/{id}
+* City-scoping enforced on /admin/complaints, /admin/field-workers, /reports/*
+* Municipal Administrators page (system-admin-only) in the frontend
+
+----
+
+h2. Acceptance Criteria
+
+# System Administrator can register a Municipal Administrator with exactly one city.
+# Municipal Administrators cannot self-register.
+# Municipal Administrators only see/act on complaints, field workers, and reports for their own city.
+# System Administrators remain unscoped across all cities.
+# No new row is added to the roles table; both levels share the administrator role."
+City & Pincode Master Data + Public Locations API,TPS-ADD-2,"h2. Objective
+
+Give citizens a pincode-first location experience instead of a free-text address field, and give administrators a city master table to scope onboarding and reporting against.
+
+----
+
+h2. Description
+
+As a Citizen,
+I want to type my 6-digit pincode and have the city auto-resolve (or be prompted to choose when a pincode maps to more than one city),
+So that I do not have to manually type my city name and city data stays consistent platform-wide.
+
+As a System Administrator,
+I want a cities master table populated from a CSV import,
+So that Municipal Administrator onboarding and complaint routing use consistent city records instead of free text.
+
+----
+
+h2. Deliverables
+
+* cities and city_pincodes tables + migrations
+* flask import-pincodes CLI command (loads database/pincode.csv, --replace to rebuild)
+* Public /api/v1/locations namespace (no JWT required): pincode lookup, city autosuggest, pincode autocomplete, reverse-geocode, landing-page overview stats, public complaint map pins
+
+----
+
+h2. Acceptance Criteria
+
+# GET /locations/pincode/{pincode} returns match_count so the UI can block/auto-select/prompt.
+# GET /locations/cities and /locations/pincodes support autosuggest/autocomplete.
+# flask import-pincodes is idempotent by default and supports a --replace flag to rebuild.
+# All /locations/* endpoints are public (no authentication required)."
+Mandatory Photo-First Pothole Reporting with Map Pin,TPS-ADD-3,"h2. Objective
+
+Narrow the product scope to pothole-only reporting and require a photo plus a map pin at submission time, instead of an optional photo and free-text address.
+
+----
+
+h2. Description
+
+As a Citizen,
+I want to be required to attach a photo and drop a map pin when reporting a pothole,
+So that administrators and field workers receive verifiable, precisely-located reports instead of ambiguous text descriptions.
+
+----
+
+h2. Deliverables
+
+* Mandatory image_url on complaint submission (upload-then-reference pattern, instance/uploads/complaints/)
+* Map pin capture (latitude/longitude) surfaced on the citizen report form and on admin/field-worker complaint detail views
+* Public complaint-pins endpoint for the landing-page map
+
+----
+
+h2. Acceptance Criteria
+
+# A complaint cannot be submitted without a photo.
+# A complaint cannot be submitted without a map pin (latitude/longitude).
+# The uploaded photo is retrievable by URL from the citizen, admin, and field-worker views.
+# The public landing page displays a map of reported complaint locations."
+Administrator-Driven Password Reset & Email Update,TPS-ADD-4,"h2. Objective
+
+Give System and Municipal Administrators a way to reset a forgotten password or correct an email address for the accounts they manage, without requiring SMTP/email infrastructure.
+
+----
+
+h2. Description
+
+As a System Administrator,
+I want to reset a Municipal Administrator's or a Citizen's password and correct their email address,
+So that a locked-out user can regain access without needing a self-service email flow that the platform does not yet support.
+
+As a Municipal Administrator,
+I want to reset a Field Worker's (or my own city's Citizens') password and correct their email address,
+So that I can support my team directly.
+
+----
+
+h2. Deliverables
+
+* Optional email/password/confirm_password fields added to PUT /admin/users/{id}, PUT /admin/field-workers/{id}, PUT /admin/municipal-administrators/{id}
+* /admin/users (list/get/put) opened to Municipal Administrators, scoped server-side to citizens in their own city
+* Separate ""Edit Details"" and ""Reset Password"" actions in the frontend (Citizens.vue, MunicipalAdministrators.vue, FieldWorkers.vue)
+
+----
+
+h2. Acceptance Criteria
+
+# A System Administrator can reset any user's password and it takes effect on next login.
+# A System Administrator can change a Municipal Administrator's or Citizen's email (unique, conflict returns 409).
+# A Municipal Administrator can reset a Field Worker's password and change their email, scoped to their own city.
+# A Municipal Administrator can view, edit, and reset the password of Citizens in their own city only (404 outside their city).
+# ""Edit Details"" and ""Reset Password"" are two separate actions/buttons in the UI, not one combined form."

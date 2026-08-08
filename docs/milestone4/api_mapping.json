@@ -1,0 +1,730 @@
+{
+  "/api/v1/admin/assignments": {
+    "description": "Monitor field worker assignment progress and overdue deadlines",
+    "errors": {
+      "401": "Unauthorised",
+      "403": "Forbidden"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-82"
+    ]
+  },
+  "/api/v1/admin/cities": {
+    "description": "List cities (for municipal administrator onboarding)",
+    "errors": {},
+    "methods": [
+      "GET"
+    ],
+    "note": "Added beyond baseline scope (Administrator Hierarchy) \u2014 no corresponding Jira TPS story",
+    "stories": []
+  },
+  "/api/v1/admin/complaints": {
+    "description": "List all complaints (city-scoped for municipal admins)",
+    "errors": {
+      "401": "Unauthorised",
+      "403": "Forbidden"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-80",
+      "TPS-81"
+    ]
+  },
+  "/api/v1/admin/complaints/{complaint_id}": {
+    "description": "View/update complaint status & priority",
+    "errors": {
+      "404": "Not found",
+      "422": "Validation error"
+    },
+    "methods": [
+      "GET",
+      "PUT"
+    ],
+    "stories": [
+      "TPS-80",
+      "TPS-81",
+      "TPS-82",
+      "TPS-83",
+      "TPS-84"
+    ]
+  },
+  "/api/v1/admin/complaints/{complaint_id}/assign": {
+    "description": "Assign complaint to a field worker",
+    "errors": {
+      "400": "Business rule violation",
+      "422": "Validation error"
+    },
+    "methods": [
+      "POST"
+    ],
+    "stories": [
+      "TPS-52"
+    ]
+  },
+  "/api/v1/admin/complaints/{complaint_id}/verify": {
+    "description": "Approve or request rework on a field worker's repair completion",
+    "errors": {
+      "400": "Business rule violation",
+      "409": "Repair completion already verified",
+      "422": "Validation error"
+    },
+    "methods": [
+      "POST"
+    ],
+    "stories": [
+      "TPS-83"
+    ]
+  },
+  "/api/v1/admin/dashboard": {
+    "description": "Administrator dashboard: totals, status chart, and 9 performance KPIs",
+    "errors": {},
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-35",
+      "TPS-95",
+      "TPS-97"
+    ]
+  },
+  "/api/v1/admin/field-workers": {
+    "description": "List / create field workers (municipal admin only)",
+    "errors": {
+      "400": "Business rule violation",
+      "409": "Conflict",
+      "422": "Validation error"
+    },
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "stories": [
+      "TPS-27"
+    ]
+  },
+  "/api/v1/admin/field-workers/{user_id}": {
+    "description": "View/update/deactivate a field worker. Also supports password reset and email change (new in Milestone 4).",
+    "errors": {
+      "404": "Not found",
+      "422": "Validation error",
+      "409": "Email already in use by another account"
+    },
+    "methods": [
+      "DELETE",
+      "GET",
+      "PUT"
+    ],
+    "stories": [
+      "TPS-27"
+    ]
+  },
+  "/api/v1/admin/municipal-administrators": {
+    "description": "List / create municipal administrators (system admin only)",
+    "errors": {
+      "400": "Business rule violation",
+      "409": "Conflict",
+      "422": "Validation error"
+    },
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "note": "Added beyond baseline scope (Administrator Hierarchy) \u2014 no corresponding Jira TPS story",
+    "stories": []
+  },
+  "/api/v1/admin/municipal-administrators/{user_id}": {
+    "description": "View/update/disable a municipal administrator. Also supports password reset and email change (new in Milestone 4).",
+    "errors": {
+      "400": "Business rule violation",
+      "404": "Not found",
+      "422": "Validation error",
+      "409": "Email already in use by another account"
+    },
+    "methods": [
+      "DELETE",
+      "GET",
+      "PUT"
+    ],
+    "note": "Added beyond baseline scope (Administrator Hierarchy) \u2014 no corresponding Jira TPS story",
+    "stories": []
+  },
+  "/api/v1/admin/settings": {
+    "description": "View/update platform-wide system settings",
+    "errors": {
+      "422": "Validation error"
+    },
+    "methods": [
+      "GET",
+      "PUT"
+    ],
+    "stories": [
+      "TPS-99"
+    ]
+  },
+  "/api/v1/admin/users": {
+    "description": "List platform users. System admins: unscoped, any role filter. Municipal admins (new in Milestone 4): role filter forced to citizen, scoped to their own city.",
+    "errors": {},
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-33"
+    ]
+  },
+  "/api/v1/admin/users/{user_id}": {
+    "description": "View/update a user's profile, active status, email, or password (password reset \u2014 new in Milestone 4). Municipal admins may only target citizens in their own city.",
+    "errors": {
+      "404": "Not found",
+      "422": "Validation error",
+      "409": "Email already in use by another account"
+    },
+    "methods": [
+      "GET",
+      "PUT"
+    ],
+    "stories": [
+      "TPS-33"
+    ]
+  },
+  "/api/v1/auth/change-password": {
+    "description": "Change own password",
+    "errors": {
+      "400": "Current password incorrect",
+      "422": "Validation error"
+    },
+    "methods": [
+      "POST"
+    ],
+    "stories": [
+      "TPS-2"
+    ]
+  },
+  "/api/v1/auth/login": {
+    "description": "User login and JWT token issuance",
+    "errors": {
+      "401": "Invalid credentials",
+      "422": "Validation error"
+    },
+    "methods": [
+      "POST"
+    ],
+    "stories": [
+      "TPS-2"
+    ]
+  },
+  "/api/v1/auth/logout": {
+    "description": "User logout",
+    "errors": {
+      "401": "Unauthorised"
+    },
+    "methods": [
+      "POST"
+    ],
+    "stories": [
+      "TPS-2"
+    ]
+  },
+  "/api/v1/auth/me": {
+    "description": "Get/update current user profile",
+    "errors": {
+      "401": "Unauthorised",
+      "422": "Validation error"
+    },
+    "methods": [
+      "GET",
+      "PUT"
+    ],
+    "stories": [
+      "TPS-2"
+    ]
+  },
+  "/api/v1/auth/me/avatar": {
+    "description": "Upload profile avatar photo",
+    "errors": {
+      "400": "Invalid photo upload"
+    },
+    "methods": [
+      "POST"
+    ],
+    "stories": [
+      "TPS-2"
+    ]
+  },
+  "/api/v1/auth/me/avatar/{filename}": {
+    "description": "Serve uploaded avatar photo",
+    "errors": {},
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-2"
+    ]
+  },
+  "/api/v1/auth/refresh": {
+    "description": "Refresh JWT access token",
+    "errors": {
+      "401": "Invalid or expired refresh token"
+    },
+    "methods": [
+      "POST"
+    ],
+    "stories": [
+      "TPS-2"
+    ]
+  },
+  "/api/v1/auth/register": {
+    "description": "User registration",
+    "errors": {
+      "409": "Email or username already taken",
+      "422": "Validation error"
+    },
+    "methods": [
+      "POST"
+    ],
+    "stories": [
+      "TPS-1"
+    ]
+  },
+  "/api/v1/citizen/complaints": {
+    "description": "Submit complaint (POST) / list own complaints (GET)",
+    "errors": {
+      "422": "Validation error"
+    },
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "stories": [
+      "TPS-3",
+      "TPS-4"
+    ]
+  },
+  "/api/v1/citizen/complaints/media": {
+    "description": "Upload complaint photo evidence",
+    "errors": {
+      "400": "Invalid photo upload"
+    },
+    "methods": [
+      "POST"
+    ],
+    "stories": [
+      "TPS-3"
+    ]
+  },
+  "/api/v1/citizen/complaints/media/{filename}": {
+    "description": "Serve uploaded complaint photo",
+    "errors": {},
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-3"
+    ]
+  },
+  "/api/v1/citizen/complaints/{complaint_id}": {
+    "description": "View/edit pending complaint (PUT), cancel complaint (DELETE)",
+    "errors": {
+      "400": "Cannot cancel \u2014 not pending",
+      "404": "Not found",
+      "422": "Validation error"
+    },
+    "methods": [
+      "DELETE",
+      "GET",
+      "PUT"
+    ],
+    "stories": [
+      "TPS-5",
+      "TPS-75"
+    ]
+  },
+  "/api/v1/citizen/complaints/{complaint_id}/feedback": {
+    "description": "Submit citizen feedback on a resolved/closed complaint",
+    "errors": {
+      "400": "Business rule violation",
+      "422": "Validation error"
+    },
+    "methods": [
+      "POST"
+    ],
+    "stories": [
+      "TPS-59"
+    ]
+  },
+  "/api/v1/citizen/dashboard": {
+    "description": "Citizen dashboard summary",
+    "errors": {
+      "401": "Unauthorised"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-10"
+    ]
+  },
+  "/api/v1/fieldworker/assignments": {
+    "description": "List assigned complaints, with filters/sort",
+    "errors": {
+      "401": "Unauthorised"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-42",
+      "TPS-86",
+      "TPS-90"
+    ]
+  },
+  "/api/v1/fieldworker/assignments/media": {
+    "description": "Upload repair-completion evidence photo",
+    "errors": {
+      "400": "Invalid photo upload"
+    },
+    "methods": [
+      "POST"
+    ],
+    "stories": [
+      "TPS-89"
+    ]
+  },
+  "/api/v1/fieldworker/assignments/media/{filename}": {
+    "description": "Serve uploaded evidence photo",
+    "errors": {},
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-89"
+    ]
+  },
+  "/api/v1/fieldworker/assignments/{assignment_id}": {
+    "description": "View assignment detail / update repair progress",
+    "errors": {
+      "400": "Invalid transition",
+      "404": "Not found",
+      "422": "Validation error"
+    },
+    "methods": [
+      "GET",
+      "PUT"
+    ],
+    "stories": [
+      "TPS-45",
+      "TPS-88"
+    ]
+  },
+  "/api/v1/fieldworker/assignments/{assignment_id}/accept": {
+    "description": "Accept an assigned complaint",
+    "errors": {
+      "400": "Invalid transition",
+      "404": "Not found"
+    },
+    "methods": [
+      "POST"
+    ],
+    "stories": [
+      "TPS-43",
+      "TPS-87"
+    ]
+  },
+  "/api/v1/fieldworker/assignments/{assignment_id}/complete": {
+    "description": "Mark repair work complete",
+    "errors": {
+      "400": "Invalid transition",
+      "404": "Not found"
+    },
+    "methods": [
+      "POST"
+    ],
+    "stories": [
+      "TPS-50",
+      "TPS-89"
+    ]
+  },
+  "/api/v1/fieldworker/dashboard": {
+    "description": "Field worker dashboard summary",
+    "errors": {
+      "401": "Unauthorised"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-47"
+    ]
+  },
+  "/api/v1/locations/cities": {
+    "description": "City autosuggest",
+    "errors": {},
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-31"
+    ]
+  },
+  "/api/v1/locations/complaint-pins": {
+    "description": "Public map markers from stored complaint coordinates",
+    "errors": {},
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-31"
+    ]
+  },
+  "/api/v1/locations/overview": {
+    "description": "Public landing-page stats",
+    "errors": {},
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-31"
+    ]
+  },
+  "/api/v1/locations/pincode/{pincode}": {
+    "description": "Resolve a 6-digit pincode to city option(s)",
+    "errors": {
+      "400": "Invalid pincode"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-31"
+    ]
+  },
+  "/api/v1/locations/pincodes": {
+    "description": "Pincode autocomplete",
+    "errors": {},
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-31"
+    ]
+  },
+  "/api/v1/locations/reverse-geocode": {
+    "description": "Map pin coordinates -> address/pincode/city",
+    "errors": {
+      "400": "Invalid coordinates"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-31"
+    ]
+  },
+  "/api/v1/notifications/": {
+    "description": "List current user's notifications",
+    "errors": {
+      "401": "Unauthorised"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-60",
+      "TPS-91",
+      "TPS-92",
+      "TPS-93",
+      "TPS-94"
+    ]
+  },
+  "/api/v1/notifications/read-all": {
+    "description": "Mark all notifications as read",
+    "errors": {
+      "401": "Unauthorised"
+    },
+    "methods": [
+      "PATCH"
+    ],
+    "stories": [
+      "TPS-91"
+    ]
+  },
+  "/api/v1/notifications/unread-count": {
+    "description": "Get count of unread notifications",
+    "errors": {
+      "401": "Unauthorised"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-91"
+    ]
+  },
+  "/api/v1/notifications/{notification_id}": {
+    "description": "View a single notification",
+    "errors": {
+      "404": "Not found"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-91"
+    ]
+  },
+  "/api/v1/notifications/{notification_id}/read": {
+    "description": "Mark a notification as read",
+    "errors": {
+      "404": "Not found"
+    },
+    "methods": [
+      "PATCH"
+    ],
+    "stories": [
+      "TPS-91"
+    ]
+  },
+  "/api/v1/reports/complaints/by-category": {
+    "description": "Complaint counts/percentages grouped by category",
+    "errors": {
+      "400": "Invalid filter"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-85"
+    ]
+  },
+  "/api/v1/reports/complaints/by-location": {
+    "description": "Complaint counts/percentages grouped by city",
+    "errors": {
+      "400": "Invalid filter"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-85",
+      "TPS-96"
+    ]
+  },
+  "/api/v1/reports/complaints/by-priority": {
+    "description": "Complaint counts/percentages grouped by priority",
+    "errors": {
+      "400": "Invalid filter"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-85",
+      "TPS-96"
+    ]
+  },
+  "/api/v1/reports/complaints/by-status": {
+    "description": "Complaint counts/percentages grouped by status",
+    "errors": {
+      "400": "Invalid filter"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-85",
+      "TPS-96"
+    ]
+  },
+  "/api/v1/reports/complaints/summary": {
+    "description": "Overall complaint statistics: totals, resolution rate, avg time",
+    "errors": {
+      "400": "Invalid filter",
+      "403": "Forbidden"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-85",
+      "TPS-96"
+    ]
+  },
+  "/api/v1/reports/complaints/trends": {
+    "description": "Complaint submission trends over time (daily/weekly/monthly)",
+    "errors": {
+      "400": "Invalid period or filter"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-96"
+    ]
+  },
+  "/api/v1/reports/export/csv": {
+    "description": "Export current filtered report as CSV",
+    "errors": {
+      "400": "Invalid filter"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-98"
+    ]
+  },
+  "/api/v1/reports/export/excel": {
+    "description": "Export current filtered report as Excel (.xlsx)",
+    "errors": {
+      "400": "Invalid filter"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-98"
+    ]
+  },
+  "/api/v1/reports/export/pdf": {
+    "description": "Export current filtered report as PDF",
+    "errors": {
+      "400": "Invalid filter"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-98"
+    ]
+  },
+  "/api/v1/reports/feedback/summary": {
+    "description": "Citizen feedback summary: average rating, distribution, recent comments (new in Milestone 4 docs; endpoint/tests already existed)",
+    "errors": {
+      "400": "Invalid date_from/date_to format",
+      "403": "Non-admins cannot access"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-96"
+    ]
+  },
+  "/api/v1/reports/workers/performance": {
+    "description": "Per-field-worker assignment/completion statistics",
+    "errors": {
+      "400": "Invalid filter"
+    },
+    "methods": [
+      "GET"
+    ],
+    "stories": [
+      "TPS-85",
+      "TPS-96"
+    ]
+  }
+}

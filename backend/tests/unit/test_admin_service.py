@@ -691,6 +691,53 @@ class TestAdminServiceUsers:
             with pytest.raises(ValueError, match="cannot deactivate your own account"):
                 service.update_user(admin.id, admin.id, {"is_active": False})
 
+    def test_update_user_resets_password(self, app):
+        with app.app_context():
+            citizen = _mgmt_ensure_citizen("mgmt.users.citizen.pwreset@example.com")
+            admin = _mgmt_ensure_admin("mgmt.users.admin.pwreset@example.com", AdministratorProfile.SYSTEM)
+            service = AdminService()
+            service.update_user(citizen.id, admin.id, {"password": "NewSecret@123"})
+            refreshed = User.query.get(citizen.id)
+            assert refreshed.check_password("NewSecret@123")
+            assert not refreshed.check_password("Citizen@123")
+
+    def test_update_user_updates_email(self, app):
+        with app.app_context():
+            citizen = _mgmt_ensure_citizen("mgmt.users.citizen.email1@example.com")
+            admin = _mgmt_ensure_admin("mgmt.users.admin.email1@example.com", AdministratorProfile.SYSTEM)
+            service = AdminService()
+            result = service.update_user(citizen.id, admin.id, {"email": "mgmt.users.citizen.email1.new@example.com"})
+            assert result["user"]["email"] == "mgmt.users.citizen.email1.new@example.com"
+
+    def test_update_user_rejects_duplicate_email(self, app):
+        with app.app_context():
+            citizen_a = _mgmt_ensure_citizen("mgmt.users.citizen.dupa@example.com")
+            _mgmt_ensure_citizen("mgmt.users.citizen.dupb@example.com")
+            admin = _mgmt_ensure_admin("mgmt.users.admin.dup@example.com", AdministratorProfile.SYSTEM)
+            service = AdminService()
+            with pytest.raises(ValueError, match="already exists"):
+                service.update_user(citizen_a.id, admin.id, {"email": "mgmt.users.citizen.dupb@example.com"})
+
+    def test_update_user_municipal_admin_scoped_to_own_city_citizen(self, app):
+        with app.app_context():
+            city = _mgmt_ensure_city("MgmtUsersScopedCity")
+            citizen = _mgmt_ensure_citizen("mgmt.users.scoped.citizen@example.com", city_id=city.id)
+            muni_admin = _mgmt_ensure_admin("mgmt.users.scoped.admin@example.com", AdministratorProfile.MUNICIPAL, "MgmtUsersScopedCity")
+            service = AdminService()
+            result = service.update_user(citizen.id, muni_admin.id, {"first_name": "Scoped"}, acting_admin=muni_admin)
+            assert result["user"]["first_name"] == "Scoped"
+
+    def test_update_user_municipal_admin_rejects_other_city_citizen(self, app):
+        with app.app_context():
+            own_city = _mgmt_ensure_city("MgmtUsersOwnCity")
+            other_city = _mgmt_ensure_city("MgmtUsersOtherCity")
+            citizen = _mgmt_ensure_citizen("mgmt.users.othercity.citizen@example.com", city_id=other_city.id)
+            muni_admin = _mgmt_ensure_admin("mgmt.users.owncity.admin@example.com", AdministratorProfile.MUNICIPAL, "MgmtUsersOwnCity")
+            service = AdminService()
+            with pytest.raises(ValueError, match="not found"):
+                service.update_user(citizen.id, muni_admin.id, {"first_name": "Nope"}, acting_admin=muni_admin)
+            assert own_city.id != other_city.id
+
 
 class TestAdminServiceFieldWorkers:
     """Unit tests for get_field_workers, create_field_worker, get_field_worker,
@@ -749,6 +796,36 @@ class TestAdminServiceFieldWorkers:
             service = AdminService()
             result = service.update_field_worker(worker.id, admin, {"is_active": False})
             assert result["user"]["is_active"] is False
+
+    def test_update_field_worker_resets_password(self, app):
+        with app.app_context():
+            city = _mgmt_ensure_city("MgmtFwPwResetCity")
+            admin = _mgmt_ensure_admin("mgmt.fw.pwreset.admin@example.com", AdministratorProfile.MUNICIPAL, "MgmtFwPwResetCity")
+            worker = _mgmt_ensure_worker("mgmt.fw.pwreset.worker@example.com", city.id)
+            service = AdminService()
+            service.update_field_worker(worker.id, admin, {"password": "NewWorker@123"})
+            refreshed = User.query.get(worker.id)
+            assert refreshed.check_password("NewWorker@123")
+            assert not refreshed.check_password("Worker@123")
+
+    def test_update_field_worker_updates_email(self, app):
+        with app.app_context():
+            city = _mgmt_ensure_city("MgmtFwEmailCity")
+            admin = _mgmt_ensure_admin("mgmt.fw.email.admin@example.com", AdministratorProfile.MUNICIPAL, "MgmtFwEmailCity")
+            worker = _mgmt_ensure_worker("mgmt.fw.email.worker@example.com", city.id)
+            service = AdminService()
+            result = service.update_field_worker(worker.id, admin, {"email": "mgmt.fw.email.worker.new@example.com"})
+            assert result["user"]["email"] == "mgmt.fw.email.worker.new@example.com"
+
+    def test_update_field_worker_rejects_duplicate_email(self, app):
+        with app.app_context():
+            city = _mgmt_ensure_city("MgmtFwDupEmailCity")
+            admin = _mgmt_ensure_admin("mgmt.fw.dupemail.admin@example.com", AdministratorProfile.MUNICIPAL, "MgmtFwDupEmailCity")
+            worker_a = _mgmt_ensure_worker("mgmt.fw.dupa@example.com", city.id)
+            _mgmt_ensure_worker("mgmt.fw.dupb@example.com", city.id)
+            service = AdminService()
+            with pytest.raises(ValueError, match="already exists"):
+                service.update_field_worker(worker_a.id, admin, {"email": "mgmt.fw.dupb@example.com"})
 
 
 class TestAdminServiceHierarchyAndSettings:
@@ -815,6 +892,55 @@ class TestAdminServiceHierarchyAndSettings:
                 created["user"]["id"], system_admin.id, {"first_name": "Renamed"}
             )
             assert result["user"]["first_name"] == "Renamed"
+
+    def test_update_municipal_administrator_resets_password(self, app):
+        with app.app_context():
+            system_admin = _mgmt_ensure_admin("mgmt.hierarchy.sysadmin.pwreset@example.com", AdministratorProfile.SYSTEM)
+            service = AdminService()
+            created = service.create_municipal_administrator(system_admin.id, {
+                "username": "mgmt_hierarchy_muni_pwreset", "email": "mgmt.hierarchy.muni.pwreset@example.com",
+                "password": "Municipal@123", "confirm_password": "Municipal@123",
+                "first_name": "Muni", "last_name": "Admin", "pincode": "226001",
+            })
+            service.update_municipal_administrator(
+                created["user"]["id"], system_admin.id, {"password": "NewMunicipal@123"}
+            )
+            refreshed = User.query.get(created["user"]["id"])
+            assert refreshed.check_password("NewMunicipal@123")
+            assert not refreshed.check_password("Municipal@123")
+
+    def test_update_municipal_administrator_updates_email(self, app):
+        with app.app_context():
+            system_admin = _mgmt_ensure_admin("mgmt.hierarchy.sysadmin.email@example.com", AdministratorProfile.SYSTEM)
+            service = AdminService()
+            created = service.create_municipal_administrator(system_admin.id, {
+                "username": "mgmt_hierarchy_muni_email", "email": "mgmt.hierarchy.muni.email@example.com",
+                "password": "Municipal@123", "confirm_password": "Municipal@123",
+                "first_name": "Muni", "last_name": "Admin", "pincode": "226001",
+            })
+            result = service.update_municipal_administrator(
+                created["user"]["id"], system_admin.id, {"email": "mgmt.hierarchy.muni.email.new@example.com"}
+            )
+            assert result["user"]["email"] == "mgmt.hierarchy.muni.email.new@example.com"
+
+    def test_update_municipal_administrator_rejects_duplicate_email(self, app):
+        with app.app_context():
+            system_admin = _mgmt_ensure_admin("mgmt.hierarchy.sysadmin.dupemail@example.com", AdministratorProfile.SYSTEM)
+            service = AdminService()
+            created_a = service.create_municipal_administrator(system_admin.id, {
+                "username": "mgmt_hierarchy_muni_dupA", "email": "mgmt.hierarchy.muni.dupA@example.com",
+                "password": "Municipal@123", "confirm_password": "Municipal@123",
+                "first_name": "Muni", "last_name": "Admin", "pincode": "226001",
+            })
+            service.create_municipal_administrator(system_admin.id, {
+                "username": "mgmt_hierarchy_muni_dupB", "email": "mgmt.hierarchy.muni.dupB@example.com",
+                "password": "Municipal@123", "confirm_password": "Municipal@123",
+                "first_name": "Muni", "last_name": "Admin", "pincode": "226001",
+            })
+            with pytest.raises(ValueError, match="already exists"):
+                service.update_municipal_administrator(
+                    created_a["user"]["id"], system_admin.id, {"email": "mgmt.hierarchy.muni.dupB@example.com"}
+                )
 
     def test_get_system_settings_returns_singleton(self, app):
         with app.app_context():

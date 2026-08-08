@@ -73,6 +73,15 @@ This folder contains technical documentation for developers working on the Civic
 - [ ] Document error handling strategy
 - [ ] Document logging strategy
 
+## Datetime Columns
+
+All timestamp columns use `UTCDateTime` (`backend/app/utils/db_types.py`)
+instead of plain `db.DateTime` — it guarantees every loaded value is
+timezone-aware UTC, so `.isoformat()` always includes the `+00:00` offset.
+When adding a new model column that stores a timestamp, import and use
+`UTCDateTime` the same way, not `db.DateTime`, to avoid reintroducing the
+naive-datetime timezone bug fixed in Milestone 4.
+
 ## Authentication Architecture (Current)
 
 ### Backend (OOP service layer)

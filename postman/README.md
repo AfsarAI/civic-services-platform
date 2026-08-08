@@ -1,6 +1,6 @@
 # Postman Collection — Civic Services Platform
 
-> Last reviewed: 2026-07-21
+> Last reviewed: 2026-08-08
 
 This folder contains the Postman API collection for testing the Civic Services Platform REST API.
 
@@ -31,8 +31,20 @@ Set the following **Collection Variables** in Postman:
 |---|---|
 | Authentication | Register, Login, Refresh, Logout, Me |
 | Citizen | Submit, view, and track complaints |
-| Administrator | Manage complaints, assign workers |
+| Administrator | Manage complaints, assign workers, manage users/field workers/municipal administrators, and reset a password or update an email for any account they're scoped to |
 | Field Worker | View tasks, update progress |
-| Reports | Statistics and analytics |
+| Reports | Statistics, analytics, feedback summary, and CSV export |
 | Notifications | View and manage notifications |
-| Locations | Pincode and city lookup endpoints |
+| Locations | Public (no auth) pincode lookup, city/pincode autosuggest, reverse-geocode, and map data |
+| System Settings | Platform-wide configuration (System Administrator only) |
+
+## Password Reset & Email Update
+
+The **Administrator** folder includes "Reset User Password", "Update User Email",
+"Reset Field Worker Password", and "Reset Municipal Administrator Password"
+requests. These all use `PUT` with an optional `password`/`confirm_password`
+and/or `email` field on top of the existing profile fields — no separate
+endpoint was added. A System Administrator can reset/update any user; a
+Municipal Administrator is limited to their own city's Field Workers and
+Citizens. See `docs/milestone4/openapi-with-user-stories.yaml` for full
+request/response documentation.

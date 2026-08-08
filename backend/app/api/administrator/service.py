@@ -614,8 +614,7 @@ class AdminService:
             raise ValueError("You cannot deactivate your own account.")
 
         if "email" in data:
-            self._ensure_email_available(data["email"], exclude_user_id=user.id)
-            user.email = data["email"]
+            user.email = self._ensure_email_available(data["email"], exclude_user_id=user.id)
 
         for field in ("first_name", "last_name", "phone", "is_active"):
             if field in data:
@@ -712,8 +711,7 @@ class AdminService:
         worker = self._get_owned_field_worker(user_id, acting_admin)
 
         if "email" in data:
-            self._ensure_email_available(data["email"], exclude_user_id=worker.id)
-            worker.email = data["email"]
+            worker.email = self._ensure_email_available(data["email"], exclude_user_id=worker.id)
 
         for field in ("first_name", "last_name", "phone", "is_active"):
             if field in data:
@@ -770,11 +768,18 @@ class AdminService:
             raise ValueError("User not found.")
 
     @staticmethod
-    def _ensure_email_available(email: str, exclude_user_id: int) -> None:
-        """Raise if ``email`` is already used by a different account."""
-        existing = User.query.filter_by(email=email).first()
+    def _ensure_email_available(email: str, exclude_user_id: int) -> str:
+        """Normalize ``email`` and raise if it's already used by a different account.
+
+        Returns the normalized (trimmed, lower-cased) email so callers store the
+        same value that was checked, regardless of whether the caller already
+        normalized it upstream (e.g. via a Marshmallow schema).
+        """
+        normalized = email.strip().lower()
+        existing = User.query.filter_by(email=normalized).first()
         if existing and existing.id != exclude_user_id:
             raise ValueError("An account with this email already exists.")
+        return normalized
 
     # ── Admin hierarchy ───────────────────────────────────────────────────
 
@@ -884,8 +889,7 @@ class AdminService:
             raise ValueError("You cannot deactivate your own account.")
 
         if "email" in data:
-            self._ensure_email_available(data["email"], exclude_user_id=user.id)
-            user.email = data["email"]
+            user.email = self._ensure_email_available(data["email"], exclude_user_id=user.id)
 
         for field in ("first_name", "last_name", "phone", "is_active"):
             if field in data:

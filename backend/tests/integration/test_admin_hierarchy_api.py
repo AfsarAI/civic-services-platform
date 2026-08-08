@@ -298,6 +298,174 @@ class TestAdminHierarchyEndpoints:
             for u in payload["data"]["items"]
         )
 
+    def test_system_admin_can_reset_citizen_password(self, app, client):
+        with app.app_context():
+            self._ensure_admin("sysadmin-pwreset@civicservices.local", AdministratorProfile.SYSTEM)
+            role = Role.query.filter_by(name=Role.CITIZEN).first()
+            citizen = User.query.filter_by(email="citizen-pwreset@example.com").first()
+            if not citizen:
+                citizen = User(
+                    username="citizenpwreset", email="citizen-pwreset@example.com",
+                    first_name="Citizen", last_name="PwReset", role_id=role.id, is_active=True,
+                )
+                citizen.set_password("OldSecret@123")
+                db.session.add(citizen)
+                db.session.commit()
+            citizen_id = citizen.id
+
+        token = self._login(client, "sysadmin-pwreset@civicservices.local")
+        response = client.put(
+            f"/api/v1/admin/users/{citizen_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"password": "NewSecret@123", "confirm_password": "NewSecret@123"},
+        )
+        assert response.status_code == 200
+        assert response.get_json()["success"] is True
+
+        old_login = client.post(
+            "/api/v1/auth/login",
+            json={"email": "citizen-pwreset@example.com", "password": "OldSecret@123"},
+        )
+        new_login = client.post(
+            "/api/v1/auth/login",
+            json={"email": "citizen-pwreset@example.com", "password": "NewSecret@123"},
+        )
+        assert old_login.status_code == 401
+        assert new_login.status_code == 200
+
+    def test_system_admin_can_update_citizen_email(self, app, client):
+        with app.app_context():
+            self._ensure_admin("sysadmin-emailupdate@civicservices.local", AdministratorProfile.SYSTEM)
+            role = Role.query.filter_by(name=Role.CITIZEN).first()
+            citizen = User.query.filter_by(email="citizen-emailupdate@example.com").first()
+            if not citizen:
+                citizen = User(
+                    username="citizenemailupdate", email="citizen-emailupdate@example.com",
+                    first_name="Citizen", last_name="EmailUpdate", role_id=role.id, is_active=True,
+                )
+                citizen.set_password("Citizen@123")
+                db.session.add(citizen)
+                db.session.commit()
+            citizen_id = citizen.id
+
+        token = self._login(client, "sysadmin-emailupdate@civicservices.local")
+        response = client.put(
+            f"/api/v1/admin/users/{citizen_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"email": "citizen-emailupdate-new@example.com"},
+        )
+        payload = response.get_json()
+        assert response.status_code == 200
+        assert payload["data"]["user"]["email"] == "citizen-emailupdate-new@example.com"
+
+    def test_update_user_duplicate_email_returns_409(self, app, client):
+        with app.app_context():
+            self._ensure_admin("sysadmin-dupemail@civicservices.local", AdministratorProfile.SYSTEM)
+            role = Role.query.filter_by(name=Role.CITIZEN).first()
+            for email in ("dup-citizen-a@example.com", "dup-citizen-b@example.com"):
+                if not User.query.filter_by(email=email).first():
+                    user = User(
+                        username=email.split("@")[0], email=email,
+                        first_name="Dup", last_name="Citizen", role_id=role.id, is_active=True,
+                    )
+                    user.set_password("Citizen@123")
+                    db.session.add(user)
+            db.session.commit()
+            citizen_a_id = User.query.filter_by(email="dup-citizen-a@example.com").first().id
+
+        token = self._login(client, "sysadmin-dupemail@civicservices.local")
+        response = client.put(
+            f"/api/v1/admin/users/{citizen_a_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"email": "dup-citizen-b@example.com"},
+        )
+        payload = response.get_json()
+        assert response.status_code == 409
+        assert "already exists" in payload["message"].lower()
+
+    def test_update_user_mismatched_confirm_password_returns_422(self, app, client):
+        with app.app_context():
+            self._ensure_admin("sysadmin-mismatch@civicservices.local", AdministratorProfile.SYSTEM)
+            role = Role.query.filter_by(name=Role.CITIZEN).first()
+            citizen = User.query.filter_by(email="citizen-mismatch@example.com").first()
+            if not citizen:
+                citizen = User(
+                    username="citizenmismatch", email="citizen-mismatch@example.com",
+                    first_name="Citizen", last_name="Mismatch", role_id=role.id, is_active=True,
+                )
+                citizen.set_password("Citizen@123")
+                db.session.add(citizen)
+                db.session.commit()
+            citizen_id = citizen.id
+
+        token = self._login(client, "sysadmin-mismatch@civicservices.local")
+        response = client.put(
+            f"/api/v1/admin/users/{citizen_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"password": "NewSecret@123", "confirm_password": "Different@123"},
+        )
+        payload = response.get_json()
+        assert response.status_code == 422
+        assert "confirm_password" in payload["errors"]
+
+    def test_municipal_admin_can_reset_field_worker_password(self, app, client):
+        with app.app_context():
+            admin = self._ensure_admin(
+                "municipal-fw-pwreset@civicservices.local",
+                AdministratorProfile.MUNICIPAL,
+                city_name="Kanpur",
+            )
+            role = Role.query.filter_by(name=Role.FIELD_WORKER).first()
+            worker = User.query.filter_by(email="worker-pwreset@example.com").first()
+            if not worker:
+                worker = User(
+                    username="workerpwreset", email="worker-pwreset@example.com",
+                    first_name="Worker", last_name="PwReset", role_id=role.id,
+                    city_id=admin.admin_city_id, is_active=True,
+                )
+                worker.set_password("OldWorker@123")
+                db.session.add(worker)
+                db.session.commit()
+            worker_id = worker.id
+
+        token = self._login(client, "municipal-fw-pwreset@civicservices.local")
+        response = client.put(
+            f"/api/v1/admin/field-workers/{worker_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"password": "NewWorker@123", "confirm_password": "NewWorker@123"},
+        )
+        assert response.status_code == 200
+
+        new_login = client.post(
+            "/api/v1/auth/login",
+            json={"email": "worker-pwreset@example.com", "password": "NewWorker@123"},
+        )
+        assert new_login.status_code == 200
+
+    def test_system_admin_can_reset_municipal_administrator_password(self, app, client):
+        with app.app_context():
+            self._ensure_admin("sysadmin-muni-pwreset@civicservices.local", AdministratorProfile.SYSTEM)
+            muni = self._ensure_admin(
+                "muni-pwreset@civicservices.local",
+                AdministratorProfile.MUNICIPAL,
+                city_name="Nagpur",
+            )
+            muni_id = muni.id
+
+        token = self._login(client, "sysadmin-muni-pwreset@civicservices.local")
+        response = client.put(
+            f"/api/v1/admin/municipal-administrators/{muni_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"password": "NewMunicipal@123", "confirm_password": "NewMunicipal@123"},
+        )
+        assert response.status_code == 200
+
+        new_login = client.post(
+            "/api/v1/auth/login",
+            json={"email": "muni-pwreset@civicservices.local", "password": "NewMunicipal@123"},
+        )
+        assert new_login.status_code == 200
+
     def test_system_admin_can_update_a_user(self, app, client):
         with app.app_context():
             self._ensure_admin("sysadmin-user-update@civicservices.local", AdministratorProfile.SYSTEM)

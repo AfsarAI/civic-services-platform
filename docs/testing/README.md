@@ -1,6 +1,6 @@
 # Testing Documentation
 
-> Last reviewed: 2026-07-21
+> Last reviewed: 2026-08-08
 
 This folder contains test plans, test cases, and testing reports for the Civic Services Platform.
 
@@ -46,6 +46,30 @@ Current automated coverage for Municipal Administrator registration includes:
 - password, confirm-password, and phone validation failures
 - Municipal Administrator login with `admin_level` and `city_name`
 - service-level audit-log creation for municipal-administrator registration
+
+## Password Reset & Email Update Coverage (Milestone 4)
+
+`tests/unit/test_admin_service.py` and `tests/integration/test_admin_hierarchy_api.py`
+cover the administrator-driven password reset/email update capability added
+this sprint:
+- password reset (and subsequent login with the new password) for a Citizen,
+  a Field Worker, and a Municipal Administrator
+- email update, including a duplicate-email conflict returning `409`
+- mismatched `confirm_password` returning `422`
+- `/admin/users` correctly scoped to a Municipal Administrator's own city
+  (citizens outside the city return `404`, not visible in the list)
+- see `docs/milestone4/TEST_CASE_DOCUMENTATION.md` for the full
+  `[Input | Expected | Actual | Result]` boxes, including one case where a
+  new unit test caught a real case-sensitivity bug in the email-uniqueness
+  check before it shipped
+
+## Timezone (`UTCDateTime`) Regression Coverage
+
+`tests/unit/test_models.py::TestUTCDateTime` locks in the fix for a bug where
+datetimes were returned without a UTC offset (causing the frontend to
+misparse them as local time, a 5:30h/IST display drift). Verifies both a
+`User.created_at` and a `ComplaintAssignment.expected_completion_at` round-trip
+as timezone-aware UTC after being reloaded from the database.
 
 ## Field Worker Coverage
 
