@@ -1,6 +1,6 @@
 # API Documentation
 
-> Last reviewed: 2026-07-21
+> Last reviewed: 2026-08-08
 
 This folder contains API documentation for the Civic Services Platform REST API.
 
@@ -74,9 +74,43 @@ System administrators (`admin_level=system`) are unscoped and see every city. Re
 
 - `POST /api/v1/admin/field-workers` — create a field worker. `city_id` is never accepted in the body; it is always the creating administrator's own city. Body: `username`, `email`, `password`, `confirm_password`, `first_name`, `last_name`, `phone` (optional).
 - `GET /api/v1/admin/field-workers/<id>` — view one field worker (system admins can view any; municipal admins only their own city's).
-- `PUT /api/v1/admin/field-workers/<id>` — edit profile fields and/or `is_active` (activate/deactivate).
+- `PUT /api/v1/admin/field-workers/<id>` — edit profile fields (`first_name`, `last_name`, `email`, `phone`) and/or `is_active` (activate/deactivate), and/or reset the password (`password` + `confirm_password`). `email` conflicts return `409`.
 - `DELETE /api/v1/admin/field-workers/<id>` — shorthand for deactivating.
 - `GET /api/v1/admin/field-workers?is_active=true|false` — list/filter; omit `is_active` to see both active and inactive workers.
+
+## User Management, Password Reset & Email Update (Milestone 4)
+
+- `GET /api/v1/admin/users` and `GET/PUT /api/v1/admin/users/<id>` are no
+  longer system-admin-only. **System administrators** are unscoped (any
+  role). **Municipal administrators** may also call these, but the `role`
+  filter is forced server-side to `citizen` and results are scoped to their
+  own `city_id` — they cannot see or edit field workers, other municipal
+  admins, or citizens outside their city (`404` if attempted).
+- `PUT /api/v1/admin/users/<id>`, `PUT /api/v1/admin/field-workers/<id>`, and
+  `PUT /api/v1/admin/municipal-administrators/<id>` all accept optional
+  `email` and `password`/`confirm_password` fields on top of their existing
+  profile fields — this is how an administrator resets a forgotten password
+  or corrects an email for the accounts they manage, with no SMTP/email
+  infrastructure required. `confirm_password` mismatches return `422`; a
+  duplicate `email` returns `409`.
+- `GET /api/v1/reports/feedback/summary` — citizen feedback summary (average
+  rating, star distribution, recent comments), scoped like the other report
+  endpoints. See `docs/milestone4/openapi-with-user-stories.yaml` for the
+  full request/response schema.
+
+## Duplicate Pothole Detection
+
+- `GET /api/v1/citizen/complaints/nearby-duplicates?latitude=&longitude=` —
+  public to any authenticated citizen; advisory only, never blocks
+  submission. Returns still-open complaints within the configured radius.
+- `GET /api/v1/admin/complaints/<id>/duplicates` — nearest-first candidate
+  list for an administrator reviewing a complaint.
+- `POST /api/v1/admin/complaints/<id>/mark-duplicate` — links
+  `duplicate_of_id`/`reason`, reuses the existing `rejected` status
+  transition (no new status added), and notifies the citizen.
+- Both checks use `duplicate_detection_radius_meters` from System Settings
+  (`GET/PUT /api/v1/admin/settings`, default 50m), overridable per-request
+  via an optional `radius_meters` query param.
 
 System administrators cannot create, edit, or deactivate field workers — these endpoints require `admin_level=municipal` (`require_municipal_admin`).
 

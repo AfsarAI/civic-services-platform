@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-> Last reviewed: 2026-07-21
+> Last reviewed: 2026-08-08
 
 This folder contains architectural decision records (ADRs) and system design diagrams for the Civic Services Platform.
 
@@ -45,6 +45,17 @@ Planned additions:
 | Authentication | JWT | Stateless, scalable |
 | Database | SQLite | Simple dev setup, upgradeable |
 | State Management | Pinia | Official Vue recommendation |
+
+## Timezone Handling
+
+All `DateTime` columns use a custom `UTCDateTime` SQLAlchemy `TypeDecorator`
+(`backend/app/utils/db_types.py`, `impl = DateTime` — no migration needed)
+rather than plain `db.DateTime`. It normalizes to UTC on write and re-attaches
+`tzinfo=timezone.utc` on read, guaranteeing every loaded datetime is
+timezone-aware. This fixed a real bug where naive datetimes serialized via
+`.isoformat()` omitted the UTC offset, causing the frontend's `new Date(...)`
+to misparse them as local time (a 5:30h/IST display drift). **Any new model
+column storing a timestamp must use `UTCDateTime`, not `db.DateTime`.**
 
 ## Administrator Hierarchy Design
 

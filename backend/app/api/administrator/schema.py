@@ -4,6 +4,7 @@ from app.schemas.complaint_schema import (
     ComplaintSchema,
     ComplaintUpdateSchema,
     AdminComplaintUpdateSchema,
+    MarkDuplicateSchema,
 )
 from app.schemas.assignment_schema import (
     AssignmentSchema,
@@ -25,6 +26,7 @@ __all__ = [
     "ComplaintSchema",
     "ComplaintUpdateSchema",
     "AdminComplaintUpdateSchema",
+    "MarkDuplicateSchema",
     "AssignmentSchema",
     "AssignmentCreateSchema",
     "AssignComplaintBodySchema",

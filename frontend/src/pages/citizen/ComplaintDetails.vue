@@ -38,7 +38,7 @@
 
             <div class="flex flex-wrap items-center gap-2">
               <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="statusBadgeClass(complaint.status)">
-                {{ statusLabel(complaint.status) }}
+                {{ statusLabel(complaint) }}
               </span>
               <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                 {{ complaint.priority || 'medium' }} priority
@@ -67,6 +67,10 @@
             <span class="font-semibold">Repair completed</span> — the field worker finished this repair
             <template v-if="complaint.repair_completed_at"> on {{ formatDate(complaint.repair_completed_at) }}</template>.
             An administrator still needs to verify and resolve it before feedback opens up.
+          </div>
+
+          <div v-if="complaint.duplicate_of_id" class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" role="status">
+            This report is linked to complaint #{{ complaint.duplicate_of_id }}, which is already being addressed.
           </div>
 
           <transition name="fade">
@@ -531,8 +535,10 @@ function photoUrl(imageUrl) {
   return `${apiBase.replace(/\/api\/v1$/, '')}${imageUrl}`
 }
 
-function statusLabel(status) {
+function statusLabel(complaintRecord) {
+  const status = complaintRecord?.status
   if (status === 'in_progress' && awaitingVerification.value) return 'Awaiting verification'
+  if (status === 'rejected' && complaintRecord?.duplicate_of_id) return 'Duplicate report'
   return (status || 'pending').replaceAll('_', ' ')
 }
 

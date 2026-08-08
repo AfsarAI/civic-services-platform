@@ -2,6 +2,8 @@
 Unit tests for SQLAlchemy models.
 """
 
+from datetime import datetime, timezone
+
 from app.models.administrator_profile import AdministratorProfile
 from app.models.city import City
 from app.models.city_pincode import CityPincode
@@ -212,3 +214,78 @@ class TestAdministratorProfileModel:
             profile = AdministratorProfile(user_id=5, admin_level=AdministratorProfile.SYSTEM)
             assert "user_id=5" in repr(profile)
             assert "system" in repr(profile)
+
+
+class TestUTCDateTime:
+    """Regression tests for the UTCDateTime column type (Milestone 4 timezone fix).
+
+    Before this fix, datetimes stored via plain ``db.DateTime`` came back from
+    SQLite as naive (no tzinfo), so ``.isoformat()`` omitted the UTC offset and
+    the frontend's ``new Date(...)`` misparsed it as local time (a 5:30h drift
+    for IST). ``UTCDateTime`` guarantees every loaded value is tz-aware UTC.
+    """
+
+    def _make_role(self):
+        role = Role.query.filter_by(name=Role.CITIZEN).first()
+        if not role:
+            role = Role(name=Role.CITIZEN)
+            db.session.add(role)
+            db.session.commit()
+        return role
+
+    def test_user_created_at_round_trips_as_timezone_aware(self, app):
+        with app.app_context():
+            role = self._make_role()
+            user = User(
+                username="utcuser", email="utc.user@example.com",
+                first_name="UTC", last_name="User", role_id=role.id,
+            )
+            user.set_password("Secret@123")
+            db.session.add(user)
+            db.session.commit()
+
+            db.session.expire_all()
+            reloaded = User.query.filter_by(email="utc.user@example.com").first()
+            assert reloaded.created_at.tzinfo is not None
+            assert reloaded.created_at.isoformat().endswith("+00:00")
+
+    def test_complaint_assignment_expected_completion_round_trips_as_timezone_aware(self, app):
+        with app.app_context():
+            role = self._make_role()
+            worker_role = Role.query.filter_by(name=Role.FIELD_WORKER).first() or Role(name=Role.FIELD_WORKER)
+            if not worker_role.id:
+                db.session.add(worker_role)
+                db.session.commit()
+            citizen = User(
+                username="utccitizen", email="utc.citizen@example.com",
+                first_name="UTC", last_name="Citizen", role_id=role.id,
+            )
+            citizen.set_password("Secret@123")
+            worker = User(
+                username="utcworker", email="utc.worker@example.com",
+                first_name="UTC", last_name="Worker", role_id=worker_role.id,
+            )
+            worker.set_password("Secret@123")
+            db.session.add_all([citizen, worker])
+            db.session.flush()
+
+            complaint = Complaint(
+                citizen_id=citizen.id, title="UTC test pothole",
+                description="A complaint used to verify timezone-aware datetimes.",
+                category=Complaint.CATEGORY_POTHOLE, status=Complaint.STATUS_ASSIGNED,
+            )
+            db.session.add(complaint)
+            db.session.flush()
+
+            expected_completion = datetime(2026, 8, 1, 11, 30, 0, tzinfo=timezone.utc)
+            assignment = ComplaintAssignment(
+                complaint_id=complaint.id, worker_id=worker.id, assigned_by_id=worker.id,
+                expected_completion_at=expected_completion,
+            )
+            db.session.add(assignment)
+            db.session.commit()
+
+            db.session.expire_all()
+            reloaded = ComplaintAssignment.query.get(assignment.id)
+            assert reloaded.expected_completion_at.tzinfo is not None
+            assert reloaded.expected_completion_at.isoformat() == "2026-08-01T11:30:00+00:00"

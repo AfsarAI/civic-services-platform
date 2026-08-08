@@ -156,6 +156,15 @@
             },
             "description": "Submit feedback for a resolved complaint."
           }
+        },
+        {
+          "name": "Check Nearby Duplicates",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": "{{base_url}}/citizen/complaints/nearby-duplicates?latitude=26.8467&longitude=80.9462",
+            "description": "Advisory check for similar open reports near a map pin before submitting (never blocks submission)."
+          }
         }
       ]
     },
@@ -212,6 +221,120 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": "{{base_url}}/admin/field-workers",
             "description": "Get all field workers for assignment."
+          }
+        },
+        {
+          "name": "Get Duplicate Candidates",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": "{{base_url}}/admin/complaints/1/duplicates",
+            "description": "List still-open complaints near this one that might report the same issue."
+          }
+        },
+        {
+          "name": "Mark Complaint as Duplicate",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/admin/complaints/1/mark-duplicate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duplicate_of_id\": 12,\n  \"reason\": \"Same pothole reported on the map.\"\n}"
+            },
+            "description": "Link a complaint as a duplicate of an existing, still-open report."
+          }
+        },
+        {
+          "name": "Reset User Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/admin/users/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"NewSecret@123\",\n  \"confirm_password\": \"NewSecret@123\"\n}"
+            },
+            "description": "Reset a user's password (System Admin: any user; Municipal Admin: citizens in their own city only). Also accepts email/first_name/last_name/phone/is_active."
+          }
+        },
+        {
+          "name": "Update User Email",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/admin/users/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"updated.citizen@example.com\"\n}"
+            },
+            "description": "Change a user's email. Returns 409 if the email is already in use by another account."
+          }
+        },
+        {
+          "name": "Reset Field Worker Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/admin/field-workers/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"NewWorker@123\",\n  \"confirm_password\": \"NewWorker@123\"\n}"
+            },
+            "description": "Reset a field worker's password (Municipal Admin only, scoped to their own city)."
+          }
+        },
+        {
+          "name": "Get Municipal Administrators",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": "{{base_url}}/admin/municipal-administrators",
+            "description": "List municipal administrators (System Admin only)."
+          }
+        },
+        {
+          "name": "Create Municipal Administrator",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/admin/municipal-administrators",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"lucknow_admin\",\n  \"email\": \"lucknow.admin@example.com\",\n  \"password\": \"Municipal@123\",\n  \"confirm_password\": \"Municipal@123\",\n  \"first_name\": \"Lucknow\",\n  \"last_name\": \"Admin\",\n  \"pincode\": \"226001\"\n}"
+            },
+            "description": "Register a new Municipal Administrator (System Admin only)."
+          }
+        },
+        {
+          "name": "Reset Municipal Administrator Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/admin/municipal-administrators/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"NewMunicipal@123\",\n  \"confirm_password\": \"NewMunicipal@123\"\n}"
+            },
+            "description": "Reset a municipal administrator's password (System Admin only)."
           }
         }
       ]
@@ -315,6 +438,24 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": "{{base_url}}/reports/workers/performance"
           }
+        },
+        {
+          "name": "Feedback Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": "{{base_url}}/reports/feedback/summary",
+            "description": "Average rating, star distribution, and recent citizen feedback comments."
+          }
+        },
+        {
+          "name": "Export CSV",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": "{{base_url}}/reports/export/csv",
+            "description": "Download the currently filtered report data as a CSV file."
+          }
         }
       ]
     },
@@ -351,6 +492,95 @@
             "method": "PATCH",
             "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": "{{base_url}}/notifications/read-all"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Locations",
+      "item": [
+        {
+          "name": "Lookup Pincode",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/locations/pincode/226001",
+            "description": "Public. Resolve a 6-digit pincode to matching city option(s)."
+          }
+        },
+        {
+          "name": "Search Cities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/locations/cities?query=luck&limit=10",
+            "description": "Public. City autosuggest."
+          }
+        },
+        {
+          "name": "Search Pincodes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/locations/pincodes?prefix=22&limit=10",
+            "description": "Public. Pincode autocomplete (min 2 digits)."
+          }
+        },
+        {
+          "name": "Reverse Geocode",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/locations/reverse-geocode?lat=26.8467&lon=80.9462",
+            "description": "Public. Map pin -> address/pincode/city."
+          }
+        },
+        {
+          "name": "Public Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/locations/overview",
+            "description": "Public. Landing-page stats."
+          }
+        },
+        {
+          "name": "Public Complaint Pins",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/locations/complaint-pins?limit=100",
+            "description": "Public. Map markers from stored complaint coordinates."
+          }
+        }
+      ]
+    },
+    {
+      "name": "System Settings",
+      "item": [
+        {
+          "name": "Get System Settings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": "{{base_url}}/admin/settings",
+            "description": "System Admin only."
+          }
+        },
+        {
+          "name": "Update System Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/admin/settings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maintenance_mode\": false,\n  \"notify_on_status_change\": true,\n  \"default_complaint_priority\": \"medium\",\n  \"duplicate_detection_radius_meters\": 50\n}"
+            },
+            "description": "System Admin only. Audit-logged."
           }
         }
       ]
