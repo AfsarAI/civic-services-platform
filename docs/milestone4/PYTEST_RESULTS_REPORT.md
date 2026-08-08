@@ -9,7 +9,7 @@
 ## Result Summary
 
 ```
-391 passed in 56.14s
+438 passed in 60.37s
 ```
 
 **100% pass rate.** No skips, no xfails, no warnings treated as errors.
@@ -17,23 +17,39 @@
 
 | Metric | Milestone 3 (2026-08-01) | Milestone 4 (2026-08-08) | Delta |
 |---|---|---|---|
-| Total tests | 182 | **391** | **+209** |
-| Test files | 17 | 23 | +6 |
+| Total tests | 182 | **438** | **+256** |
+| Test files | 17 | 26 | +9 |
 | Pass rate | 100% | 100% | — |
 
-> The +209 total delta includes test files added by other merged branches
+> The +256 total delta includes test files added by other merged branches
 > between the two snapshots (TPS-85/96/98 reports & export, TPS-99 system
 > settings, etc. — see `USER_FEEDBACK_AND_NEXT_SPRINT.md` for the full
-> changelog). The tests written **specifically for this Milestone 4
-> submission's API changes** (password reset, email update, city-scoped
-> `/admin/users`, timezone fix) are the **+19** documented in
-> `TEST_CASE_DOCUMENTATION.md`, going from 372 → 391.
+> changelog). Two groups of tests are directly attributable to this
+> Milestone 4 submission's own work:
+> 1. **+19** for password reset/email update/timezone fix (372 → 391),
+>    documented in `TEST_CASE_DOCUMENTATION.md`.
+> 2. **+47** for the duplicate-detection feature (391 → 438), which was
+>    found to be missing from the running application, traced via `git log`
+>    to an abandoned branch merge, and reintegrated via `git cherry-pick`
+>    this same sprint (`test_duplicate_detection_api.py` 13,
+>    `test_duplicate_detection_service.py` 8, `test_geo.py` 7, plus
+>    additions inside `test_admin_service.py`, `test_citizen_service.py`,
+>    and `test_schemas.py`).
+
+> **Known flaky tests (not a regression):**
+> `test_dashboard_high_priority_pending_count_reflects_urgent_open_complaints`
+> and `test_excel_export_is_valid_workbook` were observed to fail once when
+> run as part of the full 438-test suite, but pass consistently both in
+> isolation and on every other full-suite run performed. This points to
+> pre-existing test-order/shared-DB-state sensitivity, not a defect in the
+> duplicate-detection reintegration — flagged here for future investigation
+> per Section 4.3 of `USER_FEEDBACK_AND_NEXT_SPRINT.md`.
 
 ---
 
-## Full Test Breakdown (391 tests, 23 files)
+## Full Test Breakdown (438 tests, 26 files)
 
-### Integration tests (14 files, 174 tests)
+### Integration tests (15 files, 187 tests)
 | File | Tests |
 |---|---|
 | `test_admin_city_scoping_api.py` | 12 |
@@ -45,31 +61,34 @@
 | `test_citizen_api.py` | 14 |
 | `test_citizen_feedback_api.py` | 6 |
 | `test_complaint_closure_notification_api.py` | 7 |
+| `test_duplicate_detection_api.py` | **13** (reintegrated this milestone) |
 | `test_fieldworker_api.py` | 7 |
 | `test_location_api.py` | 9 |
 | `test_notifications_api.py` | 12 |
 | `test_reports_api.py` | 26 |
 | `test_system_settings_api.py` | 8 |
 
-### Unit tests (9 files, 217 tests)
+### Unit tests (11 files, 251 tests)
 | File | Tests |
 |---|---|
 | `test_admin_dashboard_kpi.py` | 9 |
-| `test_admin_service.py` | **56** (+11 new password/email tests this milestone) |
+| `test_admin_service.py` | **66** (+11 password/email this milestone, plus duplicate-detection methods reintegrated) |
 | `test_auth_service.py` | 19 |
-| `test_citizen_service.py` | 19 |
+| `test_citizen_service.py` | **22** (includes reintegrated nearby-duplicates checks) |
+| `test_duplicate_detection_service.py` | **8** (reintegrated this milestone) |
 | `test_fieldworker_service.py` | 17 |
+| `test_geo.py` | **7** (reintegrated this milestone) |
 | `test_locations_service.py` | 14 |
 | `test_models.py` | **24** (+2 new `UTCDateTime` regression tests this milestone) |
 | `test_notifications_service.py` | 12 |
 | `test_reports_service.py` | 30 |
-| `test_schemas.py` | 26 |
+| `test_schemas.py` | **32** (includes reintegrated `MarkDuplicateSchema` tests) |
 
-**Total: 391 passed, 0 failed, 0 skipped**
+**Total: 438 passed, 0 failed, 0 skipped**
 
 ---
 
-## New Tests Added for This Milestone (19 total)
+## New Tests Added for This Milestone (19 written + 47 reintegrated)
 
 See `TEST_CASE_DOCUMENTATION.md` for the full `[Input | Expected | Actual |
 Result]` boxes. Quick index:
@@ -103,6 +122,16 @@ Result]` boxes. Quick index:
 was *rewritten* rather than added — it replaced an obsolete test that
 asserted the old, since-changed 403-only behavior for `/admin/users`.)
 
+**Reintegrated (47 tests, duplicate pothole detection)** — see
+`USER_FEEDBACK_AND_NEXT_SPRINT.md` for the full story of how this feature
+went missing and was restored:
+- `tests/integration/test_duplicate_detection_api.py` (13)
+- `tests/unit/test_duplicate_detection_service.py` (8)
+- `tests/unit/test_geo.py` (7)
+- Additions inside `tests/unit/test_admin_service.py`,
+  `tests/unit/test_citizen_service.py`, and `tests/unit/test_schemas.py`
+  (`TestMarkDuplicateSchema`)
+
 ---
 
 ## How Testing Improved the API This Sprint
@@ -124,4 +153,4 @@ under "Featured Case: Where Testing Caught a Real Bug".
 ## Raw Output
 
 See `pytest_full_output.txt` in this same folder for the complete, unedited
-`pytest -v` console output (all 391 test IDs with PASSED status).
+`pytest -v` console output (all 438 test IDs with PASSED status).

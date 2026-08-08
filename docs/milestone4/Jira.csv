@@ -2856,3 +2856,39 @@ h2. Acceptance Criteria
 # A Municipal Administrator can reset a Field Worker's password and change their email, scoped to their own city.
 # A Municipal Administrator can view, edit, and reset the password of Citizens in their own city only (404 outside their city).
 # ""Edit Details"" and ""Reset Password"" are two separate actions/buttons in the UI, not one combined form."
+Duplicate Pothole Detection (Citizen Warning + Admin Review),TPS-ADD-5,"h2. Objective
+
+Reduce duplicate field-worker dispatches for the same physical pothole by warning citizens at submission time and giving administrators a way to explicitly link a report as a duplicate.
+
+----
+
+h2. Description
+
+As a Citizen,
+I want to see a warning if a similar pothole report already exists near my map pin before I submit,
+So that I don't have to submit a report I don't know is redundant (the warning is advisory only and never blocks submission).
+
+As an Administrator,
+I want to see nearby still-open complaints when reviewing a report, and mark one as a duplicate of another with a reason,
+So that I don't dispatch two field workers to repair the same pothole.
+
+----
+
+h2. Deliverables
+
+* GET /citizen/complaints/nearby-duplicates (advisory check before submission)
+* GET /admin/complaints/{id}/duplicates (nearest-first candidate list for admin review)
+* POST /admin/complaints/{id}/mark-duplicate (links duplicate_of_id + reason, reuses the existing 'rejected' status transition rather than adding a new status)
+* System Settings field duplicate_detection_radius_meters (default 50m) controlling both checks
+* Citizen-facing warning banner on the report form; administrator-facing duplicate-review panel on the complaint details screen
+
+----
+
+h2. Acceptance Criteria
+
+# Citizens see a non-blocking warning when a similar open report exists within the configured radius.
+# Administrators can view nearby open complaints for any complaint under review.
+# Administrators can mark a complaint as a duplicate of another still-open complaint, with an optional reason.
+# A complaint cannot be marked as a duplicate of itself, or of another complaint that is itself already a duplicate.
+# Marking a complaint as a duplicate transitions it to 'rejected' and notifies the citizen with duplicate-specific wording.
+# The detection radius is configurable by the System Administrator via System Settings."

@@ -71,6 +71,20 @@ misparse them as local time, a 5:30h/IST display drift). Verifies both a
 `User.created_at` and a `ComplaintAssignment.expected_completion_at` round-trip
 as timezone-aware UTC after being reloaded from the database.
 
+## Duplicate Pothole Detection Coverage
+
+47 tests across `tests/integration/test_duplicate_detection_api.py` (13),
+`tests/unit/test_duplicate_detection_service.py` (8),
+`tests/unit/test_geo.py` (7, haversine-distance math), plus additions inside
+`test_admin_service.py`, `test_citizen_service.py`, and `test_schemas.py`
+(`TestMarkDuplicateSchema`). Covers: nearby-open-complaint lookup and city
+scoping, marking a complaint as a duplicate (including self-reference and
+already-a-duplicate rejection), citizen notification wording, the citizen
+advisory nearby-duplicates check (missing/invalid coordinates → 400), and
+updating the configurable `duplicate_detection_radius_meters` system
+setting. This feature was reintegrated into the codebase in Milestone 4
+after being found missing — see `docs/milestone4/USER_FEEDBACK_AND_NEXT_SPRINT.md`.
+
 ## Field Worker Coverage
 
 `tests/integration/test_fieldworker_api.py` covers:

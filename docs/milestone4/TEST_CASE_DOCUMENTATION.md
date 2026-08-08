@@ -300,6 +300,102 @@ Actual Output: HTTP 200, all four keys present
 Result: Success
 ```
 
+## 7. Duplicate Pothole Detection (Recovered & Reintegrated Feature)
+
+This feature (System Settings radius control, citizen "possible duplicate"
+warning, admin duplicate review/mark-duplicate) was previously implemented,
+reverted, rebuilt on a separate branch, and never merged in — a user noticed
+it missing from the running System Settings page. It was traced via `git log`
+and reintegrated via `git cherry-pick` this same sprint. Full story in
+`USER_FEEDBACK_AND_NEXT_SPRINT.md`. All 47 tests below already existed on the
+recovered branch and are unmodified; they are documented here because this is
+the first milestone package where this feature's endpoints appear.
+
+```
+API being tested: POST /api/v1/admin/complaints/{id}/mark-duplicate
+Test case: test_marks_complaint_as_duplicate_and_notifies_citizen
+Inputs:
+  - System Admin logged in
+  - Citizen submits two complaints ~11m apart (BASE_LAT, BASE_LON and
+    BASE_LAT+0.0001, BASE_LON) in the same city
+  - Request: POST /admin/complaints/{duplicate_id}/mark-duplicate
+    Body: { "duplicate_of_id": <primary_id>, "reason": "Same pothole" }
+Expected Output:
+  - HTTP 200
+  - data.complaint.status == "rejected"
+  - data.complaint.duplicate_of_id == primary_id
+  - The citizen receives a notification whose message contains "duplicate"
+Actual Output:
+  - HTTP 200, status "rejected", duplicate_of_id matches primary_id
+  - Citizen notification message contains "duplicate"
+Result: Success
+```
+
+```
+API being tested: POST /api/v1/admin/complaints/{id}/mark-duplicate
+Test case: test_rejects_self_reference
+Inputs: Body { "duplicate_of_id": <same complaint's own id> }
+Expected Output: HTTP 400 (a complaint cannot be a duplicate of itself)
+Actual Output: HTTP 400
+Result: Success
+```
+
+```
+API being tested: POST /api/v1/admin/complaints/{id}/mark-duplicate
+Test case: test_rejects_missing_duplicate_of_id_with_400
+Inputs: Body {} (missing required duplicate_of_id)
+Expected Output: HTTP 400
+Actual Output: HTTP 400 — Flask-RESTX's own Swagger-model validation
+  (required=True on duplicate_of_id) runs before the Marshmallow schema and
+  returns 400 rather than 422 (same class of gotcha documented for other
+  endpoints in this project — see gotcha #22 in the repo's own notes)
+Result: Success
+```
+
+```
+API being tested: POST /api/v1/admin/complaints/{id}/mark-duplicate
+Test case: test_non_admin_cannot_mark_duplicate
+Inputs: Logged in as a citizen, POST /admin/complaints/1/mark-duplicate
+Expected Output: HTTP 403
+Actual Output: HTTP 403
+Result: Success
+```
+
+```
+API being tested: GET /api/v1/citizen/complaints/nearby-duplicates
+Test case: test_finds_nearby_open_complaint
+Inputs:
+  - Citizen has already submitted a complaint at (BASE_LAT, BASE_LON)
+  - Request: GET /citizen/complaints/nearby-duplicates?latitude=BASE_LAT&longitude=BASE_LON
+Expected Output: HTTP 200, the existing nearby complaint appears in the results
+Actual Output: HTTP 200, existing complaint present in data
+Result: Success
+```
+
+```
+API being tested: GET /api/v1/citizen/complaints/nearby-duplicates
+Test case: test_missing_coordinates_returns_400 / test_invalid_coordinates_returns_400
+Inputs: Request missing latitude/longitude, or latitude=999 (out of range)
+Expected Output: HTTP 400 in both cases
+Actual Output: HTTP 400 in both cases
+Result: Success
+```
+
+```
+API being tested: PUT /api/v1/admin/settings
+Test case: test_system_admin_can_update_duplicate_radius
+Inputs: System Admin, PUT /admin/settings body { "duplicate_detection_radius_meters": 100 }
+Expected Output: HTTP 200, data.settings.duplicate_detection_radius_meters == 100
+Actual Output: HTTP 200, value updated and persisted
+Result: Success
+```
+
+Full file breakdown for this feature (47 tests, all passing):
+`test_duplicate_detection_api.py` (13), `test_duplicate_detection_service.py`
+(8), `test_geo.py` (7, haversine-distance unit math), plus additions inside
+`test_admin_service.py`, `test_citizen_service.py`, and `test_schemas.py`
+(`TestMarkDuplicateSchema`).
+
 ---
 
 ## Summary
@@ -312,8 +408,10 @@ Result: Success
 | City-scoped `/admin/users` for municipal admins | 2 | 2/2 Success |
 | Timezone (`UTCDateTime`) regression | 2 | 2/2 Success |
 | Real bug found & fixed (email case-sensitivity) | 1 | Fail → Fixed → Success |
-| **Total new test cases this milestone** | **19** (11 unit + 2 unit-model + 6 integration) | **19/19 passing after the fix above** |
+| Duplicate pothole detection (reintegrated) | 47 | 47/47 Success |
+| **Total test cases covered in this milestone** | **66** (19 newly written + 47 reintegrated) | **66/66 passing** |
 
-Full suite: **391/391 passing** (was 372 at Milestone 3; +19 net new tests).
+Full suite: **438/438 passing** (was 372 before this sprint's password-reset
+work; 391 after that work; 438 after reintegrating duplicate detection).
 See `PYTEST_RESULTS_REPORT.md` for the complete run and `pytest_full_output.txt`
-for the raw verbose log of every one of the 391 tests.
+for the raw verbose log of every one of the 438 tests.

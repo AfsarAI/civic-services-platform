@@ -66,6 +66,32 @@
       "TPS-52"
     ]
   },
+  "/api/v1/admin/complaints/{complaint_id}/duplicates": {
+    "description": "List nearby still-open complaints that might be duplicates of this one (recovered and reintegrated in Milestone 4)",
+    "errors": {
+      "401": "Unauthorised",
+      "404": "Not found"
+    },
+    "methods": [
+      "GET"
+    ],
+    "note": "Added beyond baseline scope \u2014 no corresponding Jira TPS story",
+    "stories": []
+  },
+  "/api/v1/admin/complaints/{complaint_id}/mark-duplicate": {
+    "description": "Link a complaint as a duplicate of an existing, still-open report (recovered and reintegrated in Milestone 4)",
+    "errors": {
+      "400": "Business rule violation",
+      "401": "Unauthorised",
+      "404": "Not found",
+      "422": "Validation error"
+    },
+    "methods": [
+      "POST"
+    ],
+    "note": "Added beyond baseline scope \u2014 no corresponding Jira TPS story",
+    "stories": []
+  },
   "/api/v1/admin/complaints/{complaint_id}/verify": {
     "description": "Approve or request rework on a field worker's repair completion",
     "errors": {
@@ -154,7 +180,7 @@
     "stories": []
   },
   "/api/v1/admin/settings": {
-    "description": "View/update platform-wide system settings",
+    "description": "View/update platform-wide system settings Includes duplicate_detection_radius_meters (Milestone 4).",
     "errors": {
       "422": "Validation error"
     },
@@ -325,6 +351,18 @@
     "stories": [
       "TPS-3"
     ]
+  },
+  "/api/v1/citizen/complaints/nearby-duplicates": {
+    "description": "Advisory check for nearby possible-duplicate reports before submitting a complaint (recovered and reintegrated in Milestone 4)",
+    "errors": {
+      "400": "Missing/invalid latitude or longitude",
+      "401": "Unauthorised"
+    },
+    "methods": [
+      "GET"
+    ],
+    "note": "Added beyond baseline scope \u2014 no corresponding Jira TPS story",
+    "stories": []
   },
   "/api/v1/citizen/complaints/{complaint_id}": {
     "description": "View/edit pending complaint (PUT), cancel complaint (DELETE)",

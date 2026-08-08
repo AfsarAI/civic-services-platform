@@ -98,6 +98,20 @@ System administrators (`admin_level=system`) are unscoped and see every city. Re
   endpoints. See `docs/milestone4/openapi-with-user-stories.yaml` for the
   full request/response schema.
 
+## Duplicate Pothole Detection
+
+- `GET /api/v1/citizen/complaints/nearby-duplicates?latitude=&longitude=` —
+  public to any authenticated citizen; advisory only, never blocks
+  submission. Returns still-open complaints within the configured radius.
+- `GET /api/v1/admin/complaints/<id>/duplicates` — nearest-first candidate
+  list for an administrator reviewing a complaint.
+- `POST /api/v1/admin/complaints/<id>/mark-duplicate` — links
+  `duplicate_of_id`/`reason`, reuses the existing `rejected` status
+  transition (no new status added), and notifies the citizen.
+- Both checks use `duplicate_detection_radius_meters` from System Settings
+  (`GET/PUT /api/v1/admin/settings`, default 50m), overridable per-request
+  via an optional `radius_meters` query param.
+
 System administrators cannot create, edit, or deactivate field workers — these endpoints require `admin_level=municipal` (`require_municipal_admin`).
 
 ## System Settings (System Administrator only)

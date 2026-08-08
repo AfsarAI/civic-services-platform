@@ -156,6 +156,15 @@
             },
             "description": "Submit feedback for a resolved complaint."
           }
+        },
+        {
+          "name": "Check Nearby Duplicates",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": "{{base_url}}/citizen/complaints/nearby-duplicates?latitude=26.8467&longitude=80.9462",
+            "description": "Advisory check for similar open reports near a map pin before submitting (never blocks submission)."
+          }
         }
       ]
     },
@@ -212,6 +221,31 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": "{{base_url}}/admin/field-workers",
             "description": "Get all field workers for assignment."
+          }
+        },
+        {
+          "name": "Get Duplicate Candidates",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": "{{base_url}}/admin/complaints/1/duplicates",
+            "description": "List still-open complaints near this one that might report the same issue."
+          }
+        },
+        {
+          "name": "Mark Complaint as Duplicate",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/admin/complaints/1/mark-duplicate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duplicate_of_id\": 12,\n  \"reason\": \"Same pothole reported on the map.\"\n}"
+            },
+            "description": "Link a complaint as a duplicate of an existing, still-open report."
           }
         },
         {
@@ -544,7 +578,7 @@
             "url": "{{base_url}}/admin/settings",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"maintenance_mode\": false,\n  \"notify_on_status_change\": true,\n  \"default_complaint_priority\": \"medium\"\n}"
+              "raw": "{\n  \"maintenance_mode\": false,\n  \"notify_on_status_change\": true,\n  \"default_complaint_priority\": \"medium\",\n  \"duplicate_detection_radius_meters\": 50\n}"
             },
             "description": "System Admin only. Audit-logged."
           }

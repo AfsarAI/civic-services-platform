@@ -11,6 +11,7 @@ The platform has exactly **3 user roles** (per Milestone 1 Report):
 ### Citizen
 - Register an account and log in
 - Submit a pothole complaint with a photo, map pin, and location details
+- See a non-blocking warning if a similar pothole was already reported nearby (can still submit anyway)
 - Track the status of submitted complaints in real time
 - Edit or cancel a complaint (only while status is `pending` and not yet assigned)
 - Provide feedback and a rating after a complaint is resolved
@@ -30,6 +31,7 @@ The platform still uses one administrator login flow, but there are now two admi
 - Uses the `Manage Municipal Administrators` page from the dashboard/sidebar to register city-wise administrators
 - Uses the `Citizens` page (`/admin/citizens`) to view any citizen, edit their name/last name/email/phone, or reset their password if they've forgotten it
 - Can reset the password or update the email of any Municipal Administrator or Field Worker as well, if they're locked out or need a correction
+- Sets the duplicate-detection radius (metres) on the System Settings page, controlling both the citizen submission warning and the admin duplicate-review panel
 
 #### Municipal Administrator
 - Cannot self-register
@@ -39,6 +41,7 @@ The platform still uses one administrator login flow, but there are now two admi
 - Sees the shared administrator dashboard with city-scoped identity information
 - Uses the `Citizens` page to view, edit, and reset the password of Citizens registered in their own city only (citizens in other cities are not visible)
 - Uses the `Field Workers` page to reset a Field Worker's password or update their email/details, in addition to creating and deactivating accounts
+- Reviews nearby possible-duplicate complaints when handling a report, and can mark one as a duplicate of another (with an optional reason) instead of assigning a second field worker to the same pothole
 
 ### Field Worker
 - Log in with field worker credentials

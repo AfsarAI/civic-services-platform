@@ -248,6 +248,7 @@ Implementation summary:
 - Fixed a timezone display bug where every date/time in the app showed 5:30 hours behind (IST) due to naive (offset-less) datetime serialization; all `DateTime` columns now use a `UTCDateTime` type that guarantees a proper UTC offset on every response, with no database migration required.
 - Added administrator-driven password reset and email update (no SMTP required): System Administrators can reset/update any user; Municipal Administrators can reset/update their own Field Workers and the Citizens registered in their city. New `/admin/citizens` page and separate "Edit Details"/"Reset Password" actions across all admin management screens.
 - Fixed `AdminComplaintDetails.vue` allowing priority changes on already-rejected/closed complaints, and fixed `Reports.vue` showing "No complaints match filters" even when report data existed.
+- Restored duplicate pothole detection (System Settings radius, citizen "possible duplicate" warning, admin duplicate-review panel) after tracing it via `git log` to an abandoned branch that was never merged; also fixed a `SystemSettings.vue` bug where the saved detection radius wasn't loaded into the form.
 
 ---
 

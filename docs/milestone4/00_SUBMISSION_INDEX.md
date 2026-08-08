@@ -17,7 +17,7 @@
    milestone traces back to a specific, reproduced user-reported bug or a
    test-driven finding, documented there first.
 3. **Review the updated API spec** → `openapi-with-user-stories.yaml`
-   (validated OpenAPI 3.0, 57 paths / 68 operations — see its `info.
+   (validated OpenAPI 3.0, 60 paths / 69 operations — see its `info.
    x-changes-since-milestone-3` field for the exact delta)
 4. **Review the new test cases** → `TEST_CASE_DOCUMENTATION.md`
 5. **Verify pytest results** → `PYTEST_RESULTS_REPORT.md` + `pytest_full_output.txt`
@@ -30,9 +30,11 @@ exactly what changed since then: 3 updated endpoints (password reset + email
 update, capability added to `PUT /admin/users/{id}`, `/admin/field-workers/
 {id}`, `/admin/municipal-administrators/{id}`), 1 previously-undocumented
 endpoint (`GET /reports/feedback/summary`), a cross-cutting timezone bug fix,
-and 19 new automated tests. Where something is unchanged since Milestone 3
-(database schema, authentication design, RBAC decorators, etc.) this package
-references the Milestone 3 files rather than repeating them.
+a fully reintegrated duplicate-pothole-detection feature (3 more endpoints —
+see below), and 19 newly written + 47 reintegrated automated tests. Where
+something is unchanged since Milestone 3 (database schema, authentication
+design, RBAC decorators, etc.) this package references the Milestone 3 files
+rather than repeating them.
 
 ---
 
@@ -40,12 +42,12 @@ references the Milestone 3 files rather than repeating them.
 
 | File | Purpose |
 |---|---|
-| **openapi-with-user-stories.yaml** | Updated OpenAPI 3.0 spec — 57 paths / 68 operations, validated with `openapi-spec-validator`. `info.x-changes-since-milestone-3` documents exactly what changed. |
+| **openapi-with-user-stories.yaml** | Updated OpenAPI 3.0 spec — 60 paths / 69 operations, validated with `openapi-spec-validator`. `info.x-changes-since-milestone-3` documents exactly what changed. |
 | **api_mapping.json** | Machine-readable endpoint→story mapping, updated to match |
-| **TEST_CASE_DOCUMENTATION.md** | 19 new test cases in the required `[API \| Input \| Expected \| Actual \| Result]` format, including one case where testing caught and fixed a real bug |
-| **PYTEST_RESULTS_REPORT.md** | Full 391-test run breakdown, delta vs Milestone 3's 182 |
-| **pytest_full_output.txt** | Raw `pytest -v` console output (all 391 test IDs) |
-| **USER_FEEDBACK_AND_NEXT_SPRINT.md** | The 5 user-reported issues this sprint, root cause + fix for each, plus Sprint 4 plan |
+| **TEST_CASE_DOCUMENTATION.md** | 19 newly-written + 47 reintegrated test cases in the required `[API \| Input \| Expected \| Actual \| Result]` format, including one case where testing caught and fixed a real bug |
+| **PYTEST_RESULTS_REPORT.md** | Full 438-test run breakdown, delta vs Milestone 3's 182 |
+| **pytest_full_output.txt** | Raw `pytest -v` console output (all 438 test IDs) |
+| **USER_FEEDBACK_AND_NEXT_SPRINT.md** | The 6 user-reported issues this sprint, root cause + fix for each, plus Sprint 4 plan |
 | **SPRINT_3_DELIVERABLES_STATUS.md** | Checklist mapping this package to the PDF's required deliverables |
 | **Jira.csv** | Copy of the baseline Jira export, `+` new rows for every feature implemented beyond the original 55-story baseline (see file for the added rows, tagged `TPS-ADD-*`) |
 
@@ -54,12 +56,13 @@ references the Milestone 3 files rather than repeating them.
 ## 🎯 Rubric Coverage (Sprint 1/2/3 template, per `PROJECT DETAILS MAY 2026.pdf`)
 
 ### API Creation and Integration
-- Updated YAML lists all 3 changed endpoints and the 1 newly-documented
-  endpoint, each with a `description` explaining exactly what's new,
-  mapped to Jira story TPS-96/TPS-27/TPS-33/TPS-98 (or explicitly flagged
-  "added beyond baseline" where no TPS story exists) — see the `info.
-  x-changes-since-milestone-3` block and the updated "Summary of Related
-  Jira Stories" appendix at the end of the YAML.
+- Updated YAML lists all 3 changed endpoints, the 1 newly-documented
+  endpoint, and the 3 reintegrated duplicate-detection endpoints, each with a
+  `description` explaining exactly what's new, mapped to Jira story
+  TPS-96/TPS-27/TPS-33/TPS-98 (or explicitly flagged "added beyond baseline"
+  where no TPS story exists) — see the `info.x-changes-since-milestone-3`
+  block and the updated "Summary of Related Jira Stories" appendix at the end
+  of the YAML.
 
 ### Code for the APIs — Implementation
 - Real backend code changes: `backend/app/api/administrator/service.py`,
@@ -71,16 +74,17 @@ references the Milestone 3 files rather than repeating them.
   city-scoping) and covered by tests.
 
 ### Test Case Design & pytest
-- 19 new test cases, both unit (`AdminService` called directly) and
-  integration (full HTTP request/response through Flask's test client),
-  documented in the required box format in `TEST_CASE_DOCUMENTATION.md`.
+- 19 newly-written + 47 reintegrated test cases, both unit (`AdminService`
+  called directly) and integration (full HTTP request/response through
+  Flask's test client), documented in the required box format in
+  `TEST_CASE_DOCUMENTATION.md`.
 - Includes a genuine actual≠expected case (duplicate-email case-sensitivity
   bug) demonstrating testing improving the API, exactly as the rubric
   requests.
-- 391/391 tests passing, raw output in `pytest_full_output.txt`.
+- 438/438 tests passing, raw output in `pytest_full_output.txt`.
 
 ### User Feedback & Next Sprint Plan
-- `USER_FEEDBACK_AND_NEXT_SPRINT.md` — 5 real user-reported issues this
+- `USER_FEEDBACK_AND_NEXT_SPRINT.md` — 6 real user-reported issues this
   sprint (not hypothetical), each with root cause and fix, plus a concrete
   Sprint 4 plan.
 
@@ -91,7 +95,7 @@ references the Milestone 3 files rather than repeating them.
 ```bash
 cd backend
 source .venv/bin/activate
-pytest tests/ -v          # Expect: 391 passed
+pytest tests/ -v          # Expect: 438 passed
 flake8 app/ --max-line-length=120   # Expect: 0 violations
 
 cd ../frontend
