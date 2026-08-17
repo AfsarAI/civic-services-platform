@@ -25,11 +25,29 @@
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
           <label class="form-label" for="site_name">Site Name</label>
-          <input id="site_name" v-model.trim="form.site_name" type="text" class="form-input" required />
+          <input
+            id="site_name"
+            v-model.trim="form.site_name"
+            type="text"
+            class="form-input"
+            :class="settingsInputErrorClass('site_name')"
+            required
+            @blur="touched.site_name = true"
+          />
+          <p v-if="settingsFieldError('site_name')" class="mt-1 text-xs text-red-600">{{ settingsFieldError('site_name') }}</p>
         </div>
         <div>
           <label class="form-label" for="support_email">Support Email</label>
-          <input id="support_email" v-model.trim="form.support_email" type="email" class="form-input" placeholder="support@civicservices.local" />
+          <input
+            id="support_email"
+            v-model.trim="form.support_email"
+            type="email"
+            class="form-input"
+            :class="settingsInputErrorClass('support_email')"
+            placeholder="support@civicservices.local"
+            @blur="touched.support_email = true"
+          />
+          <p v-if="settingsFieldError('support_email')" class="mt-1 text-xs text-red-600">{{ settingsFieldError('support_email') }}</p>
         </div>
       </div>
 
@@ -52,7 +70,10 @@
           min="10"
           max="2000"
           class="form-input sm:w-64"
+          :class="settingsInputErrorClass('duplicate_detection_radius_meters')"
+          @blur="touched.duplicate_detection_radius_meters = true"
         />
+        <p v-if="settingsFieldError('duplicate_detection_radius_meters')" class="mt-1 text-xs text-red-600">{{ settingsFieldError('duplicate_detection_radius_meters') }}</p>
         <p class="mt-1 text-xs text-slate-500">
           Complaints reported within this distance of each other are flagged as possible duplicates
           (citizen submission warning + administrator review panel).
@@ -97,6 +118,11 @@ const isSaving = ref(false)
 const successMessage = ref('')
 const serverError = ref('')
 const settings = ref(null)
+const touched = reactive({
+  site_name: false,
+  support_email: false,
+  duplicate_detection_radius_meters: false,
+})
 
 const form = reactive({
   site_name: '',
@@ -106,6 +132,32 @@ const form = reactive({
   default_complaint_priority: 'medium',
   duplicate_detection_radius_meters: 50,
 })
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function settingsFieldError(field) {
+  if (!touched[field]) return null
+  switch (field) {
+    case 'site_name':
+      if (!form.site_name.trim()) return 'Site name is required.'
+      return null
+    case 'support_email':
+      if (!form.support_email) return null
+      if (!EMAIL_RE.test(form.support_email)) return 'Enter a valid support email.'
+      return null
+    case 'duplicate_detection_radius_meters': {
+      const value = Number(form.duplicate_detection_radius_meters)
+      if (Number.isNaN(value) || value < 10 || value > 2000) return 'Radius must be between 10 and 2000 meters.'
+      return null
+    }
+    default:
+      return null
+  }
+}
+
+function settingsInputErrorClass(field) {
+  return settingsFieldError(field) ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''
+}
 
 async function loadSettings() {
   loading.value = true
@@ -130,6 +182,15 @@ async function loadSettings() {
 async function handleSave() {
   successMessage.value = ''
   serverError.value = ''
+  touched.site_name = true
+  touched.support_email = true
+  touched.duplicate_detection_radius_meters = true
+
+  const hasErrors = ['site_name', 'support_email', 'duplicate_detection_radius_meters'].some((field) => settingsFieldError(field))
+  if (hasErrors) {
+    return
+  }
+
   isSaving.value = true
   try {
     const response = await adminService.updateSystemSettings({
