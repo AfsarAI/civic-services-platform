@@ -847,6 +847,22 @@ class AdminService:
         """Edit, activate/deactivate, or reset the password of a field worker in the admin's city."""
         worker = self._get_owned_field_worker(user_id, acting_admin)
 
+        if data.get("is_active") is False and worker.is_active:
+            pending_count = ComplaintAssignment.query.filter(
+                ComplaintAssignment.worker_id == worker.id,
+                ComplaintAssignment.status.in_((
+                    ComplaintAssignment.STATUS_ASSIGNED,
+                    ComplaintAssignment.STATUS_ACCEPTED,
+                    ComplaintAssignment.STATUS_IN_PROGRESS,
+                )),
+            ).count()
+            if pending_count:
+                raise ValueError(
+                    f"Cannot deactivate this field worker: {pending_count} assignment"
+                    f"{'s' if pending_count != 1 else ''} still assigned or in progress. "
+                    "Reassign or complete them first."
+                )
+
         if "email" in data:
             worker.email = self._ensure_email_available(data["email"], exclude_user_id=worker.id)
 

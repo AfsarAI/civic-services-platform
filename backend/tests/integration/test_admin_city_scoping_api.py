@@ -346,6 +346,52 @@ class TestAdminCityScoping:
         assert response.status_code == 201
         assert response.get_json()["data"]["complaint"]["status"] == "assigned"
 
+    def test_cannot_deactivate_field_worker_with_pending_assignment(self, app, client):
+        ctx = self._setup_two_cities(app, client, "pending-fw")
+        lucknow_token = self._login(client, "lucknow-admin@example.com")
+
+        worker_response = client.post(
+            "/api/v1/admin/field-workers",
+            headers={"Authorization": f"Bearer {lucknow_token}"},
+            json={
+                "username": "lucknow_worker6",
+                "email": "lucknow.worker6@example.com",
+                "password": "Worker@123",
+                "confirm_password": "Worker@123",
+                "first_name": "Manoj",
+                "last_name": "Tiwari",
+            },
+        )
+        worker_id = worker_response.get_json()["data"]["user"]["id"]
+
+        assign_response = client.post(
+            f"/api/v1/admin/complaints/{ctx['lucknow_complaint_id']}/assign",
+            headers={"Authorization": f"Bearer {lucknow_token}"},
+            json={"worker_id": worker_id},
+        )
+        assert assign_response.status_code == 201
+
+        put_response = client.put(
+            f"/api/v1/admin/field-workers/{worker_id}",
+            headers={"Authorization": f"Bearer {lucknow_token}"},
+            json={"is_active": False},
+        )
+        put_payload = put_response.get_json()
+        assert put_response.status_code == 400
+        assert "assigned or in progress" in put_payload["message"].lower()
+
+        delete_response = client.delete(
+            f"/api/v1/admin/field-workers/{worker_id}",
+            headers={"Authorization": f"Bearer {lucknow_token}"},
+        )
+        assert delete_response.status_code == 400
+
+        still_active = client.get(
+            f"/api/v1/admin/field-workers/{worker_id}",
+            headers={"Authorization": f"Bearer {lucknow_token}"},
+        )
+        assert still_active.get_json()["data"]["user"]["is_active"] is True
+
     def test_municipal_admin_cannot_verify_other_city_repair(
         self, app, client
     ):

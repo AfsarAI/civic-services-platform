@@ -630,6 +630,7 @@ class AdminFieldWorkerResource(Resource):
 
     @ns.expect(_field_worker_update)
     @ns.response(200, "Field worker updated", _envelope)
+    @ns.response(400, "Business rule violation", _envelope)
     @ns.response(404, "Not found", _envelope)
     @ns.response(409, "Conflict", _envelope)
     @ns.response(422, "Validation error", _envelope)
@@ -652,6 +653,7 @@ class AdminFieldWorkerResource(Resource):
             return error_response(str(exc), status_code=code)
 
     @ns.response(200, "Field worker deactivated", _envelope)
+    @ns.response(400, "Business rule violation", _envelope)
     @ns.response(404, "Not found", _envelope)
     @jwt_required()
     @require_municipal_admin
@@ -661,7 +663,8 @@ class AdminFieldWorkerResource(Resource):
             data = _svc.update_field_worker(user_id, _current_admin_user(), {"is_active": False})
             return success_response(data, "Field worker deactivated.")
         except ValueError as exc:
-            return error_response(str(exc), status_code=404)
+            code = 404 if "not found" in str(exc).lower() else 400
+            return error_response(str(exc), status_code=code)
 
 
 @ns.route("/dashboard")
