@@ -4,7 +4,7 @@ Field Worker service — business logic for field-worker-facing operations.
 
 from datetime import datetime, timezone
 
-from sqlalchemy import case, or_, exists
+from sqlalchemy import case, or_
 
 from app.api.notifications.service import NotificationService
 from app.extensions import db
