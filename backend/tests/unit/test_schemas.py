@@ -5,11 +5,16 @@ Unit tests for Marshmallow schemas.
 import pytest
 from marshmallow import ValidationError
 from app.schemas.user_schema import UserCreateSchema, MunicipalAdminCreateSchema
-from app.schemas.complaint_schema import ComplaintCreateSchema, MarkDuplicateSchema
+from app.schemas.complaint_schema import (
+    AdminComplaintUpdateSchema,
+    ComplaintCreateSchema,
+    MarkDuplicateSchema,
+)
 from app.schemas.feedback_schema import FeedbackCreateSchema
 from app.schemas.verification_schema import VerificationDecisionSchema
 from app.schemas.assignment_schema import AssignComplaintBodySchema, FieldWorkerProgressSchema
 from app.schemas.system_setting_schema import SystemSettingUpdateSchema
+from app.schemas.validators import validate_phone_number
 
 
 class TestUserCreateSchema:
@@ -169,6 +174,34 @@ class TestMunicipalAdminCreateSchema:
             })
         assert "phone" in exc.value.messages
 
+    @pytest.mark.parametrize("phone", ["9876543210", "6123456789", " 9876543210 "])
+    def test_valid_indian_mobile_numbers_are_accepted(self, phone):
+        validate_phone_number(phone)
+
+    @pytest.mark.parametrize(
+        "phone",
+        ["5123456789", "987654321", "98765432101", "+91-9876543210", "98765 43210", "abcdefghij"],
+    )
+    def test_invalid_indian_mobile_numbers_are_rejected(self, phone):
+        with pytest.raises(ValidationError):
+            validate_phone_number(phone)
+
+    def test_none_phone_is_accepted_for_optional_fields(self):
+        validate_phone_number(None)
+
+    def test_blank_phone_is_normalized_to_none_by_schema(self):
+        result = MunicipalAdminCreateSchema().load({
+            "username": "municipal1",
+            "email": "municipal@example.com",
+            "password": "Password123!",
+            "confirm_password": "Password123!",
+            "first_name": "Municipal",
+            "last_name": "Admin",
+            "phone": "   ",
+            "pincode": "226001",
+        })
+        assert result["phone"] is None
+
     def test_invalid_pincode_is_rejected(self):
         schema = MunicipalAdminCreateSchema()
         with pytest.raises(ValidationError) as exc:
@@ -202,6 +235,23 @@ class TestAssignComplaintBodySchema:
         schema = AssignComplaintBodySchema()
         with pytest.raises(ValidationError):
             schema.load({"worker_id": 5, "notes": "x" * 1001})
+
+
+class TestAdminComplaintUpdateSchema:
+    """Validation for administrator complaint status updates."""
+
+    def test_rejection_reason_is_accepted(self):
+        schema = AdminComplaintUpdateSchema()
+        result = schema.load({
+            "status": "rejected",
+            "rejection_reason": "This report is outside the service area.",
+        })
+        assert result["rejection_reason"] == "This report is outside the service area."
+
+    def test_rejection_reason_too_long_raises(self):
+        schema = AdminComplaintUpdateSchema()
+        with pytest.raises(ValidationError):
+            schema.load({"rejection_reason": "x" * 1001})
 
 
 class TestFieldWorkerProgressSchema:

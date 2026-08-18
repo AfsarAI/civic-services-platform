@@ -61,6 +61,9 @@ pytestdebug.log
 instance/
 .webassets-cache
 
+# Frontend build copied in for single-App-Service deploys (see deploy-backend.yml)
+backend/static_frontend/
+
 # SQLite database files
 *.db
 *.sqlite

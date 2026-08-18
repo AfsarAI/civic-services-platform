@@ -178,6 +178,9 @@
               </div>
               <span :class="statusBadgeClass(c.status)" class="shrink-0">{{ c.status }}</span>
             </div>
+            <p v-if="c.status === 'rejected' && (c.rejection_reason || c.duplicate_reason)" class="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-800">
+              <span class="font-semibold">Rejection reason:</span> {{ c.rejection_reason || c.duplicate_reason }}
+            </p>
             <div class="flex flex-wrap items-center gap-2 text-xs">
               <span class="capitalize text-slate-500">{{ c.category?.replace('_', ' ') }}</span>
               <span :class="priorityClass(c.priority)">{{ c.priority }}</span>
@@ -220,6 +223,9 @@
                 <td class="py-3 px-4 text-xs">
                   <span :class="statusBadgeClass(c.status)">
                     {{ c.status }}
+                  </span>
+                  <span v-if="c.status === 'rejected' && (c.rejection_reason || c.duplicate_reason)" class="mt-1 block max-w-xs text-[11px] font-normal leading-4 text-rose-700">
+                    {{ c.rejection_reason || c.duplicate_reason }}
                   </span>
                 </td>
                 <td class="py-3 px-4 text-xs text-slate-500">

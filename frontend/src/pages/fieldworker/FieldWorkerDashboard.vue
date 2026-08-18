@@ -92,7 +92,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search by title, street, or complaint ID..."
+            placeholder="Search by title, street"
             class="form-input w-full sm:w-64 text-sm"
             @input="onSearchInput"
           />

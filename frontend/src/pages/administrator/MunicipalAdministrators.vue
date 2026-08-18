@@ -128,7 +128,7 @@
                 type="tel"
                 class="form-input"
                 :class="inputErrorClass('phone')"
-                placeholder="+91-9876543210"
+                placeholder="9876543210"
                 @blur="touch('phone')"
               />
               <p v-if="fieldError('phone')" class="mt-1 text-xs text-red-600">{{ fieldError('phone') }}</p>
@@ -446,6 +446,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 
 import adminService from '@/services/admin.service'
+import { validateIndianMobile } from '@/utils/validation'
 
 const form = reactive({
   first_name: '',
@@ -506,9 +507,7 @@ function detailsFieldError(field) {
       if (!EMAIL_RE.test(value)) return 'Enter a valid email address.'
       return null
     case 'phone':
-      if (!value) return null
-      if (!PHONE_RE.test(value)) return 'Enter a valid phone number.'
-      return null
+      return validateIndianMobile(value)
     default:
       return null
   }
@@ -557,7 +556,6 @@ const adminStats = computed(() => {
 })
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const PHONE_RE = /^\+?(\d[\s-]?){9,14}\d$/
 
 function touch(field) {
   touched[field] = true
@@ -593,9 +591,7 @@ function validateField(field) {
       if (!EMAIL_RE.test(value)) return 'Enter a valid email address.'
       return null
     case 'phone':
-      if (!value) return null
-      if (!PHONE_RE.test(value)) return 'Enter a valid phone number.'
-      return null
+      return validateIndianMobile(value)
     case 'pincode':
       if (!value) return 'Pincode is required.'
       if (!/^\d{6}$/.test(value)) return 'Pincode must be exactly 6 digits.'

@@ -44,7 +44,7 @@
             v-model.trim="search"
             type="text"
             class="form-input"
-            placeholder="Search by title, description, or complaint ID"
+            placeholder="Search by title, description"
           />
         </div>
 
@@ -118,6 +118,10 @@
 
             <p v-if="complaint.duplicate_of_id" class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
               Linked to complaint #{{ complaint.duplicate_of_id }}, which is already being addressed.
+            </p>
+
+            <p v-if="complaint.status === 'rejected' && complaint.rejection_reason" class="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-800">
+              <span class="font-semibold">Rejection reason:</span> {{ complaint.rejection_reason }}
             </p>
 
             <div class="grid grid-cols-2 gap-3 text-xs text-slate-600">

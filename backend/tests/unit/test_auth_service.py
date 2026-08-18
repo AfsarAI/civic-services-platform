@@ -185,10 +185,10 @@ class TestAuthServiceTokenAndProfile:
             result = service.update_profile(user.id, {
                 "first_name": "Changed",
                 "last_name": "Name",
-                "phone": "+91-9876500000",
+                "phone": "9876500000",
             })
             assert result["user"]["first_name"] == "Changed"
-            assert result["user"]["phone"] == "+91-9876500000"
+            assert result["user"]["phone"] == "9876500000"
 
     def test_change_password_succeeds_with_correct_current_password(self, app):
         with app.app_context():

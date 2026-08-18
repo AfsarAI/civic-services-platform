@@ -57,10 +57,26 @@ class FieldWorkerService:
             ComplaintAssignment.STATUS_COMPLETED,
             ComplaintAssignment.STATUS_REJECTED,
         ]
+        locked_complaint_ids = (
+            db.session.query(ComplaintAssignment.complaint_id)
+            .filter(
+                ComplaintAssignment.worker_id != worker_id,
+                ComplaintAssignment.status.in_(
+                    [
+                        ComplaintAssignment.STATUS_ACCEPTED,
+                        ComplaintAssignment.STATUS_IN_PROGRESS,
+                        ComplaintAssignment.STATUS_COMPLETED,
+                    ]
+                ),
+            )
+            .subquery()
+        )
+
         query = (
             ComplaintAssignment.query
             .filter_by(worker_id=worker_id)
             .join(Complaint, Complaint.id == ComplaintAssignment.complaint_id)
+            .filter(~ComplaintAssignment.complaint_id.in_(locked_complaint_ids))
         )
 
         if status:
@@ -139,6 +155,26 @@ class FieldWorkerService:
             raise ValueError(
                 "Only assignments with status 'assigned' can be accepted. "
                 f"Current status: '{assignment.status}'."
+            )
+
+        other_active_assignment = (
+            ComplaintAssignment.query.filter(
+                ComplaintAssignment.complaint_id == assignment.complaint_id,
+                ComplaintAssignment.id != assignment.id,
+                ComplaintAssignment.worker_id != worker_id,
+                ComplaintAssignment.status.in_(
+                    [
+                        ComplaintAssignment.STATUS_ACCEPTED,
+                        ComplaintAssignment.STATUS_IN_PROGRESS,
+                        ComplaintAssignment.STATUS_COMPLETED,
+                    ]
+                ),
+            )
+            .first()
+        )
+        if other_active_assignment is not None:
+            raise ValueError(
+                "This complaint has already been accepted by another worker."
             )
 
         assignment.status = ComplaintAssignment.STATUS_ACCEPTED

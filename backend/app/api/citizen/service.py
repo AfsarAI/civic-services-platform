@@ -303,6 +303,7 @@ class CitizenService:
             "closed_at": (
                 complaint.closed_at.isoformat() if complaint.closed_at else None
             ),
+            "rejection_reason": complaint.rejection_reason,
             "created_at": complaint.created_at.isoformat(),
             "updated_at": complaint.updated_at.isoformat(),
             "feedback": (

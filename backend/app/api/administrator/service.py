@@ -212,6 +212,10 @@ class AdminService:
                 raise ValueError(
                     f"Cannot move complaint from '{complaint.status}' to '{new_status}'."
                 )
+            if new_status == Complaint.STATUS_REJECTED:
+                rejection_reason = (data.get("rejection_reason") or "").strip()
+                if not rejection_reason:
+                    raise ValueError("A rejection reason is required.")
             if new_status == Complaint.STATUS_RESOLVED:
                 raise ValueError(
                     "Completed repairs must be approved through repair verification."
@@ -226,6 +230,9 @@ class AdminService:
         # Update priority level to adjust complaint triage and urgency.
         if "priority" in data:
             complaint.priority = data["priority"]
+
+        if "rejection_reason" in data:
+            complaint.rejection_reason = (data.get("rejection_reason") or "").strip() or None
 
         db.session.commit()
 
@@ -1490,6 +1497,7 @@ class AdminService:
             "closed_at": (
                 complaint.closed_at.isoformat() if complaint.closed_at else None
             ),
+            "rejection_reason": complaint.rejection_reason,
             "created_at": complaint.created_at.isoformat(),
             "updated_at": complaint.updated_at.isoformat(),
             # Lets the dashboard/list flag "field worker finished, awaiting your

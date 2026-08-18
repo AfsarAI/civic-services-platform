@@ -73,6 +73,10 @@
             This report is linked to complaint #{{ complaint.duplicate_of_id }}, which is already being addressed.
           </div>
 
+          <div v-if="complaint.status === 'rejected' && complaint.rejection_reason" class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800" role="status">
+            <span class="font-semibold">Rejection reason:</span> {{ complaint.rejection_reason }}
+          </div>
+
           <transition name="fade">
             <div v-if="successMessage" class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="status">
               {{ successMessage }}

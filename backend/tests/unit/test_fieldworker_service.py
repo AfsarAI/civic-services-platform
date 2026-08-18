@@ -3,6 +3,8 @@ Unit tests for FieldWorkerService — isolated from HTTP plumbing, calling the
 service layer directly against the real (in-memory) database.
 """
 
+from datetime import datetime, timezone
+
 import pytest
 from app.api.fieldworker.service import FieldWorkerService
 from app.extensions import db
@@ -177,6 +179,43 @@ class TestFieldWorkerServiceAccept:
             service = FieldWorkerService()
             with pytest.raises(ValueError, match="Only assignments with status 'assigned'"):
                 service.accept_assignment(assignment.id, worker.id)
+
+    def test_accept_assignment_rejects_if_another_worker_already_accepted(self, app):
+        with app.app_context():
+            worker_1 = _make_worker("unit.fw.accept3@example.com")
+            worker_2 = _make_worker("unit.fw.accept4@example.com")
+            citizen = _make_citizen("unit.fw.citizen5@example.com")
+            assigned_by = _make_admin("unit.fw.accept.admin@example.com")
+            complaint = Complaint(
+                citizen_id=citizen.id,
+                title="Blocked pothole",
+                description="A pothole requiring repair.",
+                category=Complaint.CATEGORY_POTHOLE,
+                status=Complaint.STATUS_ASSIGNED,
+                priority="medium",
+            )
+            db.session.add(complaint)
+            db.session.flush()
+
+            assignment_1 = ComplaintAssignment(
+                complaint_id=complaint.id,
+                worker_id=worker_1.id,
+                assigned_by_id=assigned_by.id,
+                status=ComplaintAssignment.STATUS_ACCEPTED,
+                accepted_at=datetime.now(timezone.utc),
+            )
+            assignment_2 = ComplaintAssignment(
+                complaint_id=complaint.id,
+                worker_id=worker_2.id,
+                assigned_by_id=assigned_by.id,
+                status=ComplaintAssignment.STATUS_ASSIGNED,
+            )
+            db.session.add_all([assignment_1, assignment_2])
+            db.session.commit()
+
+            service = FieldWorkerService()
+            with pytest.raises(ValueError, match="already been accepted by another worker"):
+                service.accept_assignment(assignment_2.id, worker_2.id)
 
     def test_accept_assignment_rejects_terminal_complaint(self, app):
         with app.app_context():

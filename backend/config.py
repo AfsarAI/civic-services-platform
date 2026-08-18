@@ -17,10 +17,20 @@ def _build_cors_origins() -> list[str]:
     raw = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
     configured = [origin.strip() for origin in raw.split(",") if origin.strip()]
 
-    # Always allow both common Vite dev origins, even if only one is configured.
-    defaults = ["http://localhost:5173", "http://127.0.0.1:5173"]
-    origins = list(dict.fromkeys(configured + defaults))
-    return origins
+    # Only fall back to the local Vite dev origins outside production, so a
+    # misconfigured CORS_ORIGINS in prod doesn't silently also trust localhost.
+    if os.getenv("FLASK_ENV", "development") != "production":
+        defaults = ["http://localhost:5173", "http://127.0.0.1:5173"]
+        configured = list(dict.fromkeys(configured + defaults))
+    return configured
+
+
+def _normalize_database_url(url: str) -> str:
+    """Normalize legacy postgres:// scheme (some providers still emit it) to
+    the postgresql:// scheme SQLAlchemy/psycopg2 expect."""
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql://", 1)
+    return url
 
 
 class Config:
@@ -32,9 +42,11 @@ class Config:
     TESTING = False
 
     # Database
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL",
-        f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'civic.db')}",
+    SQLALCHEMY_DATABASE_URI = _normalize_database_url(
+        os.getenv(
+            "DATABASE_URL",
+            f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'civic.db')}",
+        )
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
