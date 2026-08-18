@@ -51,6 +51,10 @@
             <span v-if="complaint.duplicate_reason"> Reason: {{ complaint.duplicate_reason }}</span>
           </div>
 
+          <div v-if="complaint.status === 'rejected' && complaint.rejection_reason" class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            <span class="font-semibold">Rejection reason:</span> {{ complaint.rejection_reason }}
+          </div>
+
           <div v-if="complaint.image_url" class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
             <img :src="mediaUrl(complaint.image_url)" alt="Complaint photo" class="h-72 w-full object-cover sm:h-96" />
           </div>
@@ -293,10 +297,21 @@
                 </button>
 
                 <!-- Reject (any pre-terminal status) -->
+                <div v-if="['pending', 'assigned', 'in_progress'].includes(complaint.status)" class="space-y-2 border-t border-slate-100 pt-3">
+                  <label class="form-label" for="rejection-reason">Reason for rejection</label>
+                  <textarea
+                    id="rejection-reason"
+                    v-model.trim="rejectionReason"
+                    rows="3"
+                    maxlength="1000"
+                    class="form-input"
+                    placeholder="Explain why this complaint cannot be accepted"
+                  ></textarea>
+                </div>
                 <button
                   v-if="['pending', 'assigned', 'in_progress'].includes(complaint.status)"
                   class="btn-danger w-full py-2.5 text-sm"
-                  :disabled="actionLoading"
+                  :disabled="actionLoading || !rejectionReason.trim()"
                   @click="handleStatusChange('rejected')"
                 >
                   Reject Complaint
@@ -342,6 +357,7 @@ const assignWorkerId = ref('')
 const assignNotes = ref('')
 const expectedCompletionAt = ref('')
 const verificationRemarks = ref('')
+const rejectionReason = ref('')
 const duplicateCandidates = ref([])
 
 // The complaint's own `status` intentionally stays `in_progress` even after the
@@ -524,8 +540,11 @@ async function handleStatusChange(status) {
   resetActionAlerts()
   actionLoading.value = true
   try {
-    const response = await complaintService.updateAdminComplaint(complaint.value.id, { status })
+    const payload = { status }
+    if (status === 'rejected') payload.rejection_reason = rejectionReason.value.trim()
+    const response = await complaintService.updateAdminComplaint(complaint.value.id, payload)
     complaint.value = response?.data?.complaint || complaint.value
+    if (status === 'rejected') rejectionReason.value = ''
     actionMessage.value = `Complaint status updated to ${status.replaceAll('_', ' ')}.`
   } catch (err) {
     actionError.value = err?.response?.data?.message || 'Could not update complaint status.'

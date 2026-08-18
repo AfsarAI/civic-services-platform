@@ -104,12 +104,12 @@
           type="tel"
           class="form-input"
           :class="fieldError('phone') ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
-          placeholder="+91-9876543210"
+          placeholder="9876543210"
           autocomplete="tel"
           @blur="touch('phone')"
         />
         <p v-if="fieldError('phone')" class="field-error">{{ fieldError('phone') }}</p>
-        <p v-else class="mt-1 text-xs text-slate-400">Format: +91-9876543210 or 10-digit number</p>
+        <p v-else class="mt-1 text-xs text-slate-400">Enter 10 digits starting with 6, 7, 8, or 9.</p>
       </div>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -299,6 +299,7 @@ import { ref, reactive, computed, onBeforeUnmount } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import locationService from '@/services/location.service'
+import { validateIndianMobile } from '@/utils/validation'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -336,7 +337,6 @@ function touch(field) {
 
 // ── Client-side validation rules ────────────────────────────────────────────
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const PHONE_RE = /^\+?(\d[\s-]?){9,14}\d$/
 
 function validateField(field) {
   const v = form[field]
@@ -359,9 +359,7 @@ function validateField(field) {
       if (!EMAIL_RE.test(v)) return 'Please enter a valid email address.'
       return null
     case 'phone':
-      if (!v) return null
-      if (!PHONE_RE.test(v)) return 'Enter a valid phone number (e.g. +91-9876543210).'
-      return null
+      return validateIndianMobile(v)
     case 'password': {
       if (!v) return 'Password is required.'
       if (v.length < 8) return 'Password must be at least 8 characters.'

@@ -248,7 +248,7 @@ class TestAuthEndpoints:
                 "password": "Secure@123",
                 "first_name": "Valid",
                 "last_name": "Phone",
-                "phone": "+91-9876543210",
+                "phone": "9876543210",
                 "pincode": "226001",
             },
         )
@@ -362,14 +362,14 @@ class TestAuthEndpoints:
         response = client.put(
             "/api/v1/auth/me",
             headers={"Authorization": f"Bearer {token}"},
-            json={"first_name": "Updated", "last_name": "Name", "phone": "+91-9876543210"},
+            json={"first_name": "Updated", "last_name": "Name", "phone": "9876543210"},
         )
         payload = response.get_json()
 
         assert response.status_code == 200
         assert payload["data"]["user"]["first_name"] == "Updated"
         assert payload["data"]["user"]["last_name"] == "Name"
-        assert payload["data"]["user"]["phone"] == "+91-9876543210"
+        assert payload["data"]["user"]["phone"] == "9876543210"
         assert payload["data"]["user"]["username"] == "profileupdate"
         assert payload["data"]["user"]["email"] == "profileupdate@example.com"
 

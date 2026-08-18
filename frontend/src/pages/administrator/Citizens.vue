@@ -186,6 +186,7 @@ import { onMounted, reactive, ref } from 'vue'
 
 import { useAuthStore } from '@/stores/auth'
 import adminService from '@/services/admin.service'
+import { validateIndianMobile } from '@/utils/validation'
 
 const authStore = useAuthStore()
 
@@ -207,7 +208,6 @@ const resetTouched = reactive({})
 const isResettingPassword = ref(false)
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const PHONE_RE = /^\+?(\d[\s-]?){9,14}\d$/
 
 function detailsTouch(field) {
   detailsTouched[field] = true
@@ -227,9 +227,7 @@ function detailsFieldError(field) {
       if (!EMAIL_RE.test(value)) return 'Enter a valid email address.'
       return null
     case 'phone':
-      if (!value) return null
-      if (!PHONE_RE.test(value)) return 'Enter a valid phone number.'
-      return null
+      return validateIndianMobile(value)
     default:
       return null
   }

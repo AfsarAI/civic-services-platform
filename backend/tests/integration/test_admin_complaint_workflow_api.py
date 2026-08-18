@@ -662,9 +662,20 @@ class TestAdminComplaintWorkflow:
         response = client.put(
             f"/api/v1/admin/complaints/{complaint_id}",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"status": "rejected"},
+            json={
+                "status": "rejected",
+                "rejection_reason": "This report is outside the municipal service area.",
+            },
         )
         assert response.status_code == 200
+
+        citizen_complaint = client.get(
+            f"/api/v1/citizen/complaints/{complaint_id}",
+            headers={"Authorization": f"Bearer {citizen_token}"},
+        ).get_json()["data"]["complaint"]
+        assert citizen_complaint["rejection_reason"] == (
+            "This report is outside the municipal service area."
+        )
 
         citizen_notifs = client.get(
             "/api/v1/notifications/", headers={"Authorization": f"Bearer {citizen_token}"}
@@ -745,7 +756,10 @@ class TestAdminComplaintWorkflow:
         reject_response = client.put(
             f"/api/v1/admin/complaints/{complaint_id}",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"status": "rejected"},
+            json={
+                "status": "rejected",
+                "rejection_reason": "The reported location is outside the service area.",
+            },
         )
         assert reject_response.status_code == 200
 

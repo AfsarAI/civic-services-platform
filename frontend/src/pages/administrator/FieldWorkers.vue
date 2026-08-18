@@ -109,7 +109,7 @@
               type="tel"
               class="form-input"
               :class="createInputErrorClass('phone')"
-              placeholder="+91-9876543210"
+              placeholder="9876543210"
               @blur="touchField(createTouched, 'phone')"
             />
             <p v-if="createFieldError('phone')" class="mt-1 text-xs text-red-600">{{ createFieldError('phone') }}</p>
@@ -309,6 +309,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import adminService from '@/services/admin.service'
+import { validateIndianMobile } from '@/utils/validation'
 
 const authStore = useAuthStore()
 
@@ -342,7 +343,6 @@ const isResettingPassword = ref(false)
 const togglingIds = reactive(new Set())
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const PHONE_RE = /^\+?(\d[\s-]?){9,14}\d$/
 
 function touchField(target, field) {
   target[field] = true
@@ -366,9 +366,7 @@ function validateCreateField(field) {
       if (!EMAIL_RE.test(value)) return 'Enter a valid email address.'
       return null
     case 'phone':
-      if (!value) return null
-      if (!PHONE_RE.test(value)) return 'Enter a valid phone number.'
-      return null
+      return validateIndianMobile(value)
     case 'password':
       if (!value) return 'Password is required.'
       if (value.length < 8) return 'Password must be at least 8 characters.'
@@ -407,9 +405,7 @@ function validateEditField(field) {
       if (!EMAIL_RE.test(value)) return 'Enter a valid email address.'
       return null
     case 'phone':
-      if (!value) return null
-      if (!PHONE_RE.test(value)) return 'Enter a valid phone number.'
-      return null
+      return validateIndianMobile(value)
     default:
       return null
   }

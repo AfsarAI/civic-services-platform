@@ -142,7 +142,7 @@
               type="tel"
               class="form-input"
               :class="profileInputErrorClass('phone')"
-              placeholder="+91-9876543210"
+              placeholder="9876543210"
               @blur="profileTouch('phone')"
             />
             <p v-if="profileFieldError('phone')" class="mt-1 text-xs text-red-600">{{ profileFieldError('phone') }}</p>
@@ -238,6 +238,7 @@
 import { computed, reactive, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import authService from '@/services/auth.service'
+import { validateIndianMobile } from '@/utils/validation'
 
 const authStore = useAuthStore()
 
@@ -262,8 +263,6 @@ const passwordTouched = reactive({})
 const showPassword = reactive({ current: false, new: false, confirm: false })
 const isSavingPassword = ref(false)
 
-const PHONE_RE = /^\+?(\d[\s-]?){9,14}\d$/
-
 function profileTouch(field) {
   profileTouched[field] = true
 }
@@ -277,9 +276,7 @@ function profileFieldError(field) {
       if (!value?.trim()) return 'This field is required.'
       return null
     case 'phone':
-      if (!value) return null
-      if (!PHONE_RE.test(value)) return 'Enter a valid phone number.'
-      return null
+      return validateIndianMobile(value)
     default:
       return null
   }

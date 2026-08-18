@@ -182,7 +182,15 @@ def _import_pincode_rows(csv_path: str, limit: int | None = None) -> tuple[int, 
     rows_seen = 0
     cities_touched = 0
     mappings_touched = 0
-    city_cache: dict[str, City] = {}
+
+    # Pre-load once instead of a SELECT per CSV row. This file has 150k+ rows;
+    # a per-row round trip is fine on localhost but takes hours over a
+    # high-latency link (e.g. a laptop connecting to an Azure Postgres server
+    # in a different region) — pre-loading turns O(rows) queries into O(1).
+    city_cache: dict[str, City] = {c.name.lower(): c for c in City.query.all()}
+    mapping_cache: dict[tuple[str, int, str | None], CityPincode] = {
+        (m.pincode, m.city_id, m.area_name): m for m in CityPincode.query.all()
+    }
 
     with open(csv_path, mode="r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
@@ -203,11 +211,6 @@ def _import_pincode_rows(csv_path: str, limit: int | None = None) -> tuple[int, 
             city_key = city_name.lower()
             city = city_cache.get(city_key)
             if not city:
-                city = City.query.filter(db.func.lower(City.name) == city_key).first()
-                if city:
-                    city_cache[city_key] = city
-
-            if not city:
                 city = City(name=city_name, state=state_name, is_active=True)
                 db.session.add(city)
                 db.session.flush()
@@ -216,11 +219,8 @@ def _import_pincode_rows(csv_path: str, limit: int | None = None) -> tuple[int, 
             elif state_name and not city.state:
                 city.state = state_name
 
-            mapping = CityPincode.query.filter_by(
-                pincode=pincode,
-                city_id=city.id,
-                area_name=area_name,
-            ).first()
+            key = (pincode, city.id, area_name)
+            mapping = mapping_cache.get(key)
             if not mapping:
                 mapping = CityPincode(
                     pincode=pincode,
@@ -231,6 +231,7 @@ def _import_pincode_rows(csv_path: str, limit: int | None = None) -> tuple[int, 
                     is_active=True,
                 )
                 db.session.add(mapping)
+                mapping_cache[key] = mapping
                 mappings_touched += 1
             else:
                 mapping.is_active = True

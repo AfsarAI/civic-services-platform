@@ -261,12 +261,12 @@ class TestAdminCityScoping:
         update_response = client.put(
             f"/api/v1/admin/field-workers/{worker_id}",
             headers={"Authorization": f"Bearer {lucknow_token}"},
-            json={"is_active": False, "phone": "+91-9876500000"},
+            json={"is_active": False, "phone": "9876500000"},
         )
         assert update_response.status_code == 200
         updated = update_response.get_json()["data"]["user"]
         assert updated["is_active"] is False
-        assert updated["phone"] == "+91-9876500000"
+        assert updated["phone"] == "9876500000"
 
     def test_municipal_admin_cannot_manage_other_citys_field_worker(self, app, client):
         self._setup_two_cities(app, client, "h")

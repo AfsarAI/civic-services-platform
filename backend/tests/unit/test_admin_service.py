@@ -136,7 +136,7 @@ class TestAdminServiceMunicipalAdministrators:
                     "confirm_password": "Municipal@123",
                     "first_name": "Kanpur",
                     "last_name": "Administrator",
-                    "phone": "+91-9876543210",
+                    "phone": "9876543210",
                     "pincode": "226001",
                 },
             )
