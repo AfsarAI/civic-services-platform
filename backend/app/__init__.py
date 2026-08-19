@@ -2,11 +2,17 @@
 Civic Services Platform — Application Factory
 """
 
-from flask import Flask
+import os
+
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 
-from config import config_map
+from config import config_map, BASE_DIR
 from app.extensions import db, migrate, jwt, ma
+
+# Populated by the Azure deploy workflow (copy of frontend/dist); absent in
+# local dev, where the Vue app is served separately by `npm run dev`.
+FRONTEND_DIST_DIR = os.path.join(BASE_DIR, "static_frontend")
 
 
 def create_app(config_name: str = "development") -> Flask:
@@ -22,6 +28,9 @@ def create_app(config_name: str = "development") -> Flask:
 
     # Register API blueprints
     _register_blueprints(app)
+
+    # Serve the built frontend (if present) from this same app/origin
+    _register_frontend(app)
 
     # Register CLI commands
     _register_commands(app)
@@ -50,6 +59,28 @@ def _register_blueprints(app: Flask) -> None:
     from app.api import api_bp
 
     app.register_blueprint(api_bp, url_prefix="/api/v1")
+
+
+def _register_frontend(app: Flask) -> None:
+    """Serve the built Vue SPA (frontend/dist) from the same origin as the API.
+
+    No-op unless FRONTEND_DIST_DIR exists, so local `flask run` (API only,
+    frontend runs on its own via `npm run dev`) is unaffected.
+    """
+    if not os.path.isdir(FRONTEND_DIST_DIR):
+        return
+
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def serve_frontend(path):
+        # Safety net only — real /api/v1/* requests are already matched by
+        # the blueprint above before Werkzeug ever reaches this catch-all.
+        if path.startswith("api/"):
+            return jsonify({"success": False, "message": "Not found", "data": None, "errors": None}), 404
+        target = os.path.join(FRONTEND_DIST_DIR, path)
+        if path and os.path.isfile(target):
+            return send_from_directory(FRONTEND_DIST_DIR, path)
+        return send_from_directory(FRONTEND_DIST_DIR, "index.html")
 
 
 def _register_commands(app: Flask) -> None:

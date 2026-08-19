@@ -76,6 +76,7 @@ class AdminComplaintUpdateSchema(Schema):
         )
     )
     priority = fields.Str(validate=validate.OneOf(["low", "medium", "high", "urgent"]))
+    rejection_reason = fields.Str(validate=validate.Length(max=1000), allow_none=True)
 
 
 class MarkDuplicateSchema(Schema):

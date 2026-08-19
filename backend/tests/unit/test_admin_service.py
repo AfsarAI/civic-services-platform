@@ -136,7 +136,7 @@ class TestAdminServiceMunicipalAdministrators:
                     "confirm_password": "Municipal@123",
                     "first_name": "Kanpur",
                     "last_name": "Administrator",
-                    "phone": "+91-9876543210",
+                    "phone": "9876543210",
                     "pincode": "226001",
                 },
             )
@@ -851,6 +851,41 @@ class TestAdminServiceFieldWorkers:
             service = AdminService()
             with pytest.raises(ValueError, match="already exists"):
                 service.update_field_worker(worker_a.id, admin, {"email": "mgmt.fw.dupb@example.com"})
+
+    def test_update_field_worker_cannot_deactivate_with_pending_assignment(self, app):
+        with app.app_context():
+            city = _mgmt_ensure_city("MgmtFwPendingCity")
+            admin = _mgmt_ensure_admin("mgmt.fw.pending.admin@example.com", AdministratorProfile.MUNICIPAL, "MgmtFwPendingCity")
+            worker = _mgmt_ensure_worker("mgmt.fw.pending.worker@example.com", city.id)
+            citizen = _mgmt_ensure_citizen("mgmt.fw.pending.citizen@example.com", city.id)
+            complaint = _mgmt_make_complaint(citizen.id, city.id, status=Complaint.STATUS_ASSIGNED)
+            db.session.add(ComplaintAssignment(
+                complaint_id=complaint.id, worker_id=worker.id, assigned_by_id=admin.id,
+                status=ComplaintAssignment.STATUS_ASSIGNED,
+            ))
+            db.session.commit()
+
+            service = AdminService()
+            with pytest.raises(ValueError, match="still assigned or in progress"):
+                service.update_field_worker(worker.id, admin, {"is_active": False})
+            assert User.query.get(worker.id).is_active is True
+
+    def test_update_field_worker_can_deactivate_once_assignments_completed(self, app):
+        with app.app_context():
+            city = _mgmt_ensure_city("MgmtFwCompletedCity")
+            admin = _mgmt_ensure_admin("mgmt.fw.completed.admin@example.com", AdministratorProfile.MUNICIPAL, "MgmtFwCompletedCity")
+            worker = _mgmt_ensure_worker("mgmt.fw.completed.worker@example.com", city.id)
+            citizen = _mgmt_ensure_citizen("mgmt.fw.completed.citizen@example.com", city.id)
+            complaint = _mgmt_make_complaint(citizen.id, city.id, status=Complaint.STATUS_IN_PROGRESS)
+            db.session.add(ComplaintAssignment(
+                complaint_id=complaint.id, worker_id=worker.id, assigned_by_id=admin.id,
+                status=ComplaintAssignment.STATUS_COMPLETED,
+            ))
+            db.session.commit()
+
+            service = AdminService()
+            result = service.update_field_worker(worker.id, admin, {"is_active": False})
+            assert result["user"]["is_active"] is False
 
 
 class TestAdminServiceHierarchyAndSettings:

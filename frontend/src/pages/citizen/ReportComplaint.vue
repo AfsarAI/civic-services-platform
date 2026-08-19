@@ -132,9 +132,12 @@
               v-model.trim="form.title"
               type="text"
               class="form-input"
+              :class="fieldError('title') ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
               placeholder="Large pothole near the bus stop"
+              @blur="touchField('title')"
               required
             />
+            <p v-if="fieldError('title')" class="mt-1 text-xs text-red-600">{{ fieldError('title') }}</p>
           </div>
 
           <div class="sm:col-span-2">
@@ -144,9 +147,12 @@
               v-model.trim="form.description"
               rows="4"
               class="form-input"
+              :class="fieldError('description') ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''"
               placeholder="Tell us how deep it is, how it affects traffic, and any landmark nearby."
+              @blur="touchField('description')"
               required
             ></textarea>
+            <p v-if="fieldError('description')" class="mt-1 text-xs text-red-600">{{ fieldError('description') }}</p>
           </div>
 
           <div>
@@ -323,6 +329,7 @@ const manualCityQuery = ref('')
 const duplicateCandidates = ref([])
 const showDuplicateModal = ref(false)
 const duplicateWarningAcknowledged = ref(false)
+const touched = reactive({ title: false, description: false })
 
 const form = reactive({
   title: '',
@@ -363,6 +370,28 @@ const locationMessageClass = computed(() => {
   if (locationMessageType.value === 'success') return 'text-emerald-600'
   return 'text-slate-500'
 })
+
+function touchField(field) {
+  touched[field] = true
+}
+
+function fieldError(field) {
+  if (!touched[field] && !error.value) return null
+
+  if (field === 'title') {
+    if (!form.title || !form.title.trim()) return 'Please enter a title.'
+    if (form.title.trim().length < 5) return 'Title must be at least 5 characters.'
+    return null
+  }
+
+  if (field === 'description') {
+    if (!form.description || !form.description.trim()) return 'Please enter a description.'
+    if (form.description.trim().length < 10) return 'Description must be at least 10 characters.'
+    return null
+  }
+
+  return null
+}
 
 function coordinateText(value) {
   return Number.isFinite(value) ? Number(value).toFixed(6) : ''
@@ -640,8 +669,13 @@ function clearPhoto() {
 }
 
 async function handleSubmit() {
-  if (!form.title.trim() || !form.description.trim()) {
-    error.value = 'Please add a title and description.'
+  touched.title = true
+  touched.description = true
+
+  const titleError = fieldError('title')
+  const descriptionError = fieldError('description')
+  if (titleError || descriptionError) {
+    error.value = titleError || descriptionError
     return
   }
 

@@ -277,6 +277,17 @@ Constants: `STATUS_PENDING`, `STATUS_ASSIGNED`, `STATUS_IN_PROGRESS`, `STATUS_RE
 
 ---
 
+---
+
+## Deployment (see `deployment/README.md` for full steps)
+- Repo is **private** → GitHub Pages (free tier) isn't usable, so frontend and backend deploy **together as one Azure App Service**, not split across GitHub Pages + Azure.
+- `.github/workflows/deploy-backend.yml` (push to `main` touching `backend/**` or `frontend/**`): builds `frontend/dist` (with `VITE_API_BASE_URL=/api/v1`, a relative path — same-origin, no CORS needed), copies it into `backend/static_frontend`, then zip-deploys the `backend/` folder to Azure App Service.
+- `backend/app/__init__.py`'s `_register_frontend()` serves `backend/static_frontend/` (if present) at `/`, with a catch-all SPA-fallback route to `index.html` for client-side routes, and a safety-net 404 for unmatched `/api/*` paths (Werkzeug's catch-all does receive unmatched `/api/v1/...` requests too — verified in testing — hence the explicit `path.startswith("api/")` guard). No-op in local dev since `static_frontend/` doesn't exist there; `npm run dev` + `flask run` on separate ports still works as before.
+- Startup command on the App Service must be `gunicorn --bind=0.0.0.0 --timeout 600 app:app`.
+- **Database** → Azure Database for PostgreSQL (Flexible Server). `DATABASE_URL` needs `?sslmode=require`, and any special characters in the password (`@ : / %`) must be percent-encoded or the host parsing breaks; `config.py`'s `_normalize_database_url()` separately rewrites a legacy `postgres://` scheme to `postgresql://` if a provider ever emits that.
+- `flask db upgrade` / `flask seed` / `flask import-pincodes` against production are run manually (locally, pointed at `DATABASE_URL`) — not automated in CI, since that would require opening the Azure Postgres firewall to GitHub-hosted runner IPs.
+- `CORS_ORIGINS` is now optional in production (same-origin frontend+API); `_build_cors_origins()` in `config.py` only auto-adds the `localhost:5173` dev defaults when `FLASK_ENV != production`.
+
 ## Git Workflow
 
 ```

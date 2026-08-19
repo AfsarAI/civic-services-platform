@@ -49,38 +49,98 @@
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
               <label class="form-label" for="first_name">First Name</label>
-              <input id="first_name" v-model.trim="form.first_name" class="form-input" placeholder="Suresh" />
+              <input
+                id="first_name"
+                v-model.trim="form.first_name"
+                class="form-input"
+                :class="createInputErrorClass('first_name')"
+                placeholder="Suresh"
+                @blur="touchField(createTouched, 'first_name')"
+              />
+              <p v-if="createFieldError('first_name')" class="mt-1 text-xs text-red-600">{{ createFieldError('first_name') }}</p>
             </div>
             <div>
               <label class="form-label" for="last_name">Last Name</label>
-              <input id="last_name" v-model.trim="form.last_name" class="form-input" placeholder="Yadav" />
+              <input
+                id="last_name"
+                v-model.trim="form.last_name"
+                class="form-input"
+                :class="createInputErrorClass('last_name')"
+                placeholder="Yadav"
+                @blur="touchField(createTouched, 'last_name')"
+              />
+              <p v-if="createFieldError('last_name')" class="mt-1 text-xs text-red-600">{{ createFieldError('last_name') }}</p>
             </div>
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
               <label class="form-label" for="username">Username</label>
-              <input id="username" v-model.trim="form.username" class="form-input" placeholder="suresh_worker" />
+              <input
+                id="username"
+                v-model.trim="form.username"
+                class="form-input"
+                :class="createInputErrorClass('username')"
+                placeholder="suresh_worker"
+                @blur="touchField(createTouched, 'username')"
+              />
+              <p v-if="createFieldError('username')" class="mt-1 text-xs text-red-600">{{ createFieldError('username') }}</p>
             </div>
             <div>
               <label class="form-label" for="email">Email</label>
-              <input id="email" v-model.trim="form.email" type="email" class="form-input" placeholder="suresh.worker@example.com" />
+              <input
+                id="email"
+                v-model.trim="form.email"
+                type="email"
+                class="form-input"
+                :class="createInputErrorClass('email')"
+                placeholder="suresh.worker@example.com"
+                @blur="touchField(createTouched, 'email')"
+              />
+              <p v-if="createFieldError('email')" class="mt-1 text-xs text-red-600">{{ createFieldError('email') }}</p>
             </div>
           </div>
 
           <div>
             <label class="form-label" for="phone">Phone Number (optional)</label>
-            <input id="phone" v-model.trim="form.phone" type="tel" class="form-input" placeholder="+91-9876543210" />
+            <input
+              id="phone"
+              v-model.trim="form.phone"
+              type="tel"
+              class="form-input"
+              :class="createInputErrorClass('phone')"
+              placeholder="9876543210"
+              @blur="touchField(createTouched, 'phone')"
+            />
+            <p v-if="createFieldError('phone')" class="mt-1 text-xs text-red-600">{{ createFieldError('phone') }}</p>
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
               <label class="form-label" for="password">Password</label>
-              <input id="password" v-model="form.password" type="password" class="form-input" placeholder="Worker@123" />
+              <input
+                id="password"
+                v-model="form.password"
+                type="password"
+                class="form-input"
+                :class="createInputErrorClass('password')"
+                placeholder="Worker@123"
+                @blur="touchField(createTouched, 'password')"
+              />
+              <p v-if="createFieldError('password')" class="mt-1 text-xs text-red-600">{{ createFieldError('password') }}</p>
             </div>
             <div>
               <label class="form-label" for="confirm_password">Confirm Password</label>
-              <input id="confirm_password" v-model="form.confirm_password" type="password" class="form-input" placeholder="Re-enter password" />
+              <input
+                id="confirm_password"
+                v-model="form.confirm_password"
+                type="password"
+                class="form-input"
+                :class="createInputErrorClass('confirm_password')"
+                placeholder="Re-enter password"
+                @blur="touchField(createTouched, 'confirm_password')"
+              />
+              <p v-if="createFieldError('confirm_password')" class="mt-1 text-xs text-red-600">{{ createFieldError('confirm_password') }}</p>
             </div>
           </div>
 
@@ -153,19 +213,48 @@
             <form v-if="editingId === worker.id" class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2" @submit.prevent="handleSaveEdit(worker)">
               <div>
                 <label class="form-label" :for="`edit-first-${worker.id}`">First Name</label>
-                <input :id="`edit-first-${worker.id}`" v-model.trim="editForm.first_name" class="form-input" />
+                <input
+                  :id="`edit-first-${worker.id}`"
+                  v-model.trim="editForm.first_name"
+                  class="form-input"
+                  :class="editInputErrorClass('first_name')"
+                  @blur="touchField(editTouched, 'first_name')"
+                />
+                <p v-if="editFieldError('first_name')" class="mt-1 text-xs text-red-600">{{ editFieldError('first_name') }}</p>
               </div>
               <div>
                 <label class="form-label" :for="`edit-last-${worker.id}`">Last Name</label>
-                <input :id="`edit-last-${worker.id}`" v-model.trim="editForm.last_name" class="form-input" />
+                <input
+                  :id="`edit-last-${worker.id}`"
+                  v-model.trim="editForm.last_name"
+                  class="form-input"
+                  :class="editInputErrorClass('last_name')"
+                  @blur="touchField(editTouched, 'last_name')"
+                />
+                <p v-if="editFieldError('last_name')" class="mt-1 text-xs text-red-600">{{ editFieldError('last_name') }}</p>
               </div>
               <div>
                 <label class="form-label" :for="`edit-email-${worker.id}`">Email</label>
-                <input :id="`edit-email-${worker.id}`" v-model.trim="editForm.email" type="email" class="form-input" />
+                <input
+                  :id="`edit-email-${worker.id}`"
+                  v-model.trim="editForm.email"
+                  type="email"
+                  class="form-input"
+                  :class="editInputErrorClass('email')"
+                  @blur="touchField(editTouched, 'email')"
+                />
+                <p v-if="editFieldError('email')" class="mt-1 text-xs text-red-600">{{ editFieldError('email') }}</p>
               </div>
               <div>
                 <label class="form-label" :for="`edit-phone-${worker.id}`">Phone</label>
-                <input :id="`edit-phone-${worker.id}`" v-model.trim="editForm.phone" class="form-input" />
+                <input
+                  :id="`edit-phone-${worker.id}`"
+                  v-model.trim="editForm.phone"
+                  class="form-input"
+                  :class="editInputErrorClass('phone')"
+                  @blur="touchField(editTouched, 'phone')"
+                />
+                <p v-if="editFieldError('phone')" class="mt-1 text-xs text-red-600">{{ editFieldError('phone') }}</p>
               </div>
               <div class="sm:col-span-2 flex justify-end gap-2">
                 <button type="button" class="btn-secondary px-4 py-2 text-sm" @click="editingId = null">Cancel</button>
@@ -178,11 +267,29 @@
             <form v-if="resettingId === worker.id" class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2" @submit.prevent="handleResetPassword(worker)">
               <div>
                 <label class="form-label" :for="`reset-password-${worker.id}`">New Password</label>
-                <input :id="`reset-password-${worker.id}`" v-model="passwordResetForm.password" type="password" class="form-input" placeholder="NewSecret@123" />
+                <input
+                  :id="`reset-password-${worker.id}`"
+                  v-model="passwordResetForm.password"
+                  type="password"
+                  class="form-input"
+                  :class="resetInputErrorClass('password')"
+                  placeholder="NewSecret@123"
+                  @blur="touchField(resetTouched, 'password')"
+                />
+                <p v-if="resetFieldError('password')" class="mt-1 text-xs text-red-600">{{ resetFieldError('password') }}</p>
               </div>
               <div>
                 <label class="form-label" :for="`reset-confirm-${worker.id}`">Confirm New Password</label>
-                <input :id="`reset-confirm-${worker.id}`" v-model="passwordResetForm.confirm_password" type="password" class="form-input" placeholder="Re-enter new password" />
+                <input
+                  :id="`reset-confirm-${worker.id}`"
+                  v-model="passwordResetForm.confirm_password"
+                  type="password"
+                  class="form-input"
+                  :class="resetInputErrorClass('confirm_password')"
+                  placeholder="Re-enter new password"
+                  @blur="touchField(resetTouched, 'confirm_password')"
+                />
+                <p v-if="resetFieldError('confirm_password')" class="mt-1 text-xs text-red-600">{{ resetFieldError('confirm_password') }}</p>
               </div>
               <div class="sm:col-span-2 flex justify-end gap-2">
                 <button type="button" class="btn-secondary px-4 py-2 text-sm" @click="resettingId = null">Cancel</button>
@@ -202,6 +309,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import adminService from '@/services/admin.service'
+import { validateIndianMobile } from '@/utils/validation'
 
 const authStore = useAuthStore()
 
@@ -222,6 +330,10 @@ const isSubmitting = ref(false)
 const successMessage = ref('')
 const serverError = ref('')
 
+const createTouched = reactive({})
+const editTouched = reactive({})
+const resetTouched = reactive({})
+
 const editingId = ref(null)
 const editForm = reactive({ first_name: '', last_name: '', email: '', phone: '' })
 const isSavingEdit = ref(false)
@@ -229,6 +341,112 @@ const resettingId = ref(null)
 const passwordResetForm = reactive({ password: '', confirm_password: '' })
 const isResettingPassword = ref(false)
 const togglingIds = reactive(new Set())
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function touchField(target, field) {
+  target[field] = true
+}
+
+function validateCreateField(field) {
+  const value = form[field]
+  switch (field) {
+    case 'first_name':
+    case 'last_name':
+      if (!value?.trim()) return 'This field is required.'
+      if (value.trim().length > 80) return 'Must be 80 characters or fewer.'
+      return null
+    case 'username':
+      if (!value) return 'Username is required.'
+      if (value.length < 3) return 'Username must be at least 3 characters.'
+      if (value.length > 80) return 'Username must be 80 characters or fewer.'
+      return null
+    case 'email':
+      if (!value) return 'Email is required.'
+      if (!EMAIL_RE.test(value)) return 'Enter a valid email address.'
+      return null
+    case 'phone':
+      return validateIndianMobile(value)
+    case 'password':
+      if (!value) return 'Password is required.'
+      if (value.length < 8) return 'Password must be at least 8 characters.'
+      if (!/[A-Z]/.test(value)) return 'Password must include an uppercase letter.'
+      if (!/\d/.test(value)) return 'Password must include a digit.'
+      if (!/[!@#$%^&*(),.?":{}|<>\-_]/.test(value)) return 'Password must include a special character.'
+      return null
+    case 'confirm_password':
+      if (!value) return 'Confirm password is required.'
+      if (value !== form.password) return 'Confirm password must match password.'
+      return null
+    default:
+      return null
+  }
+}
+
+function createFieldError(field) {
+  if (!createTouched[field]) return null
+  return validateCreateField(field)
+}
+
+function createInputErrorClass(field) {
+  return createFieldError(field) ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''
+}
+
+function validateEditField(field) {
+  const value = editForm[field]
+  switch (field) {
+    case 'first_name':
+    case 'last_name':
+      if (!value?.trim()) return 'This field is required.'
+      if (value.trim().length > 80) return 'Must be 80 characters or fewer.'
+      return null
+    case 'email':
+      if (!value) return 'Email is required.'
+      if (!EMAIL_RE.test(value)) return 'Enter a valid email address.'
+      return null
+    case 'phone':
+      return validateIndianMobile(value)
+    default:
+      return null
+  }
+}
+
+function editFieldError(field) {
+  if (!editTouched[field]) return null
+  return validateEditField(field)
+}
+
+function editInputErrorClass(field) {
+  return editFieldError(field) ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''
+}
+
+function validateResetField(field) {
+  const value = passwordResetForm[field]
+  switch (field) {
+    case 'password':
+      if (!value) return 'Password is required.'
+      if (value.length < 8) return 'Password must be at least 8 characters.'
+      if (!/[A-Z]/.test(value)) return 'Password must include an uppercase letter.'
+      if (!/\d/.test(value)) return 'Password must include a digit.'
+      if (!/[!@#$%^&*(),.?":{}|<>\-_]/.test(value)) return 'Password must include a special character.'
+      return null
+    case 'confirm_password':
+      if (!value) return 'Confirm password is required.'
+      if (value !== passwordResetForm.password) return 'Confirm password must match the new password.'
+      return null
+    default:
+      return null
+  }
+}
+
+function resetFieldError(field) {
+  if (!resetTouched[field]) return null
+  return validateResetField(field)
+}
+
+function resetInputErrorClass(field) {
+  return resetFieldError(field) ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''
+}
 
 const stats = computed(() => {
   const total = fieldWorkers.value.length
@@ -265,6 +483,19 @@ function resetForm() {
 async function handleCreate() {
   successMessage.value = ''
   serverError.value = ''
+
+  Object.keys(createTouched).forEach((key) => delete createTouched[key])
+  ;['first_name', 'last_name', 'username', 'email', 'phone', 'password', 'confirm_password'].forEach((field) => {
+    createTouched[field] = true
+  })
+
+  const hasErrors = ['first_name', 'last_name', 'username', 'email', 'phone', 'password', 'confirm_password']
+    .some((field) => createFieldError(field))
+
+  if (hasErrors) {
+    return
+  }
+
   isSubmitting.value = true
   try {
     const response = await adminService.createFieldWorker({ ...form, email: form.email.trim().toLowerCase() })
@@ -298,6 +529,16 @@ function toggleEditDetails(worker) {
 }
 
 async function handleSaveEdit(worker) {
+  Object.keys(editTouched).forEach((key) => delete editTouched[key])
+  ;['first_name', 'last_name', 'email', 'phone'].forEach((field) => {
+    editTouched[field] = true
+  })
+
+  const hasErrors = ['first_name', 'last_name', 'email', 'phone'].some((field) => editFieldError(field))
+  if (hasErrors) {
+    return
+  }
+
   isSavingEdit.value = true
   serverError.value = ''
   try {
@@ -326,8 +567,10 @@ function toggleResetPassword(worker) {
 
 async function handleResetPassword(worker) {
   serverError.value = ''
-  if (passwordResetForm.password !== passwordResetForm.confirm_password) {
-    serverError.value = 'Confirm password must match the new password.'
+  resetTouched.password = true
+  resetTouched.confirm_password = true
+
+  if (resetFieldError('password') || resetFieldError('confirm_password')) {
     return
   }
 

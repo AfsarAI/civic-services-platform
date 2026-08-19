@@ -7,7 +7,7 @@ import re
 from marshmallow import ValidationError
 
 
-PHONE_PATTERN = re.compile(r"^\+?(\d[\s\-]?){9,14}\d$")
+PHONE_PATTERN = re.compile(r"^[6-9]\d{9}$")
 PINCODE_PATTERN = re.compile(r"^\d{6}$")
 
 
@@ -48,13 +48,12 @@ def validate_password_strength(value: str) -> None:
 
 
 def validate_phone_number(value: str | None) -> None:
-    """Validate a phone number using the shared project format."""
+    """Validate an optional Indian mobile number."""
     if value is None:
         return
-    if not PHONE_PATTERN.match(value):
-        raise ValidationError(
-            "Enter a valid phone number (e.g. +91-9876543210 or 9876543210)."
-        )
+    normalized = value.strip() if isinstance(value, str) else value
+    if not isinstance(normalized, str) or not PHONE_PATTERN.fullmatch(normalized):
+        raise ValidationError("Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.")
 
 
 def validate_pincode(value: str | None) -> None:

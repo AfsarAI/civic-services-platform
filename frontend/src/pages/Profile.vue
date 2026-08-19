@@ -108,17 +108,44 @@
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
               <label class="form-label" for="first_name">First Name</label>
-              <input id="first_name" v-model.trim="profileForm.first_name" type="text" class="form-input" required />
+              <input
+                id="first_name"
+                v-model.trim="profileForm.first_name"
+                type="text"
+                class="form-input"
+                :class="profileInputErrorClass('first_name')"
+                required
+                @blur="profileTouch('first_name')"
+              />
+              <p v-if="profileFieldError('first_name')" class="mt-1 text-xs text-red-600">{{ profileFieldError('first_name') }}</p>
             </div>
             <div>
               <label class="form-label" for="last_name">Last Name</label>
-              <input id="last_name" v-model.trim="profileForm.last_name" type="text" class="form-input" required />
+              <input
+                id="last_name"
+                v-model.trim="profileForm.last_name"
+                type="text"
+                class="form-input"
+                :class="profileInputErrorClass('last_name')"
+                required
+                @blur="profileTouch('last_name')"
+              />
+              <p v-if="profileFieldError('last_name')" class="mt-1 text-xs text-red-600">{{ profileFieldError('last_name') }}</p>
             </div>
           </div>
 
           <div>
             <label class="form-label" for="phone">Phone Number</label>
-            <input id="phone" v-model.trim="profileForm.phone" type="tel" class="form-input" placeholder="+91-9876543210" />
+            <input
+              id="phone"
+              v-model.trim="profileForm.phone"
+              type="tel"
+              class="form-input"
+              :class="profileInputErrorClass('phone')"
+              placeholder="9876543210"
+              @blur="profileTouch('phone')"
+            />
+            <p v-if="profileFieldError('phone')" class="mt-1 text-xs text-red-600">{{ profileFieldError('phone') }}</p>
           </div>
 
           <div v-if="authStore.adminLevel" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
@@ -150,12 +177,15 @@
               v-model="passwordForm.current_password"
               :type="showPassword.current ? 'text' : 'password'"
               class="form-input pr-12"
+              :class="passwordInputErrorClass('current_password')"
               required
+              @blur="passwordTouch('current_password')"
             />
             <button type="button" class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-700" @click="showPassword.current = !showPassword.current">
               {{ showPassword.current ? 'Hide' : 'Show' }}
             </button>
           </div>
+          <p v-if="passwordFieldError('current_password')" class="mt-1 text-xs text-red-600">{{ passwordFieldError('current_password') }}</p>
         </div>
 
         <div>
@@ -166,12 +196,15 @@
               v-model="passwordForm.new_password"
               :type="showPassword.new ? 'text' : 'password'"
               class="form-input pr-12"
+              :class="passwordInputErrorClass('new_password')"
               required
+              @blur="passwordTouch('new_password')"
             />
             <button type="button" class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-700" @click="showPassword.new = !showPassword.new">
               {{ showPassword.new ? 'Hide' : 'Show' }}
             </button>
           </div>
+          <p v-if="passwordFieldError('new_password')" class="mt-1 text-xs text-red-600">{{ passwordFieldError('new_password') }}</p>
         </div>
 
         <div>
@@ -182,12 +215,15 @@
               v-model="passwordForm.confirm_password"
               :type="showPassword.confirm ? 'text' : 'password'"
               class="form-input pr-12"
+              :class="passwordInputErrorClass('confirm_password')"
               required
+              @blur="passwordTouch('confirm_password')"
             />
             <button type="button" class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-700" @click="showPassword.confirm = !showPassword.confirm">
               {{ showPassword.confirm ? 'Hide' : 'Show' }}
             </button>
           </div>
+          <p v-if="passwordFieldError('confirm_password')" class="mt-1 text-xs text-red-600">{{ passwordFieldError('confirm_password') }}</p>
         </div>
 
         <button type="submit" class="btn-primary w-full py-3" :disabled="isSavingPassword">
@@ -202,6 +238,7 @@
 import { computed, reactive, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import authService from '@/services/auth.service'
+import { validateIndianMobile } from '@/utils/validation'
 
 const authStore = useAuthStore()
 
@@ -214,6 +251,7 @@ const profileForm = reactive({
   last_name: authStore.user?.last_name || '',
   phone: authStore.user?.phone || '',
 })
+const profileTouched = reactive({})
 const isSavingProfile = ref(false)
 
 const passwordForm = reactive({
@@ -221,8 +259,63 @@ const passwordForm = reactive({
   new_password: '',
   confirm_password: '',
 })
+const passwordTouched = reactive({})
 const showPassword = reactive({ current: false, new: false, confirm: false })
 const isSavingPassword = ref(false)
+
+function profileTouch(field) {
+  profileTouched[field] = true
+}
+
+function profileFieldError(field) {
+  if (!profileTouched[field]) return null
+  const value = profileForm[field]
+  switch (field) {
+    case 'first_name':
+    case 'last_name':
+      if (!value?.trim()) return 'This field is required.'
+      return null
+    case 'phone':
+      return validateIndianMobile(value)
+    default:
+      return null
+  }
+}
+
+function profileInputErrorClass(field) {
+  return profileFieldError(field) ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''
+}
+
+function passwordTouch(field) {
+  passwordTouched[field] = true
+}
+
+function passwordFieldError(field) {
+  if (!passwordTouched[field]) return null
+  const value = passwordForm[field]
+  switch (field) {
+    case 'current_password':
+      if (!value) return 'Current password is required.'
+      return null
+    case 'new_password':
+      if (!value) return 'New password is required.'
+      if (value.length < 8) return 'Password must be at least 8 characters.'
+      if (!/[A-Z]/.test(value)) return 'Password must include an uppercase letter.'
+      if (!/\d/.test(value)) return 'Password must include a digit.'
+      if (!/[!@#$%^&*(),.?":{}|<>\-_]/.test(value)) return 'Password must include a special character.'
+      return null
+    case 'confirm_password':
+      if (!value) return 'Confirm password is required.'
+      if (value !== passwordForm.new_password) return 'Confirm password must match the new password.'
+      return null
+    default:
+      return null
+  }
+}
+
+function passwordInputErrorClass(field) {
+  return passwordFieldError(field) ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''
+}
 
 const cameraInputRef = ref(null)
 const galleryInputRef = ref(null)
@@ -256,6 +349,15 @@ function resetAlerts() {
 
 async function handleSaveProfile() {
   resetAlerts()
+  profileTouched.first_name = true
+  profileTouched.last_name = true
+  profileTouched.phone = true
+
+  const hasErrors = ['first_name', 'last_name', 'phone'].some((field) => profileFieldError(field))
+  if (hasErrors) {
+    return
+  }
+
   isSavingProfile.value = true
   try {
     await authService.updateProfile({ ...profileForm })
@@ -270,6 +372,15 @@ async function handleSaveProfile() {
 
 async function handleChangePassword() {
   resetAlerts()
+  passwordTouched.current_password = true
+  passwordTouched.new_password = true
+  passwordTouched.confirm_password = true
+
+  const hasErrors = ['current_password', 'new_password', 'confirm_password'].some((field) => passwordFieldError(field))
+  if (hasErrors) {
+    return
+  }
+
   isSavingPassword.value = true
   try {
     await authService.changePassword({ ...passwordForm })
@@ -277,6 +388,7 @@ async function handleChangePassword() {
     passwordForm.current_password = ''
     passwordForm.new_password = ''
     passwordForm.confirm_password = ''
+    Object.keys(passwordTouched).forEach((key) => delete passwordTouched[key])
   } catch (err) {
     serverError.value = err?.response?.data?.message || 'Could not update password.'
   } finally {

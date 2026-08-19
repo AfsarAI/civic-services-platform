@@ -53,6 +53,9 @@ _complaint_update = ns.model("AdminComplaintUpdate", {
     "priority": fields.String(
         example="high", enum=["low", "medium", "high", "urgent"]
     ),
+    "rejection_reason": fields.String(
+        example="This report is outside the municipal service area."
+    ),
 })
 
 _assign_body = ns.model("AssignComplaint", {
@@ -95,7 +98,7 @@ _municipal_admin_create = ns.model("MunicipalAdminCreate", {
     "confirm_password": fields.String(required=True, example="Municipal@123"),
     "first_name": fields.String(required=True, example="Lucknow"),
     "last_name": fields.String(required=True, example="Administrator"),
-    "phone": fields.String(example="+91-9876543210"),
+    "phone": fields.String(example="9876543210"),
     "pincode": fields.String(required=True, example="226001"),
     "city_id": fields.Integer(example=42),
     "city_name": fields.String(example="Lucknow"),
@@ -123,7 +126,7 @@ _field_worker_create = ns.model("FieldWorkerCreate", {
     "confirm_password": fields.String(required=True, example="Worker@123"),
     "first_name": fields.String(required=True, example="Ravi"),
     "last_name": fields.String(required=True, example="Kumar"),
-    "phone": fields.String(example="+91-9876543210"),
+    "phone": fields.String(example="9876543210"),
 })
 
 _field_worker_update = ns.model("FieldWorkerUpdate", {
@@ -630,6 +633,7 @@ class AdminFieldWorkerResource(Resource):
 
     @ns.expect(_field_worker_update)
     @ns.response(200, "Field worker updated", _envelope)
+    @ns.response(400, "Business rule violation", _envelope)
     @ns.response(404, "Not found", _envelope)
     @ns.response(409, "Conflict", _envelope)
     @ns.response(422, "Validation error", _envelope)
@@ -652,6 +656,7 @@ class AdminFieldWorkerResource(Resource):
             return error_response(str(exc), status_code=code)
 
     @ns.response(200, "Field worker deactivated", _envelope)
+    @ns.response(400, "Business rule violation", _envelope)
     @ns.response(404, "Not found", _envelope)
     @jwt_required()
     @require_municipal_admin
@@ -661,7 +666,8 @@ class AdminFieldWorkerResource(Resource):
             data = _svc.update_field_worker(user_id, _current_admin_user(), {"is_active": False})
             return success_response(data, "Field worker deactivated.")
         except ValueError as exc:
-            return error_response(str(exc), status_code=404)
+            code = 404 if "not found" in str(exc).lower() else 400
+            return error_response(str(exc), status_code=code)
 
 
 @ns.route("/dashboard")

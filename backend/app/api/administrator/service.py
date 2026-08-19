@@ -212,6 +212,10 @@ class AdminService:
                 raise ValueError(
                     f"Cannot move complaint from '{complaint.status}' to '{new_status}'."
                 )
+            if new_status == Complaint.STATUS_REJECTED:
+                rejection_reason = (data.get("rejection_reason") or "").strip()
+                if not rejection_reason:
+                    raise ValueError("A rejection reason is required.")
             if new_status == Complaint.STATUS_RESOLVED:
                 raise ValueError(
                     "Completed repairs must be approved through repair verification."
@@ -226,6 +230,9 @@ class AdminService:
         # Update priority level to adjust complaint triage and urgency.
         if "priority" in data:
             complaint.priority = data["priority"]
+
+        if "rejection_reason" in data:
+            complaint.rejection_reason = (data.get("rejection_reason") or "").strip() or None
 
         db.session.commit()
 
@@ -846,6 +853,22 @@ class AdminService:
     def update_field_worker(self, user_id: int, acting_admin: User, data: dict) -> dict:
         """Edit, activate/deactivate, or reset the password of a field worker in the admin's city."""
         worker = self._get_owned_field_worker(user_id, acting_admin)
+
+        if data.get("is_active") is False and worker.is_active:
+            pending_count = ComplaintAssignment.query.filter(
+                ComplaintAssignment.worker_id == worker.id,
+                ComplaintAssignment.status.in_((
+                    ComplaintAssignment.STATUS_ASSIGNED,
+                    ComplaintAssignment.STATUS_ACCEPTED,
+                    ComplaintAssignment.STATUS_IN_PROGRESS,
+                )),
+            ).count()
+            if pending_count:
+                raise ValueError(
+                    f"Cannot deactivate this field worker: {pending_count} assignment"
+                    f"{'s' if pending_count != 1 else ''} still assigned or in progress. "
+                    "Reassign or complete them first."
+                )
 
         if "email" in data:
             worker.email = self._ensure_email_available(data["email"], exclude_user_id=worker.id)
@@ -1474,6 +1497,7 @@ class AdminService:
             "closed_at": (
                 complaint.closed_at.isoformat() if complaint.closed_at else None
             ),
+            "rejection_reason": complaint.rejection_reason,
             "created_at": complaint.created_at.isoformat(),
             "updated_at": complaint.updated_at.isoformat(),
             # Lets the dashboard/list flag "field worker finished, awaiting your

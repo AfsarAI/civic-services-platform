@@ -250,7 +250,10 @@ class TestSystemSettingsEndpoints:
             reject_response = client.put(
                 f"/api/v1/admin/complaints/{complaint_id}",
                 headers={"Authorization": f"Bearer {admin_token}"},
-                json={"status": "rejected"},
+                json={
+                    "status": "rejected",
+                    "rejection_reason": "This report does not meet the submission criteria.",
+                },
             )
             assert reject_response.status_code == 200
 

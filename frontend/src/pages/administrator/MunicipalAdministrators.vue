@@ -128,7 +128,7 @@
                 type="tel"
                 class="form-input"
                 :class="inputErrorClass('phone')"
-                placeholder="+91-9876543210"
+                placeholder="9876543210"
                 @blur="touch('phone')"
               />
               <p v-if="fieldError('phone')" class="mt-1 text-xs text-red-600">{{ fieldError('phone') }}</p>
@@ -346,19 +346,48 @@
             >
               <div>
                 <label class="form-label" :for="`edit-first-${admin.id}`">First Name</label>
-                <input :id="`edit-first-${admin.id}`" v-model.trim="detailsForm.first_name" class="form-input" />
+                <input
+                  :id="`edit-first-${admin.id}`"
+                  v-model.trim="detailsForm.first_name"
+                  class="form-input"
+                  :class="detailsInputErrorClass('first_name')"
+                  @blur="detailsTouch('first_name')"
+                />
+                <p v-if="detailsFieldError('first_name')" class="mt-1 text-xs text-red-600">{{ detailsFieldError('first_name') }}</p>
               </div>
               <div>
                 <label class="form-label" :for="`edit-last-${admin.id}`">Last Name</label>
-                <input :id="`edit-last-${admin.id}`" v-model.trim="detailsForm.last_name" class="form-input" />
+                <input
+                  :id="`edit-last-${admin.id}`"
+                  v-model.trim="detailsForm.last_name"
+                  class="form-input"
+                  :class="detailsInputErrorClass('last_name')"
+                  @blur="detailsTouch('last_name')"
+                />
+                <p v-if="detailsFieldError('last_name')" class="mt-1 text-xs text-red-600">{{ detailsFieldError('last_name') }}</p>
               </div>
               <div>
                 <label class="form-label" :for="`edit-email-${admin.id}`">Email</label>
-                <input :id="`edit-email-${admin.id}`" v-model.trim="detailsForm.email" type="email" class="form-input" />
+                <input
+                  :id="`edit-email-${admin.id}`"
+                  v-model.trim="detailsForm.email"
+                  type="email"
+                  class="form-input"
+                  :class="detailsInputErrorClass('email')"
+                  @blur="detailsTouch('email')"
+                />
+                <p v-if="detailsFieldError('email')" class="mt-1 text-xs text-red-600">{{ detailsFieldError('email') }}</p>
               </div>
               <div>
                 <label class="form-label" :for="`edit-phone-${admin.id}`">Phone</label>
-                <input :id="`edit-phone-${admin.id}`" v-model.trim="detailsForm.phone" class="form-input" />
+                <input
+                  :id="`edit-phone-${admin.id}`"
+                  v-model.trim="detailsForm.phone"
+                  class="form-input"
+                  :class="detailsInputErrorClass('phone')"
+                  @blur="detailsTouch('phone')"
+                />
+                <p v-if="detailsFieldError('phone')" class="mt-1 text-xs text-red-600">{{ detailsFieldError('phone') }}</p>
               </div>
               <div class="sm:col-span-2 flex justify-end gap-2">
                 <button type="button" class="btn-secondary px-4 py-2 text-sm" @click="editingId = null">Cancel</button>
@@ -380,8 +409,11 @@
                   v-model="passwordResetForm.password"
                   type="password"
                   class="form-input"
+                  :class="resetInputErrorClass('password')"
                   placeholder="NewSecret@123"
+                  @blur="resetTouch('password')"
                 />
+                <p v-if="resetFieldError('password')" class="mt-1 text-xs text-red-600">{{ resetFieldError('password') }}</p>
               </div>
               <div>
                 <label class="form-label" :for="`reset-confirm-${admin.id}`">Confirm New Password</label>
@@ -390,8 +422,11 @@
                   v-model="passwordResetForm.confirm_password"
                   type="password"
                   class="form-input"
+                  :class="resetInputErrorClass('confirm_password')"
                   placeholder="Re-enter new password"
+                  @blur="resetTouch('confirm_password')"
                 />
+                <p v-if="resetFieldError('confirm_password')" class="mt-1 text-xs text-red-600">{{ resetFieldError('confirm_password') }}</p>
               </div>
               <div class="sm:col-span-2 flex justify-end gap-2">
                 <button type="button" class="btn-secondary px-4 py-2 text-sm" @click="cancelResetPassword">Cancel</button>
@@ -411,6 +446,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 
 import adminService from '@/services/admin.service'
+import { validateIndianMobile } from '@/utils/validation'
 
 const form = reactive({
   first_name: '',
@@ -444,12 +480,70 @@ const isLoadingList = ref(false)
 const deactivatingIds = reactive(new Set())
 const editingId = ref(null)
 const detailsForm = reactive({ first_name: '', last_name: '', email: '', phone: '' })
+const detailsTouched = reactive({})
 const isSavingDetails = ref(false)
 const resettingId = ref(null)
 const passwordResetForm = reactive({ password: '', confirm_password: '' })
+const resetTouched = reactive({})
 const isResettingPassword = ref(false)
 let filterDebounce = null
 let pincodeSuggestDebounce = null
+
+function detailsTouch(field) {
+  detailsTouched[field] = true
+}
+
+function detailsFieldError(field) {
+  if (!detailsTouched[field]) return null
+  const value = detailsForm[field]
+  switch (field) {
+    case 'first_name':
+    case 'last_name':
+      if (!value?.trim()) return 'This field is required.'
+      if (value.trim().length > 80) return 'Must be 80 characters or fewer.'
+      return null
+    case 'email':
+      if (!value) return 'Email is required.'
+      if (!EMAIL_RE.test(value)) return 'Enter a valid email address.'
+      return null
+    case 'phone':
+      return validateIndianMobile(value)
+    default:
+      return null
+  }
+}
+
+function detailsInputErrorClass(field) {
+  return detailsFieldError(field) ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''
+}
+
+function resetTouch(field) {
+  resetTouched[field] = true
+}
+
+function resetFieldError(field) {
+  if (!resetTouched[field]) return null
+  const value = passwordResetForm[field]
+  switch (field) {
+    case 'password':
+      if (!value) return 'Password is required.'
+      if (value.length < 8) return 'Password must be at least 8 characters.'
+      if (!/[A-Z]/.test(value)) return 'Password must include an uppercase letter.'
+      if (!/\d/.test(value)) return 'Password must include a digit.'
+      if (!/[!@#$%^&*(),.?":{}|<>\-_]/.test(value)) return 'Password must include a special character.'
+      return null
+    case 'confirm_password':
+      if (!value) return 'Confirm password is required.'
+      if (value !== passwordResetForm.password) return 'Confirm password must match the new password.'
+      return null
+    default:
+      return null
+  }
+}
+
+function resetInputErrorClass(field) {
+  return resetFieldError(field) ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''
+}
 
 const adminStats = computed(() => {
   const total = municipalAdministrators.value.length
@@ -462,7 +556,6 @@ const adminStats = computed(() => {
 })
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const PHONE_RE = /^\+?(\d[\s-]?){9,14}\d$/
 
 function touch(field) {
   touched[field] = true
@@ -498,9 +591,7 @@ function validateField(field) {
       if (!EMAIL_RE.test(value)) return 'Enter a valid email address.'
       return null
     case 'phone':
-      if (!value) return null
-      if (!PHONE_RE.test(value)) return 'Enter a valid phone number.'
-      return null
+      return validateIndianMobile(value)
     case 'pincode':
       if (!value) return 'Pincode is required.'
       if (!/^\d{6}$/.test(value)) return 'Pincode must be exactly 6 digits.'
@@ -756,6 +847,17 @@ function toggleEditDetails(admin) {
 }
 
 async function handleSaveDetails(admin) {
+  const fields = ['first_name', 'last_name', 'email', 'phone']
+  Object.keys(detailsTouched).forEach((key) => delete detailsTouched[key])
+  fields.forEach((field) => {
+    detailsTouched[field] = true
+  })
+
+  const hasErrors = fields.some((field) => detailsFieldError(field))
+  if (hasErrors) {
+    return
+  }
+
   isSavingDetails.value = true
   serverError.value = ''
   try {
@@ -788,8 +890,10 @@ function cancelResetPassword() {
 
 async function handleResetPassword(admin) {
   serverError.value = ''
-  if (passwordResetForm.password !== passwordResetForm.confirm_password) {
-    serverError.value = 'Confirm password must match the new password.'
+  resetTouched.password = true
+  resetTouched.confirm_password = true
+
+  if (resetFieldError('password') || resetFieldError('confirm_password')) {
     return
   }
 

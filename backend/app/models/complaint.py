@@ -54,6 +54,7 @@ class Complaint(db.Model):
     citizen_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     resolved_at = db.Column(UTCDateTime, nullable=True)
     closed_at = db.Column(UTCDateTime, nullable=True)
+    rejection_reason = db.Column(db.Text, nullable=True)
     # Set when this complaint is manually linked by an administrator as a
     # duplicate report of an existing, still-open complaint (same pothole
     # reported more than once). Reuses the existing `rejected` status rather
