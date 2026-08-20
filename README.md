@@ -133,6 +133,8 @@ cd frontend
 npm install
 cp .env.example .env
 npm run dev
+
+npm run build
 ```
 
 The frontend will be available at `http://localhost:5173`.
