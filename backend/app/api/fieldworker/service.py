@@ -69,7 +69,7 @@ class FieldWorkerService:
                     ]
                 ),
             )
-            .subquery()
+            .scalar_subquery()
         )
 
         query = (
