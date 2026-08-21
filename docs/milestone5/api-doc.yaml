@@ -29,39 +29,12 @@ info:
     ```
     
   version: "1.3"
-  x-last-updated: "2026-08-20"
-  x-total-endpoints: 60
+  x-last-updated: "2026-08-21"
+  x-total-endpoints: 69
   x-milestone: "Milestone 5 (Final Submission) — final validated API specification"
-  x-changes-since-milestone-3: |
-    1. NEW endpoint: GET /reports/feedback/summary (TPS-96) — existed in code
-       and was already pytest-covered, but was missing from this YAML.
-    2. UPDATED: PUT /admin/users/{id} — now accepts optional `email` and
-       `password`/`confirm_password` fields (password reset + email change),
-       and is now reachable by municipal administrators too (scoped to
-       citizens in their own city; system admins remain unscoped).
-    3. UPDATED: PUT /admin/field-workers/{id} — now accepts optional `email`
-       and `password`/`confirm_password` fields.
-    4. UPDATED: PUT /admin/municipal-administrators/{id} — now accepts
-       optional `email` and `password`/`confirm_password` fields.
-    5. CROSS-CUTTING FIX: all datetime fields returned by every endpoint now
-       serialize with an explicit UTC offset (e.g. `2026-08-01T11:30:00+00:00`
-       instead of `2026-08-01T11:30:00`) via a new `UTCDateTime` SQLAlchemy
-       type — fixes a bug where the frontend displayed every timestamp 5:30
-       hours behind (IST) because the browser misparsed offset-less strings
-       as local time. No response schema shape changed, only the string
-       format of existing datetime fields.
-    6. NEW: Duplicate pothole detection — GET /admin/complaints/{id}/duplicates,
-       POST /admin/complaints/{id}/mark-duplicate, GET
-       /citizen/complaints/nearby-duplicates, plus a new
-       `duplicate_detection_radius_meters` field on GET/PUT /admin/settings.
-       This was originally built and merged, then reverted, then rebuilt on a
-       separate local feature branch that was never merged into `dev` — it
-       was traced via `git log`/`git cherry-pick` and reintegrated into this
-       branch during this same documentation pass, after a user noticed the
-       System Settings page no longer had the control it previously had.
   contact:
     name: Team MAY2026-Team-005
-    url: https://github.com/jedku/MAY2026-Team-005
+    url: https://github.com/IITMPivotLabs/MAY2026-Team-005
   license:
     name: MIT
 
@@ -134,10 +107,10 @@ tags:
     description: Complaint submission, tracking, and feedback (TPS-3 through TPS-10, TPS-59)
 
   - name: Administrator APIs
-    description: Complaint management, field worker assignment, user management, dashboard KPIs, system settings, and municipal administrator hierarchy (TPS-27, TPS-33, TPS-35, TPS-52, TPS-80 through TPS-84, TPS-95, TPS-97, TPS-99; municipal admin management itself has no baseline Jira story)
+    description: Complaint management, field worker assignment, user management, dashboard KPIs, system settings, and municipal administrator hierarchy (TPS-33, TPS-80, TPS-78 through TPS-84, TPS-95, TPS-97, TPS-99, TPS-110, TPS-111)
 
   - name: Field Worker APIs
-    description: Assignment management, progress tracking, repair completion (TPS-42 through TPS-50)
+    description: Assignment management, progress tracking, repair completion (TPS-86 through TPS-90)
 
   - name: Notifications
     description: Real-time user notifications (TPS-60, TPS-91 through TPS-94)
@@ -746,7 +719,7 @@ paths:
       description: |
         List all complaints with advanced filtering
         
-        **Related User Stories**: TPS-80, TPS-85
+        **Related User Stories**: TPS-78
         
         **Scoping**: Municipal admins see only their city; system admins see all cities
         
@@ -786,7 +759,7 @@ paths:
       description: |
         Retrieve complaint for admin review and action
         
-        **Related User Stories**: TPS-81, TPS-82, TPS-83
+        **Related User Stories**: TPS-79
       security:
         - Bearer: []
       parameters:
@@ -929,7 +902,7 @@ paths:
       description: |
         Assign a pending/assigned complaint to a field worker
         
-        **Related User Stories**: TPS-52
+        **Related User Stories**: TPS-80
         
         **Validation**:
         - Complaint must be in "pending" or "assigned" status
@@ -974,7 +947,7 @@ paths:
       description: |
         Create a new field worker
         
-        **Related User Stories**: TPS-27
+        **Related User Stories**: TPS-111
         
         **Restrictions**:
         - ONLY municipal admins can create field workers
@@ -1016,7 +989,7 @@ paths:
       description: |
         List field workers (scoped to city for municipal admins)
         
-        **Related User Stories**: TPS-27
+        **Related User Stories**: TPS-111
         
         **Scoping**: Municipal admins see only their city's workers
       security:
@@ -1041,8 +1014,7 @@ paths:
         Update field worker details, and/or reset their password, and/or
         change their email (Milestone 4 addition, TPS-27 extended)
 
-        **Related User Stories**: TPS-27, plus "added beyond baseline"
-        password-reset/email-update capability (no dedicated TPS story)
+        **Related User Stories**: TPS-111
 
         **What's new in Milestone 4**: `password`/`confirm_password` (must
         match, same strength rules as registration) and `email` (must be
@@ -1089,7 +1061,7 @@ paths:
       description: |
         Soft-delete field worker (sets is_active=false)
         
-        **Related User Stories**: TPS-27
+        **Related User Stories**: TPS-111
       security:
         - Bearer: []
       parameters:
@@ -1149,8 +1121,7 @@ paths:
         Update a user's profile, activate/deactivate, reset their password,
         or change their email.
 
-        **Related User Stories**: TPS-33, plus "added beyond baseline"
-        password-reset/email-update capability (no dedicated TPS story)
+        **Related User Stories**: TPS-33
 
         **What's new in Milestone 4**: `email` and `password`/
         `confirm_password` are new optional fields on this endpoint — this
@@ -1202,8 +1173,7 @@ paths:
         Administrator dashboard: complaint totals/status breakdown, a status
         distribution chart, and 9 performance KPIs.
 
-        **Related User Stories**: TPS-35 (base dashboard), TPS-95 (view dashboard
-        + status chart), TPS-97 (performance metrics KPIs)
+        **Related User Stories**: TPS-95, TPS-97
 
         **KPI fields returned**: `total_complaints`, `open_complaints`,
         `closed_complaints`, `by_status`, `avg_resolution_time_hours`,
@@ -1297,7 +1267,7 @@ paths:
       description: |
         List all municipal administrators (system admin only)
 
-        **Related User Stories**: TPS-98
+        **Related User Stories**: TPS-110
       security:
         - Bearer: []
       parameters:
@@ -1321,7 +1291,7 @@ paths:
       description: |
         Create a new municipal admin (system admin only)
         
-        **Related User Stories**: TPS-98
+        **Related User Stories**: TPS-110
         
         **Audit Logging**: Creation recorded
       security:
@@ -1358,7 +1328,7 @@ paths:
       description: |
         Get a single municipal administrator's profile (system admin only)
 
-        **Related User Stories**: TPS-98
+        **Related User Stories**: TPS-110
       security:
         - Bearer: []
       parameters:
@@ -1383,8 +1353,7 @@ paths:
         Update a municipal administrator's profile, and/or reset their
         password, and/or change their email (system admin only)
 
-        **Related User Stories**: TPS-98, plus "added beyond baseline"
-        password-reset/email-update capability (no dedicated TPS story)
+        **Related User Stories**: TPS-110
 
         **What's new in Milestone 4**: `password`/`confirm_password` and
         `email` are new optional fields — this is how a System Administrator
@@ -1434,7 +1403,7 @@ paths:
       description: |
         Deactivate a municipal administrator's account (system admin only)
 
-        **Related User Stories**: TPS-98
+        **Related User Stories**: TPS-110
 
         **Audit Logging**: Deactivation recorded
       security:
@@ -1461,7 +1430,7 @@ paths:
       description: |
         List cities for municipal administrator onboarding (system admin only)
 
-        **Related User Stories**: TPS-98
+        **Related User Stories**: TPS-110
       security:
         - Bearer: []
       responses:
@@ -1555,7 +1524,7 @@ paths:
       description: |
         Get all assignments for the logged-in field worker
         
-        **Related User Stories**: TPS-42, TPS-86, TPS-90
+        **Related User Stories**: TPS-86, TPS-90
         
         **Advanced Filtering**:
         - `status`: Filter by assignment status (assigned, accepted, in_progress, completed, rejected)
@@ -1624,7 +1593,7 @@ paths:
       description: |
         Update work progress or reject assignment
 
-        **Related User Stories**: TPS-44, TPS-88
+        **Related User Stories**: TPS-88
 
         **Valid Status Values**:
         - `in_progress`: Continue working (stays the same)
@@ -1667,7 +1636,7 @@ paths:
       description: |
         Accept an assigned complaint and begin work
         
-        **Related User Stories**: TPS-43
+        **Related User Stories**: TPS-87
         
         **State Changes**:
         - Assignment status: assigned → accepted
@@ -1701,7 +1670,7 @@ paths:
       description: |
         Mark repair complete and upload evidence photo
         
-        **Related User Stories**: TPS-50
+        **Related User Stories**: TPS-89
         
         **State Changes**:
         - Assignment status: in_progress → completed
@@ -2383,105 +2352,3 @@ paths:
       responses:
         "200":
           description: Complaint markers retrieved
-
----
-
-## Summary of Related Jira Stories
-
-**Total: 60 documented paths / 69 operations, covering all endpoints implemented as of 2026-08-08 (Milestone 4 / Sprint 3 delta on top of Milestone 3's 2026-08-01 baseline).**
-**Verified against `docs/project-guide/Jira.csv` on 2026-08-01 (Milestone 3) and re-diffed against the live Flask `url_map` on 2026-08-08 (Milestone 4) — see "Changes since Milestone 3" in the `info` block at the top of this file.**
-
-| Story | Title | Endpoints |
-|---|---|---|
-| TPS-1 | User Registration | POST /auth/register |
-| TPS-2 | User Login & Auth | POST /auth/login, /refresh, /logout, /change-password, /me/avatar; GET/PUT /auth/me; GET /auth/me/avatar/{filename} |
-| TPS-3, TPS-4 | Submit & List Complaints | POST/GET /citizen/complaints, POST /citizen/complaints/media, GET /citizen/complaints/media/{filename} |
-| TPS-5, TPS-75 | View/Edit/Cancel Complaint | GET/PUT/DELETE /citizen/complaints/{id} |
-| TPS-10 | Citizen Dashboard | GET /citizen/dashboard |
-| TPS-27 | Manage Field Workers | GET/POST /admin/field-workers, GET/PUT/DELETE /admin/field-workers/{id} |
-| TPS-31 | Location Services | GET /locations/* (pincode, cities, pincodes, reverse-geocode, overview, complaint-pins) |
-| TPS-33 | Manage Users | GET /admin/users, GET/PUT /admin/users/{id} |
-| TPS-35, TPS-95, TPS-97 | Admin Dashboard + Performance KPIs | GET /admin/dashboard |
-| TPS-42, TPS-86, TPS-90 | List/Filter Assignments | GET /fieldworker/assignments |
-| TPS-43, TPS-87 | Accept Assignment | POST /fieldworker/assignments/{id}/accept |
-| TPS-44, TPS-88 | Update Progress | PUT /fieldworker/assignments/{id} |
-| TPS-45 | Assignment Details | GET /fieldworker/assignments/{id} |
-| TPS-47 | Field Worker Dashboard | GET /fieldworker/dashboard |
-| TPS-50, TPS-89 | Complete Assignment + Evidence Photo | POST /fieldworker/assignments/{id}/complete, POST /fieldworker/assignments/media, GET /fieldworker/assignments/media/{filename} |
-| TPS-52 | Assign to Worker | POST /admin/complaints/{id}/assign |
-| TPS-59 | Citizen Feedback | POST /citizen/complaints/{id}/feedback |
-| TPS-60, TPS-91, TPS-92, TPS-93, TPS-94 | Notifications | GET /notifications, GET /notifications/{id}, PATCH /notifications/{id}/read, PATCH /notifications/read-all, GET /notifications/unread-count |
-| TPS-80, TPS-81 | List/Prioritize Complaints (Admin) | GET/PUT /admin/complaints |
-| TPS-82 | Monitor Progress | GET /admin/assignments, GET/PUT /admin/complaints/{id} |
-| TPS-83 | Verify Repair | POST /admin/complaints/{id}/verify |
-| TPS-84 | Close Complaint | PUT /admin/complaints/{id} |
-| TPS-85, TPS-96 | Administrative & Analytics Reports | GET /reports/complaints/summary, /by-status, /by-priority, /by-location, /workers/performance |
-| TPS-85 | Category Report | GET /reports/complaints/by-category |
-| TPS-96 | Complaint Trends | GET /reports/complaints/trends |
-| TPS-96 | Citizen Feedback Summary (**new in Milestone 4 doc**) | GET /reports/feedback/summary |
-| None (added beyond baseline) | Municipal Admin Mgmt (Administrator Hierarchy) | GET/POST /admin/municipal-administrators, GET/PUT/DELETE /admin/municipal-administrators/{id}, GET /admin/cities |
-| None (added beyond baseline) | Password Reset & Email Update by an Administrator (**new in Milestone 4**) | PUT /admin/users/{id}, PUT /admin/field-workers/{id}, PUT /admin/municipal-administrators/{id} (all extended with optional `email`/`password`/`confirm_password`) |
-| None (added beyond baseline) | Duplicate Pothole Detection (**recovered and reintegrated in Milestone 4**) | GET /admin/complaints/{id}/duplicates, POST /admin/complaints/{id}/mark-duplicate, GET /citizen/complaints/nearby-duplicates, plus `duplicate_detection_radius_meters` on GET/PUT /admin/settings |
-| TPS-98 | Export Reports (CSV/Excel/PDF) | GET /reports/export/csv, /reports/export/excel, /reports/export/pdf |
-| TPS-99 | System Settings | GET/PUT /admin/settings |
-
-### Changes made for Milestone 4 (Sprint 3 delta, 2026-08-08)
-A full diff of every live Flask route (`app.url_map`) against this file's
-documented paths found exactly one undocumented endpoint and three endpoints
-whose behavior had changed without the docs being updated:
-1. **`GET /reports/feedback/summary`** existed in code and was already
-   pytest-covered (`test_reports_api.py`), but was missing from this YAML
-   entirely — added above under TPS-96.
-2. **`PUT /admin/users/{id}`** gained optional `email`/`password`/
-   `confirm_password` fields (password-reset/email-change by an
-   administrator) and is no longer system-admin-only — municipal
-   administrators can now call `GET`/`PUT /admin/users(/{id})` too, scoped
-   to citizens in their own city.
-3. **`PUT /admin/field-workers/{id}`** and **`PUT
-   /admin/municipal-administrators/{id}`** gained the same optional
-   `email`/`password`/`confirm_password` fields.
-4. **Cross-cutting**: every datetime field returned anywhere in the API now
-   includes an explicit UTC offset (e.g. `+00:00`) instead of an ambiguous
-   offset-less string — fixes a real bug where the frontend displayed every
-   timestamp 5:30 hours behind (IST) because the browser misparsed
-   offset-less ISO strings as local time. This is a string-format fix only;
-   no field names or response shapes changed.
-
-See `TEST_CASE_DOCUMENTATION.md` and `USER_FEEDBACK_AND_NEXT_SPRINT.md` in
-this same `docs/milestone4/` folder for the test cases and the real bug this
-sprint's testing caught (a case-sensitive duplicate-email check).
-
-### Corrections made on 2026-08-01
-The following TPS mappings in earlier drafts of this file were found to be
-incorrect when cross-checked against `docs/project-guide/Jira.csv` and have
-been corrected above:
-- `/reports/complaints/summary` was tagged TPS-53 (actually "Design Overall
-  System Architecture", unrelated) — corrected to TPS-85, TPS-96.
-- `/reports/complaints/by-status` was tagged TPS-56 (actually "Design
-  Database Schema") — corrected to TPS-85, TPS-96.
-- `/reports/complaints/by-category` and `/by-priority` were tagged TPS-57
-  (actually "Create ER Diagram") — corrected to TPS-85 / TPS-85+TPS-96.
-- `PUT /fieldworker/assignments/{id}` was incorrectly documented under a
-  non-existent path `/fieldworker/assignments/{id}/update` — the real route
-  is the same path as the GET (`/fieldworker/assignments/{id}`).
-- `/admin/municipal-administrators` was missing its `GET` (list) operation.
-
-### Corrections made on 2026-08-01 (round 2 — Copilot PR review)
-- `/admin/municipal-administrators`, `/admin/municipal-administrators/{id}`,
-  and `/admin/cities` were incorrectly tagged TPS-98 (which is actually
-  "Export Reports", unrelated) — corrected to "no baseline Jira story";
-  the Administrator Hierarchy (system/municipal admin subtype) is a feature
-  added beyond the original 55-story baseline scope, verified by confirming
-  no story in `Jira.csv` (TPS-1 through TPS-108) mentions municipal
-  administrator management.
-- `POST /auth/me/avatar`, `POST /citizen/complaints/media`, and
-  `POST /fieldworker/assignments/media` documented the multipart field name
-  as `file`, but the backend controllers read `request.files.get("photo")` —
-  corrected to `photo` in all three.
-- `POST /citizen/complaints/media` and `POST /fieldworker/assignments/media`
-  documented a `200` success response, but both controllers return `201`
-  (`success_response(..., 201)`) — corrected. `POST /auth/me/avatar` genuinely
-  returns `200` (no explicit status override), left unchanged.
-- `/notifications` was documented without a trailing slash, but the backend
-  registers this route as `/notifications/` (`Namespace(..., path="/notifications")`
-  + `@ns.route("/")`) — corrected to avoid client-side 308 redirects.
