@@ -1,49 +1,30 @@
 openapi: 3.0.0
 info:
   title: Civic Services Platform API
-  description: |
-    REST API for the Civic Services Platform - Pothole Reporting and Resolution System
-    
-    ## Authentication
-    All endpoints (except public locations) require JWT Bearer token in header:
-    ```
-    Authorization: Bearer <access_token>
-    ```
-    
-    ## User Roles
-    - **citizen**: Submit complaints, view own complaints, submit feedback
-    - **field_worker**: Accept assignments, update progress, complete repairs
-    - **administrator**: Manage complaints, assign workers, view reports, system settings
-      - **system_admin**: Global access, manages municipal admins
-      - **municipal_admin**: City-scoped access
-    
-    ## Response Envelope
-    All endpoints return standardized response:
-    ```json
-    {
-      "success": true,
-      "message": "Human readable message",
-      "data": { ... },
-      "errors": null
-    }
-    ```
-    
-  version: "1.3"
-  x-last-updated: "2026-08-21"
-  x-total-endpoints: 69
-  x-milestone: "Milestone 5 (Final Submission) — final validated API specification"
+  description: "REST API for the Civic Services Platform - Pothole Reporting and Resolution System\n\n## Authentication\n\
+    All endpoints (except public locations) require JWT Bearer token in header:\n```\nAuthorization: Bearer <access_token>\n\
+    ```\n\n## User Roles\n- **citizen**: Submit complaints, view own complaints, submit feedback\n- **field_worker**: Accept\
+    \ assignments, update progress, complete repairs\n- **administrator**: Manage complaints, assign workers, view reports,\
+    \ and system settings\n  - **admin_level: system**: Platform-wide administrative access, including municipal administrator\
+    \ management\n  - **admin_level: municipal**: City-scoped administrative access\n\n## Response Envelope\nAll endpoints\
+    \ return standardized response:\n```json\n{\n  \"success\": true,\n  \"message\": \"Human readable message\",\n  \"data\"\
+    : { ... },\n  \"errors\": null\n}\n```\n"
+  version: '1.3'
+  x-last-updated: '2026-08-21'
+  x-api-summary:
+    api-paths: 60
+    http-operations: 71
+    user-stories: 48
   contact:
     name: Team MAY2026-Team-005
     url: https://github.com/IITMPivotLabs/MAY2026-Team-005
   license:
     name: MIT
-
 servers:
-  - url: http://localhost:5000/api/v1
-    description: Development server
-  - url: https://civicservices.app/api/v1
-    description: Production server
-
+- url: http://localhost:5000/api/v1
+  description: Development server
+- url: https://civic-api-team005-ewhkb5ftarg5fuap.uaenorth-01.azurewebsites.net/api/v1
+  description: Production server
 components:
   securitySchemes:
     Bearer:
@@ -51,7 +32,6 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: JWT access token (1 hour validity)
-
   responses:
     UnauthorizedError:
       description: Missing or invalid JWT token
@@ -60,10 +40,15 @@ components:
           schema:
             type: object
             properties:
-              success: { type: boolean, example: false }
-              message: { type: string, example: "Missing or invalid token" }
-              errors: { type: "object", nullable: true }
-
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: Missing or invalid token
+              errors:
+                type: object
+                nullable: true
     ForbiddenError:
       description: Insufficient permissions for this role
       content:
@@ -71,10 +56,15 @@ components:
           schema:
             type: object
             properties:
-              success: { type: boolean, example: false }
-              message: { type: string, example: "Only admins can access this endpoint" }
-              errors: { type: "object", nullable: true }
-
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: Only admins can access this endpoint
+              errors:
+                type: object
+                nullable: true
     ValidationError:
       description: Request body validation failed
       content:
@@ -82,12 +72,19 @@ components:
           schema:
             type: object
             properties:
-              success: { type: boolean, example: false }
-              message: { type: string, example: "Validation failed" }
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: Validation failed
               errors:
                 type: object
-                example: { email: ["Invalid email format"], password: ["Too weak"] }
-
+                example:
+                  email:
+                  - Invalid email format
+                  password:
+                  - Too weak
     NotFoundError:
       description: Resource not found
       content:
@@ -95,49 +92,57 @@ components:
           schema:
             type: object
             properties:
-              success: { type: boolean, example: false }
-              message: { type: string, example: "Resource not found" }
-              errors: { type: "object", nullable: true }
-
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: Resource not found
+              errors:
+                type: object
+                nullable: true
 tags:
-  - name: Authentication
-    description: User registration, login, and profile management (TPS-1, TPS-2)
-
-  - name: Citizen APIs
-    description: Complaint submission, tracking, and feedback (TPS-3 through TPS-10, TPS-59)
-
-  - name: Administrator APIs
-    description: Complaint management, field worker assignment, user management, dashboard KPIs, system settings, and municipal administrator hierarchy (TPS-33, TPS-80, TPS-78 through TPS-84, TPS-95, TPS-97, TPS-99, TPS-110, TPS-111)
-
-  - name: Field Worker APIs
-    description: Assignment management, progress tracking, repair completion (TPS-86 through TPS-90)
-
-  - name: Notifications
-    description: Real-time user notifications (TPS-60, TPS-91 through TPS-94)
-
-  - name: Reports
-    description: Analytics, reporting, and report export - CSV/Excel/PDF (TPS-85, TPS-96, TPS-98)
-
-  - name: Locations
-    description: Public location lookup services (TPS-31)
-
+- name: Authentication
+  description: User registration, login, and profile management
+- name: Citizen APIs
+  description: Complaint submission, tracking, and feedback
+- name: Administrator APIs
+  description: Complaint management, field worker assignment, user management, dashboard KPIs, system settings, and municipal
+    administrator hierarchy
+- name: Field Worker APIs
+  description: Assignment management, progress tracking, repair completion
+- name: Notifications
+  description: Real-time user notifications
+- name: Reports
+  description: Analytics, reporting, and report export - CSV/Excel/PDF
+- name: Locations
+  description: Public location lookup services
 paths:
   /auth/register:
     post:
-      tags: [Authentication]
+      tags:
+      - Authentication
       summary: User Registration
-      description: |
-        Register a new user account
-        
-        **Related User Stories**: TPS-1
-        
+      description: 'Register a new user account
+
+
+        **Related User Stories**: TPS-64 (US16)
+
+
         **Role**: Public (no JWT required)
-        
+
+
         **Validation Rules**:
+
         - Email must be unique and valid format
+
         - Password must contain uppercase, lowercase, digit, and special character
+
         - Phone must be valid Indian phone format (10 digits)
+
         - First/last names must not be blank
+
+        '
       requestBody:
         required: true
         content:
@@ -145,191 +150,271 @@ paths:
             schema:
               type: object
               properties:
-                username: { type: string, example: "john_doe" }
-                email: { type: string, format: email, example: "john@example.com" }
-                password: { type: string, format: password, example: "SecurePass@123" }
-                confirm_password: { type: string, format: password }
-                first_name: { type: string, example: "John" }
-                last_name: { type: string, example: "Doe" }
-                phone: { type: string, example: "9876543210" }
-                role: { type: string, enum: ["citizen", "field_worker"], example: "citizen" }
+                username:
+                  type: string
+                  example: john_doe
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  format: password
+                  example: SecurePass@123
+                confirm_password:
+                  type: string
+                  format: password
+                first_name:
+                  type: string
+                  example: John
+                last_name:
+                  type: string
+                  example: Doe
+                phone:
+                  type: string
+                  example: '9876543210'
+                role:
+                  type: string
+                  enum:
+                  - citizen
+                  - field_worker
+                  example: citizen
       responses:
-        "201":
+        '201':
           description: User registered successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  success: { type: boolean, example: true }
-                  message: { type: string, example: "User registered successfully" }
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: User registered successfully
                   data:
                     type: object
                     properties:
-                      id: { type: integer }
-                      username: { type: string }
-                      email: { type: string }
-                      role: { type: string }
-        "400":
+                      id:
+                        type: integer
+                      username:
+                        type: string
+                      email:
+                        type: string
+                      role:
+                        type: string
+        '400':
           description: Validation failure (duplicate email, weak password, invalid format)
-        "409":
+        '409':
           description: Email already registered
-        "422":
+        '422':
           $ref: '#/components/responses/ValidationError'
-
   /auth/login:
     post:
-      tags: [Authentication]
+      tags:
+      - Authentication
       summary: User Login
-      description: |
-        Login and obtain JWT tokens
-        
-        **Related User Stories**: TPS-2
-        
+      description: 'Login and obtain JWT tokens
+
+
+        **Related User Stories**: TPS-65 (US15), TPS-66 (US14), TPS-67 (US13)
+
+
         **Role**: Public
-        
+
+
         **Returns**:
+
         - `access_token`: Valid for 1 hour
+
         - `refresh_token`: Valid for 30 days
-        
+
+
         **Note**: Maintenance mode (TPS-99) can block non-admin logins
+
+        '
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [username, password]
+              required:
+              - username
+              - password
               properties:
-                username: { type: string }
-                password: { type: string, format: password }
+                username:
+                  type: string
+                password:
+                  type: string
+                  format: password
       responses:
-        "200":
+        '200':
           description: Login successful, tokens returned
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  success: { type: boolean, example: true }
-                  message: { type: string, example: "Login successful" }
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Login successful
                   data:
                     type: object
                     properties:
-                      user: { type: object }
-                      access_token: { type: string }
-                      refresh_token: { type: string }
-        "401":
+                      user:
+                        type: object
+                      access_token:
+                        type: string
+                      refresh_token:
+                        type: string
+        '401':
           description: Invalid credentials or inactive account
-        "503":
+        '503':
           description: Maintenance mode enabled for non-admins
-
   /auth/me:
     get:
-      tags: [Authentication]
+      tags:
+      - Authentication
       summary: Get Current User Profile
-      description: |
-        Retrieve logged-in user details
-        
-        **Related User Stories**: TPS-2
-        
+      description: 'Retrieve logged-in user details
+
+
+        **Related User Stories**: TPS-65 (US15), TPS-66 (US14), TPS-67 (US13), TPS-68 (US12)
+
+
         **Includes**: Role info, admin level, city scope (if applicable)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       responses:
-        "200":
+        '200':
           description: User profile retrieved
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  success: { type: boolean, example: true }
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: object
                     properties:
-                      id: { type: integer }
-                      username: { type: string }
-                      email: { type: string }
-                      role: { type: string }
-                      admin_level: { type: string, enum: ["system", "municipal"] }
-                      city_id: { type: integer, nullable: true }
-        "401":
+                      id:
+                        type: integer
+                      username:
+                        type: string
+                      email:
+                        type: string
+                      role:
+                        type: string
+                      admin_level:
+                        type: string
+                        enum:
+                        - system
+                        - municipal
+                      city_id:
+                        type: integer
+                        nullable: true
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-
   /auth/refresh:
     post:
-      tags: [Authentication]
+      tags:
+      - Authentication
       summary: Refresh Access Token
-      description: |
-        Exchange a valid refresh token for a new access token
+      description: 'Exchange a valid refresh token for a new access token
 
-        **Related User Stories**: TPS-2
+
+        **Related User Stories**: TPS-65 (US15), TPS-66 (US14), TPS-67 (US13)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       responses:
-        "200":
+        '200':
           description: New access token issued
-        "401":
+        '401':
           description: Invalid or expired refresh token
-
   /auth/logout:
     post:
-      tags: [Authentication]
+      tags:
+      - Authentication
       summary: Logout
-      description: |
-        Log out the current user
+      description: 'Log out the current user
 
-        **Related User Stories**: TPS-2
+
+        **Related User Stories**: TPS-69 (US11)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       responses:
-        "200":
+        '200':
           description: Logged out successfully
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-
   /auth/change-password:
     post:
-      tags: [Authentication]
+      tags:
+      - Authentication
       summary: Change Password
-      description: |
-        Change the current user's own password
+      description: 'Change the current user''s own password
 
-        **Related User Stories**: TPS-2
+
+        **Related User Stories**: TPS-65 (US15), TPS-66 (US14), TPS-67 (US13)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [current_password, new_password, confirm_password]
+              required:
+              - current_password
+              - new_password
+              - confirm_password
               properties:
-                current_password: { type: string, format: password }
-                new_password: { type: string, format: password }
-                confirm_password: { type: string, format: password }
+                current_password:
+                  type: string
+                  format: password
+                new_password:
+                  type: string
+                  format: password
+                confirm_password:
+                  type: string
+                  format: password
       responses:
-        "200":
+        '200':
           description: Password changed
-        "400":
+        '400':
           description: Current password incorrect
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "422":
+        '422':
           $ref: '#/components/responses/ValidationError'
-
   /auth/me/avatar:
     post:
-      tags: [Authentication]
+      tags:
+      - Authentication
       summary: Upload Profile Avatar
-      description: |
-        Upload a profile photo for the current user (multipart/form-data)
+      description: 'Upload a profile photo for the current user (multipart/form-data)
 
-        **Related User Stories**: TPS-2
+
+        **Related User Stories**: TPS-65 (US15), TPS-66 (US14), TPS-67 (US13)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       requestBody:
         required: true
         content:
@@ -337,324 +422,451 @@ paths:
             schema:
               type: object
               properties:
-                photo: { type: string, format: binary }
+                photo:
+                  type: string
+                  format: binary
       responses:
-        "200":
+        '200':
           description: Avatar uploaded, returns updated user with avatar_url
-        "400":
+        '400':
           description: Invalid file type or size
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-
   /auth/me/avatar/{filename}:
     get:
-      tags: [Authentication]
+      tags:
+      - Authentication
       summary: Serve Avatar Photo
-      description: |
-        Serve an uploaded avatar photo (public, no JWT required)
+      description: 'Serve an uploaded avatar photo (public, no JWT required)
 
-        **Related User Stories**: TPS-2
+
+        **Related User Stories**: TPS-65 (US15), TPS-66 (US14), TPS-67 (US13)
+
+        '
       parameters:
-        - name: filename
-          in: path
-          required: true
-          schema: { type: string }
+      - name: filename
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Avatar image file
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-
   /citizen/complaints:
     post:
-      tags: [Citizen APIs]
+      tags:
+      - Citizen APIs
       summary: Submit New Complaint
-      description: |
-        Citizen submits a new pothole/infrastructure complaint
-        
-        **Related User Stories**: TPS-3, TPS-4
-        
+      description: 'Citizen submits a new pothole/infrastructure complaint
+
+
+        **Related User Stories**: TPS-70 (US24)
+
+
         **Requirements**:
+
         - Photo/image is MANDATORY (uploaded first, then referenced)
+
         - Pincode must resolve to exactly one city or city must be explicitly provided
+
         - Priority defaults to system setting (TPS-99)
-        
+
+
         **Photo Upload Flow**:
+
         1. Upload photo using multipart form to get `image_url`
+
         2. Include `image_url` in complaint body
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [title, description, pincode, image_url]
+              required:
+              - title
+              - description
+              - pincode
+              - image_url
               properties:
-                title: { type: string, example: "Large pothole on Main Street" }
-                description: { type: string }
-                pincode: { type: string, pattern: '^\d{6}$', example: "560001" }
-                city_id: { type: integer, nullable: true, description: "Required if pincode resolves to multiple cities" }
-                category: { type: string, enum: ["pothole", "streetlight", "drainage", "garbage", "road_damage", "other"] }
-                priority: { type: string, enum: ["low", "medium", "high", "urgent"], nullable: true }
-                image_url: { type: string, example: "complaints/uuid4-filename.jpg" }
-                latitude: { type: number, nullable: true }
-                longitude: { type: number, nullable: true }
+                title:
+                  type: string
+                  example: Large pothole on Main Street
+                description:
+                  type: string
+                pincode:
+                  type: string
+                  pattern: ^\d{6}$
+                  example: '560001'
+                city_id:
+                  type: integer
+                  nullable: true
+                  description: Required if pincode resolves to multiple cities
+                category:
+                  type: string
+                  enum:
+                  - pothole
+                  - streetlight
+                  - drainage
+                  - garbage
+                  - road_damage
+                  - other
+                priority:
+                  type: string
+                  enum:
+                  - low
+                  - medium
+                  - high
+                  - urgent
+                  nullable: true
+                image_url:
+                  type: string
+                  example: complaints/uuid4-filename.jpg
+                latitude:
+                  type: number
+                  nullable: true
+                longitude:
+                  type: number
+                  nullable: true
       responses:
-        "201":
+        '201':
           description: Complaint submitted successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  success: { type: boolean, example: true }
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: object
                     properties:
-                      id: { type: integer }
-                      status: { type: string, example: "pending" }
-                      created_at: { type: string, format: date-time }
-        "400":
+                      id:
+                        type: integer
+                      status:
+                        type: string
+                        example: pending
+                      created_at:
+                        type: string
+                        format: date-time
+        '400':
           description: Invalid pincode, city mismatch, or missing image
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-        "422":
+        '422':
           $ref: '#/components/responses/ValidationError'
-
     get:
-      tags: [Citizen APIs]
+      tags:
+      - Citizen APIs
       summary: List My Complaints
-      description: |
-        Retrieve all complaints submitted by the logged-in citizen
-        
-        **Related User Stories**: TPS-4, TPS-10
-        
+      description: 'Retrieve all complaints submitted by the logged-in citizen
+
+
+        **Related User Stories**: TPS-71 (US23), TPS-72 (US22)
+
+
         **Pagination**: Returns 20 items per page
-        
+
+
         **Statuses Shown**: All (including pending, assigned, in_progress, resolved, closed, rejected, cancelled)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: page
-          in: query
-          schema: { type: integer, default: 1 }
-        - name: per_page
-          in: query
-          schema: { type: integer, default: 20 }
-        - name: status
-          in: query
-          schema: { type: string, enum: ["pending", "assigned", "in_progress", "resolved", "closed", "rejected", "cancelled"] }
-        - name: sort_by
-          in: query
-          schema: { type: string, enum: ["created_at", "updated_at"], default: "created_at" }
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: per_page
+        in: query
+        schema:
+          type: integer
+          default: 20
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - pending
+          - assigned
+          - in_progress
+          - resolved
+          - closed
+          - rejected
+          - cancelled
+      - name: sort_by
+        in: query
+        schema:
+          type: string
+          enum:
+          - created_at
+          - updated_at
+          default: created_at
       responses:
-        "200":
+        '200':
           description: Complaints retrieved
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  success: { type: boolean, example: true }
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: object
                     properties:
-                      items: { type: array }
+                      items:
+                        type: object
                       pagination:
                         type: object
                         properties:
-                          page: { type: integer }
-                          per_page: { type: integer }
-                          total: { type: integer }
-                          pages: { type: integer }
-        "401":
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total:
+                            type: integer
+                          pages:
+                            type: integer
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-
   /citizen/complaints/{id}:
     get:
-      tags: [Citizen APIs]
+      tags:
+      - Citizen APIs
       summary: View Complaint Details
-      description: |
-        Get full details of a specific complaint
-        
-        **Related User Stories**: TPS-5
-        
-        **Includes**: Current status, assigned worker info, feedback (if resolved)
-      security:
-        - Bearer: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        "200":
-          description: Complaint details retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          description: Not the complaint owner
-        "404":
-          $ref: '#/components/responses/NotFoundError'
+      description: 'Get full details of a specific complaint
 
-    put:
-      tags: [Citizen APIs]
-      summary: Edit Complaint
-      description: |
-        Update complaint title/description (ONLY while status is pending)
-        
-        **Related User Stories**: TPS-5
-        
-        **Restrictions**:
-        - Cannot edit status or priority (admin-only)
-        - Cannot edit if status is not "pending"
+
+        **Related User Stories**: TPS-73 (US21)
+
+
+        **Includes**: Current status, assigned worker info, feedback (if resolved)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Complaint details retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Not the complaint owner
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags:
+      - Citizen APIs
+      summary: Edit Complaint
+      description: 'Update complaint title/description (ONLY while status is pending)
+
+
+        **Related User Stories**: TPS-74 (US20)
+
+
+        **Restrictions**:
+
+        - Cannot edit status or priority (admin-only)
+
+        - Cannot edit if status is not "pending"
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                title: { type: string }
-                description: { type: string }
+                title:
+                  type: string
+                description:
+                  type: string
       responses:
-        "200":
+        '200':
           description: Complaint updated
-        "400":
+        '400':
           description: Complaint not in pending status
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-
     delete:
-      tags: [Citizen APIs]
+      tags:
+      - Citizen APIs
       summary: Cancel Complaint
-      description: |
-        Soft-cancel complaint (sets status to "cancelled", preserves record)
-        
-        **Related User Stories**: TPS-75
-        
-        **Note**: Cancelled complaints are permanently hidden from assignment, but remain in citizen's history
-      security:
-        - Bearer: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        "200":
-          description: Complaint cancelled
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          $ref: '#/components/responses/ForbiddenError'
-        "404":
-          $ref: '#/components/responses/NotFoundError'
+      description: 'Soft-cancel complaint (sets status to "cancelled", preserves record)
 
+
+        **Related User Stories**: TPS-75 (US19)
+
+
+        **Note**: Cancelled complaints are permanently hidden from assignment, but remain in citizen''s history
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Complaint cancelled
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
   /citizen/complaints/{id}/feedback:
     post:
-      tags: [Citizen APIs]
+      tags:
+      - Citizen APIs
       summary: Submit Complaint Feedback
-      description: |
-        Submit feedback/satisfaction rating (ONLY after complaint is resolved or closed)
-        
-        **Related User Stories**: TPS-59
-        
+      description: 'Submit feedback/satisfaction rating (ONLY after complaint is resolved or closed)
+
+
+        **Related User Stories**: TPS-77 (US17)
+
+
         **Restrictions**:
+
         - Complaint must be in "resolved" or "closed" status
+
         - Only ONE feedback per complaint (unique constraint)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [rating, comment]
+              required:
+              - rating
+              - comment
               properties:
-                rating: { type: integer, minimum: 1, maximum: 5 }
-                comment: { type: string }
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
       responses:
-        "201":
+        '201':
           description: Feedback submitted
-        "400":
+        '400':
           description: Complaint not resolved/closed or feedback already exists
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-
   /citizen/complaints/nearby-duplicates:
     get:
-      tags: [Citizen APIs]
+      tags:
+      - Citizen APIs
       summary: Check Nearby Possible-Duplicate Complaints
-      description: |
-        Check for still-open reports near a map pin before submitting a new
+      description: 'Check for still-open reports near a map pin before submitting a new
+
         complaint. Advisory only — never blocks submission; lets the report
+
         form warn "a similar report already exists nearby, submit anyway?"
+
         with a photo of the existing report for comparison.
 
-        **Related User Stories**: None (added beyond baseline) — recovered
-        from an earlier feature branch and reintegrated into this branch
-        this sprint; no corresponding Jira TPS story.
-      security:
-        - Bearer: []
-      parameters:
-        - name: latitude
-          in: query
-          required: true
-          schema: { type: number, format: float }
-        - name: longitude
-          in: query
-          required: true
-          schema: { type: number, format: float }
-        - name: radius_meters
-          in: query
-          schema: { type: integer }
-          description: Overrides the configured system-wide radius for this lookup only
-      responses:
-        "200":
-          description: Nearby complaints retrieved
-        "400":
-          description: Missing or invalid latitude/longitude
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
 
+        **Related User Stories**: TPS-70 (US24)
+
+        from an earlier feature branch and reintegrated into this branch
+
+        this sprint; no corresponding Jira TPS story.
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: latitude
+        in: query
+        required: true
+        schema:
+          type: number
+          format: float
+      - name: longitude
+        in: query
+        required: true
+        schema:
+          type: number
+          format: float
+      - name: radius_meters
+        in: query
+        schema:
+          type: integer
+        description: Overrides the configured system-wide radius for this lookup only
+      responses:
+        '200':
+          description: Nearby complaints retrieved
+        '400':
+          description: Missing or invalid latitude/longitude
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
   /citizen/complaints/media:
     post:
-      tags: [Citizen APIs]
+      tags:
+      - Citizen APIs
       summary: Upload Complaint Photo
-      description: |
-        Upload a mandatory photo for a pothole complaint (multipart/form-data),
+      description: 'Upload a mandatory photo for a pothole complaint (multipart/form-data),
+
         returns an `image_url` to reference when submitting the complaint
 
-        **Related User Stories**: TPS-3
+
+        **Related User Stories**: TPS-70 (US24)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       requestBody:
         required: true
         content:
@@ -662,952 +874,1274 @@ paths:
             schema:
               type: object
               properties:
-                photo: { type: string, format: binary }
+                photo:
+                  type: string
+                  format: binary
       responses:
-        "201":
+        '201':
           description: Photo uploaded, returns image_url
-        "400":
+        '400':
           description: Invalid file type or size
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-
   /citizen/complaints/media/{filename}:
     get:
-      tags: [Citizen APIs]
+      tags:
+      - Citizen APIs
       summary: Serve Complaint Photo
-      description: |
-        Serve an uploaded complaint photo (public, no JWT required)
+      description: 'Serve an uploaded complaint photo (public, no JWT required)
 
-        **Related User Stories**: TPS-3
+
+        **Related User Stories**: TPS-70 (US24)
+
+        '
       parameters:
-        - name: filename
-          in: path
-          required: true
-          schema: { type: string }
+      - name: filename
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Photo image file
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-
   /citizen/dashboard:
     get:
-      tags: [Citizen APIs]
+      tags:
+      - Citizen APIs
       summary: Citizen Dashboard
-      description: |
-        Get citizen dashboard statistics
-        
-        **Related User Stories**: TPS-10
-        
-        **Returns**: Complaint counts by status, recent complaints
-      security:
-        - Bearer: []
-      responses:
-        "200":
-          description: Dashboard stats retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          $ref: '#/components/responses/ForbiddenError'
+      description: 'Get citizen dashboard statistics
 
+
+        **Related User Stories**: TPS-65 (US15)
+
+
+        **Returns**: Complaint counts by status, recent complaints
+
+        '
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          description: Dashboard stats retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
   /admin/complaints:
     get:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: List All Complaints (Admin)
-      description: |
-        List all complaints with advanced filtering
-        
-        **Related User Stories**: TPS-78
-        
-        **Scoping**: Municipal admins see only their city; system admins see all cities
-        
-        **Filters**: status, priority, category, date_from, date_to, search
-      security:
-        - Bearer: []
-      parameters:
-        - name: status
-          in: query
-          schema: { type: string }
-        - name: priority
-          in: query
-          schema: { type: string, enum: ["low", "medium", "high", "urgent"] }
-        - name: date_from
-          in: query
-          schema: { type: string, format: date, description: "YYYY-MM-DD" }
-        - name: date_to
-          in: query
-          schema: { type: string, format: date, description: "YYYY-MM-DD" }
-        - name: page
-          in: query
-          schema: { type: integer, default: 1 }
-      responses:
-        "200":
-          description: Complaints retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          $ref: '#/components/responses/ForbiddenError'
-        "400":
-          description: Invalid filter parameters
+      description: 'List all complaints with advanced filtering
 
+
+        **Related User Stories**: TPS-78 (US34)
+
+
+        **Scoping**: Municipal admins see only their city; system admins see all cities
+
+
+        **Filters**: status, priority, category, date_from, date_to, search
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: priority
+        in: query
+        schema:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+          - urgent
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+          description: YYYY-MM-DD
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+          description: YYYY-MM-DD
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      responses:
+        '200':
+          description: Complaints retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '400':
+          description: Invalid filter parameters
   /admin/complaints/{id}:
     get:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: View Complaint Details (Admin)
-      description: |
-        Retrieve complaint for admin review and action
-        
-        **Related User Stories**: TPS-79
-      security:
-        - Bearer: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        "200":
-          description: Complaint retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          $ref: '#/components/responses/ForbiddenError'
-        "404":
-          $ref: '#/components/responses/NotFoundError'
+      description: 'Retrieve complaint for admin review and action
 
-    put:
-      tags: [Administrator APIs]
-      summary: Update Complaint Status/Priority (Admin)
-      description: |
-        Update complaint status and/or priority
-        
-        **Related User Stories**: TPS-81, TPS-82, TPS-83, TPS-84
-        
-        **Status Workflow Restrictions** (TPS-81/82/83/84):
-        - `in_progress` → `resolved` (verify repair)
-        - `resolved` → `closed` (final closure)
-        - `pending|assigned|in_progress` → `rejected` (not fixable)
-        - Other transitions are blocked (400 error)
-        
-        **Notifications Fired**:
-        - Status change → citizen notification
-        - Reject with active assignment → worker also notified
-        - Close/reject → citizen + assigned worker notified
+
+        **Related User Stories**: TPS-79 (US33)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Complaint retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags:
+      - Administrator APIs
+      summary: Update Complaint Status/Priority (Admin)
+      description: 'Update complaint status and/or priority
+
+
+        **Related User Stories**: TPS-81 (US31), TPS-82 (US30), TPS-83 (US29), TPS-84 (US28)
+
+
+        **Status Workflow Restrictions** (TPS-81/82/83/84):
+
+        - `in_progress` → `resolved` (verify repair)
+
+        - `resolved` → `closed` (final closure)
+
+        - `pending|assigned|in_progress` → `rejected` (not fixable)
+
+        - Other transitions are blocked (400 error)
+
+
+        **Notifications Fired**:
+
+        - Status change → citizen notification
+
+        - Reject with active assignment → worker also notified
+
+        - Close/reject → citizen + assigned worker notified
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                status: { type: string, enum: ["in_progress", "resolved", "closed", "rejected"] }
-                priority: { type: string, enum: ["low", "medium", "high", "urgent"] }
+                status:
+                  type: string
+                  enum:
+                  - in_progress
+                  - resolved
+                  - closed
+                  - rejected
+                priority:
+                  type: string
+                  enum:
+                  - low
+                  - medium
+                  - high
+                  - urgent
       responses:
-        "200":
+        '200':
           description: Complaint updated
-        "400":
+        '400':
           description: Invalid status transition or priority
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-
   /admin/complaints/{id}/duplicates:
     get:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Get Duplicate Candidates
-      description: |
-        List still-open complaints near this one (within the configured
+      description: 'List still-open complaints near this one (within the configured
+
         `duplicate_detection_radius_meters`) that might report the same
+
         physical issue, nearest first, for the administrator to review
+
         before assigning a field worker.
 
-        **Related User Stories**: None (added beyond baseline) — recovered
-        from an earlier feature branch and reintegrated into this branch
-        this sprint; no corresponding Jira TPS story.
-      security:
-        - Bearer: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-        - name: radius_meters
-          in: query
-          schema: { type: integer }
-          description: Overrides the configured system-wide radius for this lookup only
-      responses:
-        "200":
-          description: Duplicate candidates retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "404":
-          $ref: '#/components/responses/NotFoundError'
 
+        **Related User Stories**: TPS-78 (US34)
+
+        from an earlier feature branch and reintegrated into this branch
+
+        this sprint; no corresponding Jira TPS story.
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: radius_meters
+        in: query
+        schema:
+          type: integer
+        description: Overrides the configured system-wide radius for this lookup only
+      responses:
+        '200':
+          description: Duplicate candidates retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
   /admin/complaints/{id}/mark-duplicate:
     post:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Mark Complaint as Duplicate
-      description: |
-        Link a complaint as a duplicate of an existing, still-open report.
+      description: 'Link a complaint as a duplicate of an existing, still-open report.
+
         Reuses the existing `rejected` status transition (no new status is
+
         introduced) and notifies the citizen with duplicate-specific wording.
 
-        **Related User Stories**: None (added beyond baseline) — recovered
+
+        **Related User Stories**: TPS-78 (US34)
+
         from an earlier feature branch and reintegrated into this branch
+
         this sprint; no corresponding Jira TPS story.
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [duplicate_of_id]
+              required:
+              - duplicate_of_id
               properties:
-                duplicate_of_id: { type: integer, example: 12 }
-                reason: { type: string, example: "Same pothole reported on the map." }
+                duplicate_of_id:
+                  type: integer
+                  example: 12
+                reason:
+                  type: string
+                  example: Same pothole reported on the map.
       responses:
-        "200":
+        '200':
           description: Complaint linked as a duplicate
-        "400":
+        '400':
           description: Business rule violation (e.g. complaint already terminal, or primary complaint is itself a duplicate)
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-        "422":
+        '422':
           $ref: '#/components/responses/ValidationError'
-
   /admin/complaints/{id}/assign:
     post:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Assign Complaint to Field Worker
-      description: |
-        Assign a pending/assigned complaint to a field worker
-        
-        **Related User Stories**: TPS-80
-        
+      description: 'Assign a pending/assigned complaint to a field worker
+
+
+        **Related User Stories**: TPS-80 (US32)
+
+
         **Validation**:
+
         - Complaint must be in "pending" or "assigned" status
+
         - Worker must be in the SAME city as the complaint
+
         - Complaint status automatically moves to "assigned"
-        
+
+
         **Notification**: Worker and citizen both notified
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [worker_id]
+              required:
+              - worker_id
               properties:
-                worker_id: { type: integer }
-                notes: { type: string, nullable: true }
-                expected_completion_at: { type: string, format: date-time, nullable: true }
+                worker_id:
+                  type: integer
+                notes:
+                  type: string
+                  nullable: true
+                expected_completion_at:
+                  type: string
+                  format: date-time
+                  nullable: true
       responses:
-        "201":
+        '201':
           description: Assignment created
-        "400":
+        '400':
           description: Worker not in same city or invalid complaint status
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-        "404":
+        '404':
           description: Complaint or worker not found
-
   /admin/field-workers:
     post:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Create Field Worker
-      description: |
-        Create a new field worker
-        
-        **Related User Stories**: TPS-111
-        
+      description: 'Create a new field worker
+
+
+        **Related User Stories**: TPS-111 (US25)
+
+
         **Restrictions**:
+
         - ONLY municipal admins can create field workers
-        - city_id is automatically set to admin's own city (not in request body)
+
+        - city_id is automatically set to admin''s own city (not in request body)
+
         - System admins cannot create field workers directly
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [username, email, password, first_name, last_name, phone]
+              required:
+              - username
+              - email
+              - password
+              - first_name
+              - last_name
+              - phone
               properties:
-                username: { type: string }
-                email: { type: string, format: email }
-                password: { type: string, format: password }
-                first_name: { type: string }
-                last_name: { type: string }
-                phone: { type: string, pattern: '^\d{10}$' }
+                username:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                phone:
+                  type: string
+                  pattern: ^\d{10}$
       responses:
-        "201":
+        '201':
           description: Field worker created
-        "400":
+        '400':
           description: Invalid data
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           description: Only municipal admins can create field workers
-        "409":
+        '409':
           description: Email already registered
-        "422":
+        '422':
           $ref: '#/components/responses/ValidationError'
-
     get:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: List Field Workers
-      description: |
-        List field workers (scoped to city for municipal admins)
-        
-        **Related User Stories**: TPS-111
-        
-        **Scoping**: Municipal admins see only their city's workers
-      security:
-        - Bearer: []
-      parameters:
-        - name: page
-          in: query
-          schema: { type: integer, default: 1 }
-      responses:
-        "200":
-          description: Field workers retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          $ref: '#/components/responses/ForbiddenError'
+      description: 'List field workers (scoped to city for municipal admins)
 
+
+        **Related User Stories**: TPS-111 (US25)
+
+
+        **Scoping**: Municipal admins see only their city''s workers
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      responses:
+        '200':
+          description: Field workers retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
   /admin/field-workers/{id}:
     put:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Update Field Worker
-      description: |
-        Update field worker details, and/or reset their password, and/or
+      description: 'Update field worker details, and/or reset their password, and/or
+
         change their email (Milestone 4 addition, TPS-27 extended)
 
-        **Related User Stories**: TPS-111
 
-        **What's new in Milestone 4**: `password`/`confirm_password` (must
+        **Related User Stories**: TPS-111 (US25)
+
+
+        **What''s new in Milestone 4**: `password`/`confirm_password` (must
+
         match, same strength rules as registration) and `email` (must be
+
         unique) are now optional fields on this same endpoint — a municipal
-        administrator can reset a field worker's forgotten password or
+
+        administrator can reset a field worker''s forgotten password or
+
         correct their email without any new endpoint.
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                first_name: { type: string }
-                last_name: { type: string }
-                email: { type: string, format: email }
-                phone: { type: string }
-                is_active: { type: boolean }
-                password: { type: string, format: password, description: "Optional new password. Requires confirm_password to match." }
-                confirm_password: { type: string, format: password }
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                is_active:
+                  type: boolean
+                password:
+                  type: string
+                  format: password
+                  description: Optional new password. Requires confirm_password to match.
+                confirm_password:
+                  type: string
+                  format: password
       responses:
-        "200":
+        '200':
           description: Field worker updated
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-        "409":
+        '409':
           description: An account with this email already exists
-        "422":
+        '422':
           description: Password too weak, or confirm_password does not match password
-
     delete:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Deactivate Field Worker
-      description: |
-        Soft-delete field worker (sets is_active=false)
-        
-        **Related User Stories**: TPS-111
-      security:
-        - Bearer: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        "200":
-          description: Field worker deactivated
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          $ref: '#/components/responses/ForbiddenError'
-        "404":
-          $ref: '#/components/responses/NotFoundError'
+      description: 'Soft-delete field worker (sets is_active=false)
 
+
+        **Related User Stories**: TPS-111 (US25)
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Field worker deactivated
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
   /admin/users:
     get:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: List Users
-      description: |
-        List platform users.
+      description: 'List platform users.
 
-        **Related User Stories**: TPS-33
 
-        **What's new in Milestone 4**: this endpoint (and `GET`/`PUT`
+        **Related User Stories**: TPS-68 (US12)
+
+
+        **What''s new in Milestone 4**: this endpoint (and `GET`/`PUT`
+
         `/admin/users/{id}`) is no longer system-admin-only. Municipal
-        administrators may now call it too, but the `role` filter is forced
-        server-side to `citizen` and results are scoped to their own
-        `city_id` — they cannot see or edit field workers, other
-        municipal admins, or citizens outside their city through this route.
-        System administrators remain fully unscoped.
-      security:
-        - Bearer: []
-      parameters:
-        - name: role
-          in: query
-          schema: { type: string, enum: ["citizen", "field_worker", "administrator"] }
-          description: Ignored for municipal administrators (always forced to "citizen")
-        - name: page
-          in: query
-          schema: { type: integer, default: 1 }
-      responses:
-        "200":
-          description: Users retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          $ref: '#/components/responses/ForbiddenError'
 
+        administrators may now call it too, but the `role` filter is forced
+
+        server-side to `citizen` and results are scoped to their own
+
+        `city_id` — they cannot see or edit field workers, other
+
+        municipal admins, or citizens outside their city through this route.
+
+        System administrators remain fully unscoped.
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: role
+        in: query
+        schema:
+          type: string
+          enum:
+          - citizen
+          - field_worker
+          - administrator
+        description: Ignored for municipal administrators (always forced to "citizen")
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      responses:
+        '200':
+          description: Users retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
   /admin/users/{id}:
     put:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Update User
-      description: |
-        Update a user's profile, activate/deactivate, reset their password,
+      description: 'Update a user''s profile, activate/deactivate, reset their password,
+
         or change their email.
 
-        **Related User Stories**: TPS-33
 
-        **What's new in Milestone 4**: `email` and `password`/
+        **Related User Stories**: TPS-68 (US12)
+
+
+        **What''s new in Milestone 4**: `email` and `password`/
+
         `confirm_password` are new optional fields on this endpoint — this
-        is how a System Administrator resets a Citizen's (or any user's)
+
+        is how a System Administrator resets a Citizen''s (or any user''s)
+
         forgotten password, and how a Municipal Administrator resets a
+
         password for a citizen in their own city (see the city-scoping note
+
         on `GET /admin/users` above).
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                first_name: { type: string }
-                last_name: { type: string }
-                email: { type: string, format: email }
-                phone: { type: string }
-                is_active: { type: boolean }
-                password: { type: string, format: password, description: "Optional new password. Requires confirm_password to match." }
-                confirm_password: { type: string, format: password }
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                is_active:
+                  type: boolean
+                password:
+                  type: string
+                  format: password
+                  description: Optional new password. Requires confirm_password to match.
+                confirm_password:
+                  type: string
+                  format: password
       responses:
-        "200":
+        '200':
           description: User updated
-        "400":
+        '400':
           description: Cannot deactivate own account
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-        "409":
+        '409':
           description: An account with this email already exists
-        "422":
+        '422':
           description: Password too weak, or confirm_password does not match password
-
   /admin/dashboard:
     get:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Admin Dashboard
-      description: |
-        Administrator dashboard: complaint totals/status breakdown, a status
+      description: 'Administrator dashboard: complaint totals/status breakdown, a status
+
         distribution chart, and 9 performance KPIs.
 
-        **Related User Stories**: TPS-95, TPS-97
+
+        **Related User Stories**: TPS-95 (US47), TPS-97 (US45)
+
 
         **KPI fields returned**: `total_complaints`, `open_complaints`,
+
         `closed_complaints`, `by_status`, `avg_resolution_time_hours`,
+
         `avg_assignment_time_hours`, `complaint_closure_rate_percentage`,
+
         `field_worker_completion_rate_percentage`, `citizen_satisfaction_rating`,
+
         `high_priority_pending_count`, `active_field_workers`
+
         (plus legacy aliases `avg_resolution_hours`, `high_priority_complaints`)
 
+
         **City Scoping**: Municipal admins see only their own city; system
+
         admins are unscoped
 
-        **Optional Filters**: `date_from`, `date_to` (YYYY-MM-DD)
-      security:
-        - Bearer: []
-      parameters:
-        - name: date_from
-          in: query
-          schema: { type: string, format: date }
-        - name: date_to
-          in: query
-          schema: { type: string, format: date }
-      responses:
-        "200":
-          description: Dashboard stats and KPIs retrieved
-        "400":
-          description: Invalid date_from/date_to format
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          $ref: '#/components/responses/ForbiddenError'
 
+        **Optional Filters**: `date_from`, `date_to` (YYYY-MM-DD)
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Dashboard stats and KPIs retrieved
+        '400':
+          description: Invalid date_from/date_to format
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
   /admin/settings:
     get:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Get System Settings
-      description: |
-        Retrieve platform-wide settings
-        
-        **Related User Stories**: TPS-99
-        
-        **Settings**:
-        - `maintenance_mode`: Blocks non-admin logins
-        - `notify_on_status_change`: Controls notification firing
-        - `default_complaint_priority`: Applied to new complaints
-        - `duplicate_detection_radius_meters`: Distance (metres) within which two open complaints are flagged as possible duplicates, used by the citizen submission warning and the admin duplicate-review panel
-      security:
-        - Bearer: []
-      responses:
-        "200":
-          description: Settings retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          description: Only system admins can access
+      description: 'Retrieve platform-wide settings
 
-    put:
-      tags: [Administrator APIs]
-      summary: Update System Settings
-      description: |
-        Update platform settings (system admin only)
-        
-        **Related User Stories**: TPS-99
-        
-        **Audit Logging**: All changes recorded
+
+        **Related User Stories**: TPS-99 (US48)
+
+
+        **Settings**:
+
+        - `maintenance_mode`: Blocks non-admin logins
+
+        - `notify_on_status_change`: Controls notification firing
+
+        - `default_complaint_priority`: Applied to new complaints
+
+        - `duplicate_detection_radius_meters`: Distance (metres) within which two open complaints are flagged as possible
+        duplicates, used by the citizen submission warning and the admin duplicate-review panel
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
+      responses:
+        '200':
+          description: Settings retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Only system admins can access
+    put:
+      tags:
+      - Administrator APIs
+      summary: Update System Settings
+      description: 'Update platform settings (system admin only)
+
+
+        **Related User Stories**: TPS-99 (US48)
+
+
+        **Audit Logging**: All changes recorded
+
+        '
+      security:
+      - Bearer: []
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                maintenance_mode: { type: boolean }
-                notify_on_status_change: { type: boolean }
-                default_complaint_priority: { type: string, enum: ["low", "medium", "high", "urgent"] }
-                duplicate_detection_radius_meters: { type: integer, minimum: 10, maximum: 2000, example: 50 }
+                maintenance_mode:
+                  type: boolean
+                notify_on_status_change:
+                  type: boolean
+                default_complaint_priority:
+                  type: string
+                  enum:
+                  - low
+                  - medium
+                  - high
+                  - urgent
+                duplicate_detection_radius_meters:
+                  type: integer
+                  minimum: 10
+                  maximum: 2000
+                  example: 50
       responses:
-        "200":
+        '200':
           description: Settings updated
-        "400":
+        '400':
           description: Invalid setting value
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           description: Only system admins can access
-
   /admin/municipal-administrators:
     get:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: List Municipal Administrators
-      description: |
-        List all municipal administrators (system admin only)
+      description: 'List all municipal administrators (system admin only)
 
-        **Related User Stories**: TPS-110
+
+        **Related User Stories**: TPS-110 (US26)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: page
-          in: query
-          schema: { type: integer, default: 1 }
-        - name: per_page
-          in: query
-          schema: { type: integer, default: 20 }
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: per_page
+        in: query
+        schema:
+          type: integer
+          default: 20
       responses:
-        "200":
+        '200':
           description: Municipal administrators retrieved (paginated)
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           description: Only system admins can access
-
     post:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Create Municipal Administrator
-      description: |
-        Create a new municipal admin (system admin only)
-        
-        **Related User Stories**: TPS-110
-        
+      description: 'Create a new municipal admin (system admin only)
+
+
+        **Related User Stories**: TPS-110 (US26)
+
+
         **Audit Logging**: Creation recorded
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [username, email, password, first_name, last_name, phone, city_id]
+              required:
+              - username
+              - email
+              - password
+              - first_name
+              - last_name
+              - phone
+              - city_id
               properties:
-                username: { type: string }
-                email: { type: string, format: email }
-                password: { type: string, format: password }
-                first_name: { type: string }
-                last_name: { type: string }
-                phone: { type: string, pattern: '^\d{10}$' }
-                city_id: { type: integer }
+                username:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                phone:
+                  type: string
+                  pattern: ^\d{10}$
+                city_id:
+                  type: integer
       responses:
-        "201":
+        '201':
           description: Municipal admin created
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           description: Only system admins can create
-        "409":
+        '409':
           description: Email already registered
-
   /admin/municipal-administrators/{id}:
     get:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: View Municipal Administrator
-      description: |
-        Get a single municipal administrator's profile (system admin only)
+      description: 'Get a single municipal administrator''s profile (system admin only)
 
-        **Related User Stories**: TPS-110
+
+        **Related User Stories**: TPS-110 (US26)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       responses:
-        "200":
+        '200':
           description: Municipal administrator retrieved
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           description: Only system admins can access
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-
     put:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Update Municipal Administrator
-      description: |
-        Update a municipal administrator's profile, and/or reset their
+      description: 'Update a municipal administrator''s profile, and/or reset their
+
         password, and/or change their email (system admin only)
 
-        **Related User Stories**: TPS-110
 
-        **What's new in Milestone 4**: `password`/`confirm_password` and
+        **Related User Stories**: TPS-110 (US26)
+
+
+        **What''s new in Milestone 4**: `password`/`confirm_password` and
+
         `email` are new optional fields — this is how a System Administrator
-        resets a Municipal Administrator's forgotten password or corrects
+
+        resets a Municipal Administrator''s forgotten password or corrects
+
         their email.
 
+
         **Audit Logging**: Updates recorded
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                first_name: { type: string }
-                last_name: { type: string }
-                email: { type: string, format: email }
-                phone: { type: string }
-                is_active: { type: boolean }
-                password: { type: string, format: password, description: "Optional new password. Requires confirm_password to match." }
-                confirm_password: { type: string, format: password }
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                is_active:
+                  type: boolean
+                password:
+                  type: string
+                  format: password
+                  description: Optional new password. Requires confirm_password to match.
+                confirm_password:
+                  type: string
+                  format: password
       responses:
-        "200":
+        '200':
           description: Municipal administrator updated
-        "400":
+        '400':
           description: Invalid field value
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           description: Only system admins can access
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-        "409":
+        '409':
           description: An account with this email already exists
-        "422":
+        '422':
           description: Password too weak, or confirm_password does not match password
-
     delete:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Disable Municipal Administrator
-      description: |
-        Deactivate a municipal administrator's account (system admin only)
+      description: 'Deactivate a municipal administrator''s account (system admin only)
 
-        **Related User Stories**: TPS-110
+
+        **Related User Stories**: TPS-110 (US26)
+
 
         **Audit Logging**: Deactivation recorded
-      security:
-        - Bearer: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        "200":
-          description: Municipal administrator deactivated
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          description: Only system admins can access
-        "404":
-          $ref: '#/components/responses/NotFoundError'
 
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Municipal administrator deactivated
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Only system admins can access
+        '404':
+          $ref: '#/components/responses/NotFoundError'
   /admin/cities:
     get:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: List Cities
-      description: |
-        List cities for municipal administrator onboarding (system admin only)
+      description: 'List cities for municipal administrator onboarding (system admin only)
 
-        **Related User Stories**: TPS-110
+
+        **Related User Stories**: TPS-110 (US26)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       responses:
-        "200":
+        '200':
           description: Cities retrieved
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           description: Only system admins can access
-
   /admin/assignments:
     get:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Monitor Assignment Progress
-      description: |
-        Monitor field worker assignment progress and overdue deadlines
+      description: 'Monitor field worker assignment progress and overdue deadlines
 
-        **Related User Stories**: TPS-82
+
+        **Related User Stories**: TPS-82 (US30)
+
 
         **Filters**: `status`, `overdue` (true/false)
-      security:
-        - Bearer: []
-      parameters:
-        - name: page
-          in: query
-          schema: { type: integer, default: 1 }
-        - name: per_page
-          in: query
-          schema: { type: integer, default: 20 }
-        - name: status
-          in: query
-          schema: { type: string }
-        - name: overdue
-          in: query
-          schema: { type: boolean }
-      responses:
-        "200":
-          description: Assignment monitoring data retrieved (paginated)
-        "400":
-          description: Invalid assignment status
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          $ref: '#/components/responses/ForbiddenError'
 
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: per_page
+        in: query
+        schema:
+          type: integer
+          default: 20
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: overdue
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: Assignment monitoring data retrieved (paginated)
+        '400':
+          description: Invalid assignment status
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
   /admin/complaints/{id}/verify:
     post:
-      tags: [Administrator APIs]
+      tags:
+      - Administrator APIs
       summary: Verify Repair Completion
-      description: |
-        Approve a field worker's repair completion (→ resolved) or request
+      description: 'Approve a field worker''s repair completion (→ resolved) or request
+
         rework (→ back to in_progress)
 
-        **Related User Stories**: TPS-83
+
+        **Related User Stories**: TPS-83 (US29)
+
 
         **Notification**: Citizen notified on approval; field worker notified
+
         on rework request
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [decision]
+              required:
+              - decision
               properties:
-                decision: { type: string, enum: ["approved", "rework_requested"] }
-                remarks: { type: string }
+                decision:
+                  type: string
+                  enum:
+                  - approved
+                  - rework_requested
+                remarks:
+                  type: string
       responses:
-        "200":
+        '200':
           description: Repair verification recorded
-        "400":
+        '400':
           description: No pending verification, or already verified
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-
   /fieldworker/assignments:
     get:
-      tags: [Field Worker APIs]
+      tags:
+      - Field Worker APIs
       summary: List Assignments
-      description: |
-        Get all assignments for the logged-in field worker
-        
-        **Related User Stories**: TPS-86, TPS-90
-        
-        **Advanced Filtering**:
-        - `status`: Filter by assignment status (assigned, accepted, in_progress, completed, rejected)
-        - `priority`: Filter by complaint priority (low, medium, high, urgent)
-        - `search`: Search complaint title/address or exact ID
-        - `sort_by`: Sort by assigned_at (default) or priority
-        - `sort_order`: asc or desc
-        
-        **Note**: Includes full complaint details (title, priority, status, address) for each assignment
-      security:
-        - Bearer: []
-      parameters:
-        - name: status
-          in: query
-          schema: { type: string }
-        - name: priority
-          in: query
-          schema: { type: string }
-        - name: search
-          in: query
-          schema: { type: string }
-        - name: sort_by
-          in: query
-          schema: { type: string, enum: ["assigned_at", "priority"] }
-        - name: sort_order
-          in: query
-          schema: { type: string, enum: ["asc", "desc"] }
-      responses:
-        "200":
-          description: Assignments retrieved with pagination
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          $ref: '#/components/responses/ForbiddenError'
-        "400":
-          description: Invalid filter parameters
+      description: 'Get all assignments for the logged-in field worker
 
+
+        **Related User Stories**: TPS-86 (US39), TPS-90 (US35)
+
+
+        **Advanced Filtering**:
+
+        - `status`: Filter by assignment status (assigned, accepted, in_progress, completed, rejected)
+
+        - `priority`: Filter by complaint priority (low, medium, high, urgent)
+
+        - `search`: Search complaint title/address or exact ID
+
+        - `sort_by`: Sort by assigned_at (default) or priority
+
+        - `sort_order`: asc or desc
+
+
+        **Note**: Includes full complaint details (title, priority, status, address) for each assignment
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: priority
+        in: query
+        schema:
+          type: string
+      - name: search
+        in: query
+        schema:
+          type: string
+      - name: sort_by
+        in: query
+        schema:
+          type: string
+          enum:
+          - assigned_at
+          - priority
+      - name: sort_order
+        in: query
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+      responses:
+        '200':
+          description: Assignments retrieved with pagination
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '400':
+          description: Invalid filter parameters
   /fieldworker/assignments/{id}:
     get:
-      tags: [Field Worker APIs]
+      tags:
+      - Field Worker APIs
       summary: View Assignment Details
-      description: |
-        Get full details of a specific assignment
-        
-        **Related User Stories**: TPS-45
+      description: 'Get full details of a specific assignment
+
+
+        **Related User Stories**: TPS-86 (US39)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       responses:
-        "200":
+        '200':
           description: Assignment retrieved
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-
     put:
-      tags: [Field Worker APIs]
+      tags:
+      - Field Worker APIs
       summary: Update Progress
-      description: |
-        Update work progress or reject assignment
+      description: 'Update work progress or reject assignment
 
-        **Related User Stories**: TPS-88
+
+        **Related User Stories**: TPS-88 (US37)
+
 
         **Valid Status Values**:
+
         - `in_progress`: Continue working (stays the same)
+
         - `rejected`: Cancel assignment (complaint returns to pending)
 
+
         **Notifications**:
+
         - Reject → citizen + assigning admin notified
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -1615,112 +2149,144 @@ paths:
             schema:
               type: object
               properties:
-                status: { type: string, enum: ["in_progress", "rejected"] }
-                notes: { type: string }
+                status:
+                  type: string
+                  enum:
+                  - in_progress
+                  - rejected
+                notes:
+                  type: string
       responses:
-        "200":
+        '200':
           description: Progress updated
-        "400":
+        '400':
           description: Invalid status or complaint no longer actionable
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-
   /fieldworker/assignments/{id}/accept:
     post:
-      tags: [Field Worker APIs]
+      tags:
+      - Field Worker APIs
       summary: Accept Assignment
-      description: |
-        Accept an assigned complaint and begin work
-        
-        **Related User Stories**: TPS-87
-        
-        **State Changes**:
-        - Assignment status: assigned → accepted
-        - Complaint status: assigned → in_progress
-        - Sets `accepted_at` timestamp
-        
-        **Notification**: Citizen notified that work has started
-      security:
-        - Bearer: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        "200":
-          description: Assignment accepted
-        "400":
-          description: Assignment already accepted or complaint no longer actionable
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          $ref: '#/components/responses/ForbiddenError'
-        "404":
-          $ref: '#/components/responses/NotFoundError'
+      description: 'Accept an assigned complaint and begin work
 
+
+        **Related User Stories**: TPS-87 (US38)
+
+
+        **State Changes**:
+
+        - Assignment status: assigned → accepted
+
+        - Complaint status: assigned → in_progress
+
+        - Sets `accepted_at` timestamp
+
+
+        **Notification**: Citizen notified that work has started
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Assignment accepted
+        '400':
+          description: Assignment already accepted or complaint no longer actionable
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
   /fieldworker/assignments/{id}/complete:
     post:
-      tags: [Field Worker APIs]
+      tags:
+      - Field Worker APIs
       summary: Mark Assignment Complete
-      description: |
-        Mark repair complete and upload evidence photo
-        
-        **Related User Stories**: TPS-89
-        
+      description: 'Mark repair complete and upload evidence photo
+
+
+        **Related User Stories**: TPS-89 (US36)
+
+
         **State Changes**:
+
         - Assignment status: in_progress → completed
+
         - Complaint status: STAYS in_progress (admin must verify and resolve)
+
         - Sets `completed_at` timestamp and optional `evidence_url`
-        
+
+
         **Photo Upload Flow**:
+
         1. Use `POST /fieldworker/assignments/media` to upload evidence
+
         2. Get `evidence_url` from response
+
         3. Include in `evidence_url` field here (optional)
-        
-        **Critical Notification**: Assigning admin notified "Repair marked complete — verification needed" so they verify and close
+
+
+        **Critical Notification**: Assigning admin notified "Repair marked complete — verification needed" so they verify
+        and close
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                notes: { type: string }
-                evidence_url: { type: string, nullable: true }
+                notes:
+                  type: string
+                evidence_url:
+                  type: string
+                  nullable: true
       responses:
-        "200":
+        '200':
           description: Assignment marked complete
-        "400":
+        '400':
           description: Assignment already completed or complaint no longer actionable
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-
   /fieldworker/assignments/media:
     post:
-      tags: [Field Worker APIs]
+      tags:
+      - Field Worker APIs
       summary: Upload Repair Evidence Photo
-      description: |
-        Upload an optional repair-completion evidence photo (multipart/form-data),
+      description: 'Upload an optional repair-completion evidence photo (multipart/form-data),
+
         returns an `evidence_url` to reference when completing the assignment
 
-        **Related User Stories**: TPS-89
+
+        **Related User Stories**: TPS-89 (US36)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       requestBody:
         required: true
         content:
@@ -1728,627 +2294,798 @@ paths:
             schema:
               type: object
               properties:
-                photo: { type: string, format: binary }
+                photo:
+                  type: string
+                  format: binary
       responses:
-        "201":
+        '201':
           description: Photo uploaded, returns evidence_url
-        "400":
+        '400':
           description: Invalid file type or size
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           $ref: '#/components/responses/ForbiddenError'
-
   /fieldworker/assignments/media/{filename}:
     get:
-      tags: [Field Worker APIs]
+      tags:
+      - Field Worker APIs
       summary: Serve Repair Evidence Photo
-      description: |
-        Serve an uploaded evidence photo (public, no JWT required)
+      description: 'Serve an uploaded evidence photo (public, no JWT required)
 
-        **Related User Stories**: TPS-89
+
+        **Related User Stories**: TPS-89 (US36)
+
+        '
       parameters:
-        - name: filename
-          in: path
-          required: true
-          schema: { type: string }
+      - name: filename
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Photo image file
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-
   /fieldworker/dashboard:
     get:
-      tags: [Field Worker APIs]
+      tags:
+      - Field Worker APIs
       summary: Field Worker Dashboard
-      description: |
-        Get field worker dashboard statistics
-        
-        **Related User Stories**: TPS-47
-      security:
-        - Bearer: []
-      responses:
-        "200":
-          description: Dashboard stats retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          $ref: '#/components/responses/ForbiddenError'
+      description: 'Get field worker dashboard statistics
 
+
+        **Related User Stories**: TPS-90 (US35)
+
+        '
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          description: Dashboard stats retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
   /notifications/:
     get:
-      tags: [Notifications]
+      tags:
+      - Notifications
       summary: List Notifications
-      description: |
-        Get all notifications for the logged-in user
-        
-        **Related User Stories**: TPS-60, TPS-91, TPS-92, TPS-93, TPS-94
-        
-        **Notification Types**:
-        - `TYPE_COMPLAINT_SUBMITTED`: Citizen submitted complaint
-        - `TYPE_COMPLAINT_ASSIGNED`: Assigned to field worker
-        - `TYPE_COMPLAINT_RESOLVED`: Complaint resolved
-        - `TYPE_COMPLAINT_CLOSED`: Complaint closed (TPS-94)
-        - `TYPE_ASSIGNMENT_ACCEPTED`: Work started
-        - `TYPE_REPAIR_COMPLETED`: Worker marked complete, admin should verify
-        - `TYPE_ASSIGNMENT_REJECTED`: Worker rejected, reassignment needed
-        
-        **Real Events**: Not passive read API—notifications fire on real status changes
-      security:
-        - Bearer: []
-      parameters:
-        - name: page
-          in: query
-          schema: { type: integer, default: 1 }
-      responses:
-        "200":
-          description: Notifications retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
+      description: 'Get all notifications for the logged-in user
 
+
+        **Related User Stories**: TPS-91 (US43)
+
+
+        **Notification Types**:
+
+        - `TYPE_COMPLAINT_SUBMITTED`: Citizen submitted complaint
+
+        - `TYPE_COMPLAINT_ASSIGNED`: Assigned to field worker
+
+        - `TYPE_COMPLAINT_RESOLVED`: Complaint resolved
+
+        - `TYPE_COMPLAINT_CLOSED`: Complaint closed (TPS-94)
+
+        - `TYPE_ASSIGNMENT_ACCEPTED`: Work started
+
+        - `TYPE_REPAIR_COMPLETED`: Worker marked complete, admin should verify
+
+        - `TYPE_ASSIGNMENT_REJECTED`: Worker rejected, reassignment needed
+
+
+        **Real Events**: Not passive read API—notifications fire on real status changes
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      responses:
+        '200':
+          description: Notifications retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
   /notifications/{id}:
     get:
-      tags: [Notifications]
+      tags:
+      - Notifications
       summary: View Notification
-      description: |
-        Get a single notification by ID (must belong to the current user)
+      description: 'Get a single notification by ID (must belong to the current user)
 
-        **Related User Stories**: TPS-91
+
+        **Related User Stories**: TPS-91 (US43)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       responses:
-        "200":
+        '200':
           description: Notification retrieved
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-
   /notifications/{id}/read:
     patch:
-      tags: [Notifications]
+      tags:
+      - Notifications
       summary: Mark Notification as Read
-      description: |
-        Mark a single notification as read
+      description: 'Mark a single notification as read
 
-        **Related User Stories**: TPS-91
+
+        **Related User Stories**: TPS-91 (US43)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
       responses:
-        "200":
+        '200':
           description: Notification marked as read
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "404":
+        '404':
           $ref: '#/components/responses/NotFoundError'
-
   /notifications/read-all:
     patch:
-      tags: [Notifications]
+      tags:
+      - Notifications
       summary: Mark All Notifications as Read
-      description: |
-        Mark all of the current user's unread notifications as read
+      description: 'Mark all of the current user''s unread notifications as read
 
-        **Related User Stories**: TPS-91
+
+        **Related User Stories**: TPS-91 (US43)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       responses:
-        "200":
+        '200':
           description: All notifications marked as read
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-
   /notifications/unread-count:
     get:
-      tags: [Notifications]
+      tags:
+      - Notifications
       summary: Unread Notification Count
-      description: |
-        Get the count of unread notifications for the navbar bell badge
+      description: 'Get the count of unread notifications for the navbar bell badge
 
-        **Related User Stories**: TPS-91
+
+        **Related User Stories**: TPS-91 (US43)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       responses:
-        "200":
+        '200':
           description: Unread count retrieved
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-
   /reports/complaints/summary:
     get:
-      tags: [Reports]
+      tags:
+      - Reports
       summary: Complaint Summary Report
-      description: |
-        Get overall complaint statistics
-        
-        **Related User Stories**: TPS-85, TPS-96
-        
-        **City Scoping**: Municipal admins see only their city
-        
-        **Optional Filters**:
-        - `date_from`, `date_to`: Date range (YYYY-MM-DD)
-        - `status`: Filter by status
-      security:
-        - Bearer: []
-      parameters:
-        - name: date_from
-          in: query
-          schema: { type: string, format: date }
-        - name: date_to
-          in: query
-          schema: { type: string, format: date }
-        - name: status
-          in: query
-          schema: { type: string }
-      responses:
-        "200":
-          description: Summary retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          description: Non-admins cannot access
+      description: 'Get overall complaint statistics
 
+
+        **Related User Stories**: TPS-85 (US27)
+
+
+        **City Scoping**: Municipal admins see only their city
+
+
+        **Optional Filters**:
+
+        - `date_from`, `date_to`: Date range (YYYY-MM-DD)
+
+        - `status`: Filter by status
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: status
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Summary retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Non-admins cannot access
   /reports/complaints/by-status:
     get:
-      tags: [Reports]
+      tags:
+      - Reports
       summary: Status Breakdown Report
-      description: |
-        Get complaint counts by status (pending, assigned, in_progress, resolved, etc.)
-        
-        **Related User Stories**: TPS-85, TPS-96
-      security:
-        - Bearer: []
-      parameters:
-        - name: date_from
-          in: query
-          schema: { type: string, format: date }
-        - name: date_to
-          in: query
-          schema: { type: string, format: date }
-      responses:
-        "200":
-          description: Status breakdown retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          description: Non-admins cannot access
+      description: 'Get complaint counts by status (pending, assigned, in_progress, resolved, etc.)
 
+
+        **Related User Stories**: TPS-85 (US27), TPS-96 (US46)
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Status breakdown retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Non-admins cannot access
   /reports/complaints/by-category:
     get:
-      tags: [Reports]
+      tags:
+      - Reports
       summary: Category Breakdown Report
-      description: |
-        Get complaint counts by category (pothole, drainage, etc.)
-        
-        **Related User Stories**: TPS-85
-      security:
-        - Bearer: []
-      parameters:
-        - name: date_from
-          in: query
-          schema: { type: string, format: date }
-        - name: date_to
-          in: query
-          schema: { type: string, format: date }
-      responses:
-        "200":
-          description: Category breakdown retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          description: Non-admins cannot access
+      description: 'Get complaint counts by category (pothole, drainage, etc.)
 
+
+        **Related User Stories**: TPS-85 (US27), TPS-96 (US46)
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Category breakdown retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Non-admins cannot access
   /reports/complaints/by-priority:
     get:
-      tags: [Reports]
+      tags:
+      - Reports
       summary: Priority Breakdown Report
-      description: |
-        Get complaint counts by priority (low, medium, high, urgent)
-        
-        **Related User Stories**: TPS-85, TPS-96
-      security:
-        - Bearer: []
-      parameters:
-        - name: date_from
-          in: query
-          schema: { type: string, format: date }
-        - name: date_to
-          in: query
-          schema: { type: string, format: date }
-      responses:
-        "200":
-          description: Priority breakdown retrieved
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          description: Non-admins cannot access
+      description: 'Get complaint counts by priority (low, medium, high, urgent)
 
+
+        **Related User Stories**: TPS-85 (US27), TPS-96 (US46)
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Priority breakdown retrieved
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Non-admins cannot access
   /reports/complaints/by-location:
     get:
-      tags: [Reports]
+      tags:
+      - Reports
       summary: Location Breakdown Report
-      description: |
-        Get complaint counts by city
+      description: 'Get complaint counts by city
 
-        **Related User Stories**: TPS-85, TPS-96
+
+        **Related User Stories**: TPS-85 (US27), TPS-96 (US46)
+
 
         A municipal administrator is already city-scoped, so this naturally
-        returns a single row for them; system admins see every city.
-      security:
-        - Bearer: []
-      parameters:
-        - name: date_from
-          in: query
-          schema: { type: string, format: date }
-        - name: date_to
-          in: query
-          schema: { type: string, format: date }
-        - name: status
-          in: query
-          schema: { type: string }
-      responses:
-        "200":
-          description: Location breakdown retrieved
-        "400":
-          description: Invalid filter
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          description: Non-admins cannot access
 
+        returns a single row for them; system admins see every city.
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: status
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Location breakdown retrieved
+        '400':
+          description: Invalid filter
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Non-admins cannot access
   /reports/complaints/trends:
     get:
-      tags: [Reports]
+      tags:
+      - Reports
       summary: Complaint Trends Report
-      description: |
-        Get complaint submission counts over time
+      description: 'Get complaint submission counts over time
 
-        **Related User Stories**: TPS-96
+
+        **Related User Stories**: TPS-96 (US46)
+
 
         **`period`**: `daily` (last 30 days, default), `weekly` (last 12 weeks),
-        `monthly` (last 12 months) — ignored when `date_from`/`date_to` supplied
-      security:
-        - Bearer: []
-      parameters:
-        - name: period
-          in: query
-          schema: { type: string, enum: ["daily", "weekly", "monthly"], default: daily }
-        - name: date_from
-          in: query
-          schema: { type: string, format: date }
-        - name: date_to
-          in: query
-          schema: { type: string, format: date }
-        - name: status
-          in: query
-          schema: { type: string }
-      responses:
-        "200":
-          description: Trend data retrieved
-        "400":
-          description: Invalid period or filter
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          description: Non-admins cannot access
 
+        `monthly` (last 12 months) — ignored when `date_from`/`date_to` supplied
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: period
+        in: query
+        schema:
+          type: string
+          enum:
+          - daily
+          - weekly
+          - monthly
+          default: daily
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: status
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Trend data retrieved
+        '400':
+          description: Invalid period or filter
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Non-admins cannot access
   /reports/workers/performance:
     get:
-      tags: [Reports]
+      tags:
+      - Reports
       summary: Field Worker Performance Report
-      description: |
-        Get per-field-worker assignment/completion statistics
+      description: 'Get per-field-worker assignment/completion statistics
 
-        **Related User Stories**: TPS-85, TPS-96
+
+        **Related User Stories**: TPS-85 (US27), TPS-97 (US45)
+
 
         Municipal administrators only see field workers in their own city.
-      security:
-        - Bearer: []
-      parameters:
-        - name: date_from
-          in: query
-          schema: { type: string, format: date }
-        - name: date_to
-          in: query
-          schema: { type: string, format: date }
-      responses:
-        "200":
-          description: Worker performance data retrieved
-        "400":
-          description: Invalid filter
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          description: Non-admins cannot access
 
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Worker performance data retrieved
+        '400':
+          description: Invalid filter
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Non-admins cannot access
   /reports/feedback/summary:
     get:
-      tags: [Reports]
+      tags:
+      - Reports
       summary: Citizen Feedback Summary
-      description: |
-        Average rating, star-rating distribution, and recent comments across
-        resolved/closed complaints (Milestone 4 addition to this YAML \u2014
-        the endpoint itself already existed in code and was already
-        pytest-covered in `test_reports_api.py` as part of the TPS-96 work
-        merged after Milestone 3's documentation snapshot).
+      description: 'Average rating, star-rating distribution, and recent comments across
 
-        **Related User Stories**: TPS-96
+        resolved/closed complaints (Milestone 4 addition to this YAML \u2014
+
+        the endpoint itself already existed in code and was already
+
+        pytest-covered in `test_reports_api.py` as part of the TPS-96 work
+
+        merged after Milestone 3''s documentation snapshot).
+
+
+        **Related User Stories**: TPS-85 (US27)
+
 
         Municipal administrators only see feedback for complaints in their
-        own city; system administrators are unscoped.
-      security:
-        - Bearer: []
-      parameters:
-        - name: date_from
-          in: query
-          schema: { type: string, format: date }
-        - name: date_to
-          in: query
-          schema: { type: string, format: date }
-        - name: location
-          in: query
-          schema: { type: integer }
-          description: City ID filter (system admins only)
-      responses:
-        "200":
-          description: Citizen feedback summary retrieved
-        "400":
-          description: Invalid date_from/date_to format
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          description: Non-admins cannot access
 
+        own city; system administrators are unscoped.
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: location
+        in: query
+        schema:
+          type: integer
+        description: City ID filter (system admins only)
+      responses:
+        '200':
+          description: Citizen feedback summary retrieved
+        '400':
+          description: Invalid date_from/date_to format
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Non-admins cannot access
   /reports/export/csv:
     get:
-      tags: [Reports]
+      tags:
+      - Reports
       summary: Export Report as CSV
-      description: |
-        Export the currently filtered report data as a CSV file download
+      description: 'Export the currently filtered report data as a CSV file download
 
-        **Related User Stories**: TPS-98
+
+        **Related User Stories**: TPS-98 (US44)
+
 
         Contains the same filtered summary/status/category/priority/location/
-        worker-performance data shown on the Reports screen. Response is a
-        file download (`Content-Disposition: attachment`), not the standard
-        JSON envelope.
-      security:
-        - Bearer: []
-      parameters:
-        - name: date_from
-          in: query
-          schema: { type: string, format: date }
-        - name: date_to
-          in: query
-          schema: { type: string, format: date }
-        - name: status
-          in: query
-          schema: { type: string }
-      responses:
-        "200":
-          description: CSV file (text/csv)
-        "400":
-          description: Invalid filter
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          description: Non-admins cannot access
 
+        worker-performance data shown on the Reports screen. Response is a
+
+        file download (`Content-Disposition: attachment`), not the standard
+
+        JSON envelope.
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: status
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: CSV file (text/csv)
+        '400':
+          description: Invalid filter
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Non-admins cannot access
   /reports/export/excel:
     get:
-      tags: [Reports]
+      tags:
+      - Reports
       summary: Export Report as Excel
-      description: |
-        Export the currently filtered report data as a multi-sheet .xlsx
+      description: 'Export the currently filtered report data as a multi-sheet .xlsx
+
         workbook (Summary, By Status, By Category, By Priority, By Location,
+
         Worker Performance)
 
-        **Related User Stories**: TPS-98
-      security:
-        - Bearer: []
-      parameters:
-        - name: date_from
-          in: query
-          schema: { type: string, format: date }
-        - name: date_to
-          in: query
-          schema: { type: string, format: date }
-        - name: status
-          in: query
-          schema: { type: string }
-      responses:
-        "200":
-          description: Excel workbook (application/vnd.openxmlformats-officedocument.spreadsheetml.sheet)
-        "400":
-          description: Invalid filter
-        "401":
-          $ref: '#/components/responses/UnauthorizedError'
-        "403":
-          description: Non-admins cannot access
 
+        **Related User Stories**: TPS-98 (US44)
+
+        '
+      security:
+      - Bearer: []
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: status
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Excel workbook (application/vnd.openxmlformats-officedocument.spreadsheetml.sheet)
+        '400':
+          description: Invalid filter
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Non-admins cannot access
   /reports/export/pdf:
     get:
-      tags: [Reports]
+      tags:
+      - Reports
       summary: Export Report as PDF
-      description: |
-        Export the currently filtered report data as a paginated PDF document
+      description: 'Export the currently filtered report data as a paginated PDF document
 
-        **Related User Stories**: TPS-98
+
+        **Related User Stories**: TPS-98 (US44)
+
+        '
       security:
-        - Bearer: []
+      - Bearer: []
       parameters:
-        - name: date_from
-          in: query
-          schema: { type: string, format: date }
-        - name: date_to
-          in: query
-          schema: { type: string, format: date }
-        - name: status
-          in: query
-          schema: { type: string }
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: status
+        in: query
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: PDF document (application/pdf)
-        "400":
+        '400':
           description: Invalid filter
-        "401":
+        '401':
           $ref: '#/components/responses/UnauthorizedError'
-        "403":
+        '403':
           description: Non-admins cannot access
-
   /locations/pincode/{pincode}:
     get:
-      tags: [Locations]
+      tags:
+      - Locations
       summary: Resolve Pincode to City
-      description: |
-        Look up city for a given pincode
-        
-        **Related User Stories**: TPS-31
-        
-        **Public Endpoint**: No JWT required
-        
-        **Response**:
-        - `match_count`: 0 = not found, 1 = unique city, N = multiple options
-        - Cities returned if found
-      parameters:
-        - name: pincode
-          in: path
-          required: true
-          schema: { type: string, pattern: '^\d{6}$' }
-      responses:
-        "200":
-          description: Pincode resolved
-        "400":
-          description: Invalid pincode format
+      description: 'Look up city for a given pincode
 
+
+        **Related User Stories**: TPS-70 (US24)
+
+
+        **Public Endpoint**: No JWT required
+
+
+        **Response**:
+
+        - `match_count`: 0 = not found, 1 = unique city, N = multiple options
+
+        - Cities returned if found
+
+        '
+      parameters:
+      - name: pincode
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{6}$
+      responses:
+        '200':
+          description: Pincode resolved
+        '400':
+          description: Invalid pincode format
   /locations/cities:
     get:
-      tags: [Locations]
+      tags:
+      - Locations
       summary: City Autosuggest
-      description: |
-        Get cities matching a query prefix
-        
-        **Related User Stories**: TPS-31
-        
-        **Public Endpoint**: No JWT required
-      parameters:
-        - name: query
-          in: query
-          required: true
-          schema: { type: string, minLength: 1 }
-        - name: limit
-          in: query
-          schema: { type: integer, default: 10 }
-      responses:
-        "200":
-          description: Cities retrieved
+      description: 'Get cities matching a query prefix
 
+
+        **Related User Stories**: TPS-70 (US24)
+
+
+        **Public Endpoint**: No JWT required
+
+        '
+      parameters:
+      - name: query
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 10
+      responses:
+        '200':
+          description: Cities retrieved
   /locations/pincodes:
     get:
-      tags: [Locations]
+      tags:
+      - Locations
       summary: Pincode Prefix Search
-      description: |
-        Get pincodes matching a prefix (minimum 2 digits)
-        
-        **Related User Stories**: TPS-31
-        
-        **Public Endpoint**: No JWT required
-      parameters:
-        - name: prefix
-          in: query
-          required: true
-          schema: { type: string, minLength: 2, pattern: '^\d+$' }
-        - name: limit
-          in: query
-          schema: { type: integer, default: 10 }
-      responses:
-        "200":
-          description: Pincodes retrieved
+      description: 'Get pincodes matching a prefix (minimum 2 digits)
 
+
+        **Related User Stories**: TPS-70 (US24)
+
+
+        **Public Endpoint**: No JWT required
+
+        '
+      parameters:
+      - name: prefix
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 2
+          pattern: ^\d+$
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 10
+      responses:
+        '200':
+          description: Pincodes retrieved
   /locations/reverse-geocode:
     get:
-      tags: [Locations]
+      tags:
+      - Locations
       summary: Reverse Geocode
-      description: |
-        Get address/pincode/city from map coordinates
-        
-        **Related User Stories**: TPS-31
-        
-        **Public Endpoint**: No JWT required
-      parameters:
-        - name: lat
-          in: query
-          required: true
-          schema: { type: number }
-        - name: lon
-          in: query
-          required: true
-          schema: { type: number }
-      responses:
-        "200":
-          description: Location info retrieved
-        "400":
-          description: Invalid coordinates
+      description: 'Get address/pincode/city from map coordinates
 
+
+        **Related User Stories**: TPS-70 (US24)
+
+
+        **Public Endpoint**: No JWT required
+
+        '
+      parameters:
+      - name: lat
+        in: query
+        required: true
+        schema:
+          type: number
+      - name: lon
+        in: query
+        required: true
+        schema:
+          type: number
+      responses:
+        '200':
+          description: Location info retrieved
+        '400':
+          description: Invalid coordinates
   /locations/overview:
     get:
-      tags: [Locations]
+      tags:
+      - Locations
       summary: Public Platform Overview
-      description: |
-        Get public statistics for landing page
-        
-        **Related User Stories**: TPS-31
-        
-        **Public Endpoint**: No JWT required
-      responses:
-        "200":
-          description: Overview stats retrieved
+      description: 'Get public statistics for landing page
 
+
+        **Related User Stories**: None (no direct Jira story in Jira_Stories.csv)
+
+
+        **Public Endpoint**: No JWT required
+
+        '
+      responses:
+        '200':
+          description: Overview stats retrieved
   /locations/complaint-pins:
     get:
-      tags: [Locations]
+      tags:
+      - Locations
       summary: Public Complaint Map Markers
-      description: |
-        Get recent complaint coordinates for map display
-        
-        **Related User Stories**: TPS-31
-        
+      description: 'Get recent complaint coordinates for map display
+
+
+        **Related User Stories**: TPS-70 (US24)
+
+
         **Public Endpoint**: No JWT required
+
+        '
       parameters:
-        - name: limit
-          in: query
-          schema: { type: integer, default: 100 }
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 100
       responses:
-        "200":
+        '200':
           description: Complaint markers retrieved
+x-api-summary:
+  api-paths: 60
+  http-operations: 71
+  user-stories: 48
+

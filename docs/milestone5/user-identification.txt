@@ -5,126 +5,200 @@ User Identification
 
 The Civic Services Platform is designed to serve different categories of users involved in reporting, managing, and resolving pothole complaints. Based on the system requirements, the users are classified into Primary, Secondary, and Tertiary users.
 
-Primary User
+------------------------------------------------------------
 
+1. PRIMARY USER – CITIZEN
+
+Description:
+Citizens are the primary users of the Civic Services Platform. They use the platform to report potholes and other civic complaints, track complaint progress, receive notifications, and provide feedback after resolution.
+
+Role:
 Citizen
 
-Description
+Responsibilities:
+- Register and maintain their citizen account.
+- Submit civic complaints with relevant details.
+- Provide accurate complaint location using latitude and longitude.
+- Provide complaint category, description, and supporting photographs where required.
+- Track submitted complaints and their status.
+- Review complaint details and complaint history.
+- Provide feedback after a complaint is resolved.
+- Review nearby complaints where applicable to identify possible duplicate complaints.
 
-Citizens are the primary users of the application. They use the platform to report potholes, monitor complaint progress, and provide feedback after the issue has been resolved.
+Goals:
+- Report civic problems quickly and conveniently.
+- Provide accurate location and useful complaint information.
+- Track the progress of submitted complaints.
+- Receive timely information when complaint status changes.
+- Ensure reported problems are resolved and provide feedback on the resolution.
 
-Responsibilities
+Pain Points:
+- Difficulty reporting a complaint with accurate location information.
+- Difficulty identifying the city and area associated with a PIN code.
+- Lack of visibility into complaint progress after submission.
+- Repeated or duplicate complaints for the same civic issue.
+- Lack of timely notification when complaint status changes.
+- Difficulty providing feedback after a complaint is resolved.
 
-- Register and log in to the system.
-- Report pothole complaints.
-- Upload complaint details and supporting images.
-- Track complaint status.
-- View complaint history.
-- Submit feedback after complaint resolution.
-
-Goals
-
-- Report potholes quickly and easily.
-- Receive timely updates.
-- Ensure complaints are resolved efficiently.
-
-Pain Points
-
-- Difficult and time-consuming complaint process.
-- Lack of transparency.
-- No status tracking.
-- Delayed complaint resolution.
-- Poor communication with authorities.
+Key Needs:
+- Simple and secure registration and login.
+- Easy complaint submission.
+- Accurate GPS / latitude and longitude location capture.
+- City and area identification using PIN code.
+- Complaint tracking and history.
+- Notifications for important complaint updates.
+- Ability to provide feedback after resolution.
 
 ------------------------------------------------------------
 
-Secondary Users
+2. SECONDARY USER – FIELD WORKER
 
+Description:
+Field Workers are operational users responsible for investigating and resolving civic complaints assigned to them by the Administrator.
+
+Role:
 Field Worker
 
-Description
+Responsibilities:
+- View complaints assigned to them.
+- Review complaint details, photographs, and location.
+- Investigate the reported civic issue.
+- Update the status of assigned complaints.
+- Record work and resolution details.
+- Complete assigned complaints and provide appropriate resolution information.
 
-Field workers receive assigned complaints from administrators and are responsible for repairing potholes and updating work progress.
+Goals:
+- Receive clear and actionable complaint assignments.
+- Locate the reported issue accurately.
+- Complete assigned civic work efficiently.
+- Keep complaint status information up to date.
+- Provide sufficient resolution information for administrative review.
 
-Responsibilities
+Pain Points:
+- Difficulty finding the exact location of a complaint.
+- Incomplete or unclear complaint information.
+- Difficulty identifying which complaints require action.
+- Lack of a clear view of assigned work and status.
+- Additional effort when complaint information is duplicated or incomplete.
 
-- View assigned complaints.
-- Accept complaint assignments.
-- Update repair progress.
-- Mark repairs as completed.
-- View work history.
+Key Needs:
+- Secure role-based access.
+- Clear list of assigned complaints.
+- Access to complaint location and details.
+- Ability to update complaint status.
+- Ability to record resolution information.
 
-Goals
-
-- Receive accurate work assignments.
-- Update progress efficiently.
-- Complete repairs within the expected time.
-
-Pain Points
-
-- Manual assignment process.
-- Lack of real-time updates.
-- Difficulty tracking assigned work.
 
 ------------------------------------------------------------
 
-Tertiary Users
+3. TERTIARY USER – ADMINISTRATOR
 
+Description:
+Administrators are administrative users of the Civic Services Platform. The database contains a single administrator role, `administrator`. The administrator profile maintains an administrative level that determines the scope of administrative access: System or Municipal.
+
+Role:
 Administrator
 
-Description
+Administrative Levels:
+- System Administrator – system-level administration with platform-wide responsibilities.
+- Municipal Administrator – municipal-level administration restricted to the assigned city.
 
-Administrators oversee the complete complaint management process. The administrator role is internally split into two subtypes: System Administrator and Municipal Administrator. Both log in through the same authentication flow, but their access scope differs.
+Responsibilities:
+System Administrator:
+- Manage Municipal Administrator accounts.
+- Manage system-level configuration and settings.
+- Maintain platform-wide administrative information.
+- Perform administrative activities that are not restricted to a particular city.
+- Oversee platform-wide administrative functions.
 
-System Administrator
+Municipal Administrator:
+- Manage citizens and Field Workers within the assigned city.
+- Manage complaints belonging to the assigned city.
+- Assign complaints to appropriate Field Workers.
+- Monitor complaint status and operational progress.
+- Review duplicate complaints within the permitted municipal scope.
+- Generate municipal reports and export relevant data.
+- Manage municipal operations within the assigned city.
 
-- Has platform-wide access.
-- Manages municipal administrators and global system settings.
-- Can review complaints, reports, and user data across all cities.
+Goals:
+System Administrator:
+- Maintain secure and reliable platform-wide administration.
+- Ensure appropriate administrative users have access to the system.
+- Maintain consistent system-wide configuration.
+- Provide a controlled administrative foundation for municipal operations.
 
-Municipal Administrator
+Municipal Administrator:
+- Manage civic complaints efficiently within the assigned city.
+- Ensure complaints are assigned to appropriate Field Workers.
+- Monitor complaint resolution and operational progress.
+- Maintain accurate city-level civic service information.
+- Generate useful reports for municipal monitoring and decision-making.
 
-- Has access scoped to one city.
-- Manages complaints, field workers, and city-level operational work.
-- Cannot manage municipal administrators or system-wide settings.
+Pain Points:
+System Administrator:
+- Managing administrators across multiple municipal areas.
+- Maintaining consistent system configuration.
+- Preventing unauthorized administrative access.
+- Maintaining a clear separation between system-wide and municipal administration.
 
-Responsibilities
+Municipal Administrator:
+- Managing a large number of complaints within a city.
+- Identifying duplicate complaints.
+- Assigning complaints to appropriate Field Workers.
+- Monitoring complaint status and resolution progress.
+- Maintaining accurate city-specific citizen and Field Worker information.
+- Preparing reports and exporting data for municipal review.
+- Ensuring access is restricted to the authorized city.
 
-- View and manage complaints within the permitted scope.
-- Assign complaints to field workers.
-- Prioritize complaints.
-- Monitor complaint progress.
-- Verify completed repairs.
-- Close complaints.
-- Generate reports and analytics.
+Key Needs:
+System Administrator:
+- Secure administrative authentication.
+- Platform-wide administrative access.
+- Ability to manage Municipal Administrators.
+- Ability to manage system-level settings.
+- Access to appropriate administrative monitoring and reporting.
 
-Goals
+Municipal Administrator:
+- Secure role-based authentication.
+- City-scoped access to data.
+- Ability to manage citizens and Field Workers for the assigned city.
+- Complaint assignment and monitoring.
+- Duplicate complaint visibility.
+- Access to city-specific reports and analytics.
+- CSV report export.
+- Controlled access that prevents access to other cities.
 
-- Efficient complaint management.
-- Balanced workload distribution.
-- Timely complaint resolution.
-- Improved municipal service performance.
 
-Pain Points
+4. ROLE AND ADMINISTRATIVE LEVEL MODEL
 
-- Large number of complaints.
-- Difficulty prioritizing urgent issues.
-- Manual monitoring of repair progress.
-- Limited reporting and analytics.
+The final system contains three database/application roles:
 
-------------------------------------------------------------
+- Citizen
+- Field Worker
+- Administrator
 
-Summary
+The Administrator role has two administrative levels maintained in the Administrator profile:
 
-The Civic Services Platform supports three major user groups:
+Administrator
+    |
+    +-- System Level
+    |     Platform-wide administration
+    |
+    +-- Municipal Level
+          City-scoped administration
 
-1. Citizens
-   - Report and monitor pothole complaints.
+The administrative level is an attribute of the Administrator profile; it is not a separate database role.
 
-2. Field Workers
-   - Repair potholes and update work progress.
+Citizen
+    ↓
+Creates and tracks civic complaints and provides feedback.
 
-3. Administrators
-   - Manage complaints, assign field workers, monitor progress, and generate reports.
+Field Worker
+    ↓
+Handles complaints assigned by the Administrator.
 
-This classification ensures that every stakeholder has clearly defined responsibilities and appropriate access to the system based on their role.
+Administrator
+    ↓
+Manages civic operations according to the administrator's level:
+    - System level: platform-wide administration
+    - Municipal level: assigned-city administration
