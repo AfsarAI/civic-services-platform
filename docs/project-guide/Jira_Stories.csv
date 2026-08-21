@@ -1,0 +1,2746 @@
+Issue Type,Issue key,Issue id,Summary,Description,Sprint,Parent,Parent key,Parent summary,Status
+Story,TPS-111,10250,Municipal Administrator Can Register Field Workers,"h2. User Story
+
+As a Municipal Administrator,
+I want to register Field Workers area-wise,
+So that complaints can be assigned to the responsible worker based on city and area.
+
+h2. Description
+
+Implement functionality that allows the Municipal Administrator to create Field Worker accounts.
+
+Each Field Worker must belong to exactly one city and one area within that city.
+
+Only Municipal Administrators should be able to manage Field Workers within their own city.
+
+h2. Acceptance Criteria
+
+* Municipal Administrator can create Field Workers.
+* Worker belongs to exactly one city.
+* Worker belongs to exactly one area within that city.
+* Field Worker can log in successfully.
+* Proper authorization is enforced so Municipal Administrators can manage only their own city workers.
+* Area-wise Field Worker details are available for complaint assignment.
+
+h2. Definition of Done
+
+✓ Field Worker registration API implemented.
+✓ Registration UI completed.
+✓ Area-wise Field Worker assignment implemented.
+✓ Validation and authorization completed.
+✓ Field Worker can successfully log in.
+✓ Swagger/OpenAPI documentation updated.
+✓ Unit testing completed.
+✓ Code reviewed and merged.
+✓ Approved by the Product Owner (Team).",Sprint 1,10047,TPS-4,Epic 4: Administrator Management,Done
+Story,TPS-110,10249,System Administrator Can Register Municipal Administrators,"
+
+*User Story*  
+As a System Administrator,  
+I want to register Municipal Administrators city-wise,  
+So that every city has its own administrator responsible for complaint management.
+
+----
+
+*Description*  
+Implement functionality that allows the System Administrator to create Municipal Administrator accounts.  
+Each Municipal Administrator must belong to exactly one city.  
+Only System Administrators should have permission to perform this operation.
+
+----
+
+*Acceptance Criteria*
+
+* System Administrator can create Municipal Administrators.
+* Every Municipal Administrator belongs to exactly one city.
+* Duplicate email validation exists for Municipal Administrators.
+* Municipal Administrator can log in successfully.
+* Proper authorization is enforced so only System Administrators can perform this action.
+
+----
+
+*Definition of Done*  
+✓ Municipal Administrator registration API implemented.  
+✓ Registration UI completed.  
+✓ City-wise administrator creation implemented.  
+✓ Validation and authorization completed.  
+✓ Municipal Administrator can successfully log in.  
+✓ Swagger/OpenAPI documentation updated.  
+✓ Unit testing completed.  
+✓ Code reviewed and merged.  
+✓ Approved by the Product Owner (Team).
+
+----",Sprint 1,10047,TPS-4,Epic 4: Administrator Management,Done
+Story,TPS-99,10206,Configure System Settings,"h2. User Story
+
+As an administrator,
+
+I want to configure system settings,
+
+So that the Civic Services Platform operates according to organizational requirements.
+
+----
+
+h2. Description
+
+Provide configuration options for administrators to manage application settings including notification preferences, complaint priorities, and system parameters.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can access system settings.
+# Configuration changes are saved.
+# Updated settings take effect immediately where applicable.
+# Unauthorized users cannot modify settings.
+# Configuration changes are logged.
+# Settings are validated before saving.
+
+----
+
+h2. Definition of Done
+
+✓ Configuration page implemented.
+
+✓ Settings saved successfully.
+
+✓ Validation completed.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 3,10052,TPS-9,Epic 8: Testing & Deployment,Done
+Story,TPS-98,10205,Export Reports,"h2. User Story
+
+As an administrator,
+
+I want to export generated reports,
+
+So that I can share, archive, and analyze complaint data outside the Civic Services Platform.
+
+----
+
+h2. Description
+
+Allow administrators to export generated reports in commonly used file formats for reporting and record-keeping purposes.
+
+The system should support exporting reports in the following formats:
+
+• PDF
+
+• Microsoft Excel (.xlsx)
+
+• CSV
+
+The exported reports should contain the same filtered data currently displayed on the report screen.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can export reports as PDF.
+# Administrator can export reports as Excel (.xlsx).
+# Administrator can export reports as CSV.
+# Exported reports contain the selected filters.
+# Exported reports maintain proper formatting.
+# Report export completes successfully.
+
+----
+
+h2. Definition of Done
+
+✓ PDF export implemented.
+
+✓ Excel export implemented.
+
+✓ CSV export implemented.
+
+✓ Exported reports verified.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 3,10050,TPS-7,Epic 7: Reports & Analytics,Done
+Story,TPS-97,10204,View Performance Metrics,"h2. User Story
+
+As an administrator,
+
+I want to view key performance metrics,
+
+So that I can evaluate the efficiency of complaint handling, monitor service quality, and identify opportunities for improvement.
+
+----
+
+h2. Description
+
+Provide a performance metrics dashboard that displays key performance indicators (KPIs) for monitoring the effectiveness of the Civic Services Platform.
+
+The dashboard should provide real-time performance metrics to support operational monitoring and strategic decision-making.
+
+The performance metrics should include:
+
+• Total Complaints Received
+
+• Average Complaint Resolution Time
+
+• Average Assignment Time
+
+• Number of Open Complaints
+
+• Number of Closed Complaints
+
+• Field Worker Productivity
+
+• Complaint Closure Rate
+
+• Citizen Satisfaction Rating
+
+• High Priority Pending Complaints
+
+The dashboard should present these metrics using charts, graphs, and KPI cards.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can view all key performance metrics.
+# Performance metrics are calculated accurately.
+# Dashboard displays charts and KPI cards.
+# Dashboard updates automatically when complaint data changes.
+# Performance metrics can be filtered by date range.
+# Dashboard loads successfully.
+
+----
+
+h2. Definition of Done
+
+✓ Performance dashboard implemented.
+
+✓ KPI calculations verified.
+
+✓ Charts displayed correctly.
+
+✓ Auto-refresh implemented.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 3,10050,TPS-7,Epic 7: Reports & Analytics,Done
+Story,TPS-96,10203,Generate Analytics Reports,"h2. User Story
+
+As an administrator,
+
+I want to generate analytical reports,
+
+So that I can analyze complaint trends, evaluate system performance, and support informed decision-making.
+
+----
+
+h2. Description
+
+Provide analytical reporting capabilities that summarize complaint data and operational performance over a selected period.
+
+The reports should help administrators identify trends and improve resource planning.
+
+The analytics reports should include:
+
+• Complaint Trends by Month
+
+• Complaints by Location
+
+• Complaints by Priority
+
+• Average Resolution Time
+
+• Complaint Closure Rate
+
+• Field Worker Performance Summary
+
+• Citizen Feedback Summary
+
+Reports should support filtering by:
+
+• Date Range
+
+• Complaint Status
+
+• Priority
+
+• Location
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can generate analytics reports.
+# Reports display accurate analytical information.
+# Reports support filtering by date range.
+# Reports support filtering by complaint status and priority.
+# Reports display charts and summary statistics.
+# Reports load successfully.
+
+----
+
+h2. Definition of Done
+
+✓ Analytics reports implemented.
+
+✓ Filters implemented.
+
+✓ Charts displayed correctly.
+
+✓ Data accuracy verified.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 3,10050,TPS-7,Epic 7: Reports & Analytics,Done
+Story,TPS-95,10202,View Dashboard,"h2. User Story
+
+As an administrator,
+
+I want to view a dashboard showing key complaint statistics,
+
+So that I can quickly monitor the overall performance of the Civic Services Platform and identify areas requiring attention.
+
+----
+
+h2. Description
+
+Provide an interactive dashboard that presents key performance indicators (KPIs) and complaint statistics in graphical and tabular formats.
+
+The dashboard should provide a real-time overview of complaint activities and operational performance.
+
+The dashboard should display:
+
+• Total Complaints
+
+• Open Complaints
+
+• Assigned Complaints
+
+• In Progress Complaints
+
+• Completed Complaints
+
+• Closed Complaints
+
+• High Priority Complaints
+
+• Average Resolution Time
+
+• Number of Active Field Workers
+
+• Recent Complaint Activity
+
+The dashboard should automatically refresh whenever new complaint data becomes available.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can access the dashboard.
+# Dashboard displays all key complaint statistics.
+# Dashboard displays charts and summary cards.
+# Dashboard data is updated automatically.
+# Dashboard loads successfully.
+# Dashboard is responsive on different screen sizes.
+
+----
+
+h2. Definition of Done
+
+✓ Dashboard implemented.
+
+✓ Statistics displayed correctly.
+
+✓ Charts rendered successfully.
+
+✓ Data refreshed correctly.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 3,10050,TPS-7,Epic 7: Reports & Analytics,Done
+Story,TPS-94,10201,Receive Complaint Closure Notifications,"h2. User Story
+
+As a citizen,
+
+I want to receive a notification when my complaint is officially closed,
+
+So that I know the repair has been verified, completed successfully, and no further action is required.
+
+----
+
+h2. Description
+
+The system shall automatically notify citizens when their complaint has been verified by the administrator and officially closed.
+
+The notification should confirm that the repair work has been completed successfully and provide a summary of the completed complaint.
+
+The notification should include:
+
+• Complaint ID
+
+• Complaint Location
+
+• Complaint Closure Date
+
+• Final Complaint Status
+
+• Administrator Remarks (if available)
+
+• Link to submit feedback and rate the completed repair
+
+The notification should be available in the Notification Center.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen receives a notification after the complaint is officially closed.
+# Notification contains the Complaint ID.
+# Notification displays the complaint closure date.
+# Notification includes a link to submit feedback.
+# Notification appears in the Notification Center.
+# Notification can be marked as read.
+
+----
+
+h2. Definition of Done
+
+✓ Complaint closure notification implemented.
+
+✓ Notification displayed correctly.
+
+✓ Feedback link included.
+
+✓ Read/Unread functionality implemented.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 3,10049,TPS-6,Epic 6: Notifications,Done
+Story,TPS-93,10200,Receive Assignment Notifications,"h2. User Story
+
+As a field worker,
+
+I want to receive notifications when a complaint is assigned to me,
+
+So that I can promptly review the assignment and begin the repair work.
+
+----
+
+h2. Description
+
+The system shall automatically notify field workers whenever a new complaint is assigned to them by an administrator.
+
+Each notification should provide sufficient information for the field worker to identify the assigned complaint and begin the repair process.
+
+The notification should include:
+
+• Complaint ID
+
+• Assignment Date and Time
+
+• Location
+
+• Complaint Priority
+
+• Expected Completion Date
+
+• Administrator Remarks (if available)
+
+The notification should appear in the Notification Center immediately after the assignment is made.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker receives a notification immediately after a complaint is assigned.
+# Notification contains the Complaint ID.
+# Notification displays complaint priority.
+# Notification displays assignment date and time.
+# Notification appears in the Notification Center.
+# Notification can be marked as read.
+
+----
+
+h2. Definition of Done
+
+✓ Assignment notification implemented.
+
+✓ Notification displayed correctly.
+
+✓ Notification history maintained.
+
+✓ Read/Unread functionality implemented.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 3,10049,TPS-6,Epic 6: Notifications,Done
+Story,TPS-92,10199,Receive Complaint Status Notifications,"h2. User Story
+
+As a citizen,
+
+I want to receive notifications whenever the status of my complaint changes,
+
+So that I am informed about the progress of my complaint without having to check the application frequently.
+
+----
+
+h2. Description
+
+The system shall automatically generate notifications whenever the status of a complaint changes.
+
+Notifications should be sent for the following events:
+
+• Complaint Submitted
+
+• Under Review
+
+• Assigned to Field Worker
+
+• Repair Work Started
+
+• Repair Progress Updated
+
+• Repair Completed
+
+• Complaint Closed
+
+The notification should clearly indicate the complaint reference and the latest status update.
+
+----
+
+h2. Acceptance Criteria
+
+# Notifications are automatically generated when complaint status changes.
+# Notifications contain the Complaint ID and latest status.
+# Notifications are delivered only to the complaint owner.
+# Notifications appear in the Notification Center.
+# Notifications are displayed in chronological order.
+# Notifications can be marked as read.
+
+----
+
+h2. Definition of Done
+
+✓ Complaint status notifications implemented.
+
+✓ Notification history maintained.
+
+✓ Notifications displayed correctly.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 3,10049,TPS-6,Epic 6: Notifications,Done
+Story,TPS-91,10198,View Notifications,"h2. User Story
+
+As a registered user,
+
+I want to view all my notifications,
+
+So that I can stay informed about important updates related to my account and complaint activities.
+
+----
+
+h2. Description
+
+Provide a notification center where users can view all notifications generated by the Civic Services Platform.
+
+Notifications should include important system events such as:
+
+• Complaint Submitted
+
+• Complaint Assigned
+
+• Repair Work Started
+
+• Repair Progress Updated
+
+• Repair Completed
+
+• Complaint Closed
+
+Each notification should display:
+
+• Notification Title
+
+• Notification Message
+
+• Date and Time
+
+• Read/Unread Status
+
+Users should be able to view notification details and mark notifications as read.
+
+----
+
+h2. Acceptance Criteria
+
+# User can access the Notification Center.
+# Notifications are displayed in chronological order.
+# Read and unread notifications are clearly distinguished.
+# User can mark notifications as read.
+# Notification details can be viewed.
+# Notification list loads successfully.
+
+----
+
+h2. Definition of Done
+
+✓ Notification Center implemented.
+
+✓ Notifications displayed correctly.
+
+✓ Read/Unread functionality implemented.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 3,10049,TPS-6,Epic 6: Notifications,Done
+Story,TPS-90,10197,View Work History,"h2. User Story
+
+As a field worker,
+
+I want to view my work history,
+
+So that I can review my assigned, completed, and pending repair tasks and monitor my work performance.
+
+----
+
+h2. Description
+
+Provide a work history page where field workers can view all complaints assigned to them, including completed, ongoing, and pending repair tasks.
+
+The work history should display:
+
+• Complaint ID
+
+• Assignment Date
+
+• Location
+
+• Priority
+
+• Current Status
+
+• Completion Date (if completed)
+
+• Repair Remarks
+
+The system should allow field workers to search, filter, and sort their work history for easy reference.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker can view all assigned and completed work.
+# Work history displays complete complaint information.
+# Field worker can search work history.
+# Field worker can filter work history by complaint status.
+# Work history is displayed in chronological order.
+# Work history loads successfully without errors.
+
+----
+
+h2. Definition of Done
+
+✓ Work History page developed.
+
+✓ Search functionality implemented.
+
+✓ Filtering implemented.
+
+✓ Sorting implemented.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 3,10048,TPS-5,Epic 5:  Field Worker Management,Done
+Story,TPS-89,10196,Complete Repair Work,"h2. User Story
+
+As a field worker,
+
+I want to complete the assigned repair work and submit completion details,
+
+So that the administrator can verify the repair and close the complaint.
+
+----
+
+h2. Description
+
+Allow field workers to mark an assigned repair as completed after finishing the pothole repair work.
+
+The field worker should provide sufficient evidence to support the completion of the repair.
+
+The completion details should include:
+
+• Completion Date
+
+• Completion Time
+
+• Repair Remarks
+
+• One or More Completion Photographs
+
+• Final Repair Status
+
+After successful submission, the system should notify the administrator that the complaint is ready for verification.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker can mark an assigned complaint as completed.
+# Field worker can upload one or more completion photographs.
+# Field worker can enter repair remarks.
+# Completion date and time are recorded automatically.
+# Administrator is notified after completion is submitted.
+# Complaint status changes to ""Completed"".
+
+----
+
+h2. Definition of Done
+
+✓ Repair completion implemented.
+
+✓ Completion photographs uploaded successfully.
+
+✓ Repair remarks stored.
+
+✓ Completion date and time recorded.
+
+✓ Administrator notification triggered.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10048,TPS-5,Epic 5:  Field Worker Management,Done
+Story,TPS-88,10195,Update Repair Progress,"h2. User Story
+
+As a field worker,
+
+I want to update the progress of repair work,
+
+So that administrators and citizens can monitor the current status of the assigned complaint.
+
+----
+
+h2. Description
+
+Allow field workers to update the progress of assigned repair work throughout its lifecycle.
+
+The system should enable field workers to record progress updates whenever significant work has been completed.
+
+Progress updates may include:
+
+• Work Started
+
+• Repair In Progress
+
+• Temporary Delay (with reason)
+
+• Estimated Completion Date
+
+• Progress Remarks
+
+Each progress update should be recorded with the corresponding date and time.
+
+The latest progress should be visible to administrators and reflected in the citizen's complaint tracking page.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker can update the repair progress of assigned complaints.
+# Progress updates are successfully saved.
+# Progress history is maintained.
+# Administrators can view the latest progress updates.
+# Citizens can track the updated complaint status.
+# Date and time of each update are recorded.
+
+----
+
+h2. Definition of Done
+
+✓ Progress update functionality implemented.
+
+✓ Progress history maintained.
+
+✓ Complaint status updated successfully.
+
+✓ Administrator and Citizen views updated.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10048,TPS-5,Epic 5:  Field Worker Management,Done
+Story,TPS-87,10194,Accept Assigned Complaint,"h2. User Story
+
+As a field worker,
+
+I want to accept an assigned complaint,
+
+So that I can acknowledge responsibility for the repair work and begin resolving the reported pothole.
+
+----
+
+h2. Description
+
+Allow field workers to review newly assigned complaints and accept responsibility for carrying out the repair work.
+
+The system should record the acceptance along with the date and time. Once accepted, the complaint status should be updated and visible to the administrator.
+
+If necessary, the field worker may reject the assignment with a valid reason, allowing the administrator to reassign the complaint.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker can view newly assigned complaints.
+# Field worker can accept an assigned complaint.
+# System records the acceptance date and time.
+# Complaint status changes to ""Accepted"".
+# Administrator is notified when the complaint is accepted.
+# If the assignment is rejected, the reason is recorded and the administrator is notified.
+
+----
+
+h2. Definition of Done
+
+✓ Assignment acceptance implemented.
+
+✓ Complaint status updated successfully.
+
+✓ Acceptance history recorded.
+
+✓ Administrator notification implemented.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10048,TPS-5,Epic 5:  Field Worker Management,Done
+Story,TPS-86,10193,View Assigned Complaints,"h2. User Story
+
+As a field worker,
+
+I want to view all complaints assigned to me,
+
+So that I can plan my work efficiently and begin repair activities on assigned potholes.
+
+----
+
+h2. Description
+
+Provide a dashboard where field workers can view all complaints assigned to them.
+
+The dashboard should display relevant information for each assigned complaint to help field workers prioritize and organize their daily work.
+
+The complaint list should include:
+
+• Complaint ID
+
+• Reported Date
+
+• Location
+
+• Road/Street Name
+
+• Complaint Priority
+
+• Current Status
+
+• Expected Completion Date
+
+The dashboard should allow field workers to search, filter, and sort assigned complaints.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker can view all assigned complaints.
+# Complaint list displays all required information.
+# Field worker can search assigned complaints.
+# Field worker can filter complaints by status and priority.
+# Field worker can sort complaints by priority or assignment date.
+# Dashboard loads successfully.
+
+----
+
+h2. Definition of Done
+
+✓ Assigned complaints dashboard implemented.
+
+✓ Search functionality implemented.
+
+✓ Filtering implemented.
+
+✓ Sorting implemented.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 3,10048,TPS-5,Epic 5:  Field Worker Management,Done
+Story,TPS-85,10192,Generate Administrative Reports,"h2. User Story
+
+As an administrator,
+
+I want to generate administrative reports,
+
+So that I can monitor complaint statistics, evaluate operational performance, and support informed decision-making.
+
+----
+
+h2. Description
+
+Provide reporting capabilities that allow administrators to generate reports on complaint management and repair activities.
+
+The system should generate reports based on complaint data and operational performance.
+
+The reports should include:
+
+• Total Complaints
+
+• Open Complaints
+
+• Assigned Complaints
+
+• In Progress Complaints
+
+• Completed Complaints
+
+• Closed Complaints
+
+• Average Resolution Time
+
+• Complaints by Priority
+
+• Complaints by Location
+
+• Field Worker Performance
+
+The system should allow reports to be filtered by date range and complaint status.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can generate complaint reports.
+# Reports display accurate complaint statistics.
+# Reports can be filtered by date range.
+# Reports can be filtered by complaint status.
+# Reports can be viewed on-screen.
+# Reports can be exported for future reference.
+
+----
+
+h2. Definition of Done
+
+✓ Report generation implemented.
+
+✓ Filters implemented.
+
+✓ Report export functionality implemented.
+
+✓ Report accuracy verified.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 3,10047,TPS-4,Epic 4: Administrator Management,Done
+Story,TPS-84,10191,Close Complaint,"h2. User Story
+
+As an administrator,
+
+I want to close a verified complaint,
+
+So that completed complaints are officially resolved and removed from the active work queue.
+
+----
+
+h2. Description
+
+Allow administrators to officially close a complaint after verifying that the repair work has been completed successfully.
+
+Only complaints that have been approved during the verification process should be eligible for closure.
+
+When a complaint is closed, the system should:
+
+• Update the complaint status to ""Closed""
+
+• Record the closure date and time
+
+• Notify the citizen that the complaint has been successfully resolved
+
+• Archive the complaint for future reference and reporting
+
+Closed complaints should become read-only and should not allow further operational updates.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can close only verified complaints.
+# Complaint status changes to ""Closed"".
+# Closure date and time are recorded.
+# Citizen receives a complaint closure notification.
+# Closed complaints become read-only.
+# Closed complaints remain available for reporting and historical reference.
+
+----
+
+h2. Definition of Done
+
+✓ Complaint successfully closed.
+
+✓ Closure information recorded.
+
+✓ Citizen notification sent.
+
+✓ Complaint archived.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10047,TPS-4,Epic 4: Administrator Management,Done
+Story,TPS-83,10190,Verify Complaint Resolution,"h2. User Story
+
+As an administrator,
+
+I want to verify that the reported pothole has been repaired successfully,
+
+So that I can ensure the complaint has been resolved according to municipal standards before closing it.
+
+----
+
+h2. Description
+
+Allow administrators to review completed repair work submitted by field workers before officially closing the complaint.
+
+The administrator should verify that the repair work meets quality standards using the completion details provided by the field worker.
+
+The verification should include:
+
+• Complaint ID
+
+• Repair Completion Date
+
+• Completion Photograph(s)
+
+• Field Worker's Remarks
+
+• Repair Status
+
+• Verification Status
+
+The administrator may either approve the repair or request additional work if the repair is unsatisfactory.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can review completed repair details.
+# Administrator can view uploaded completion photographs.
+# Administrator can approve the completed repair.
+# Administrator can reject the repair and request rework.
+# Verification decision is recorded.
+# Complaint status is updated after verification.
+
+----
+
+h2. Definition of Done
+
+✓ Verification functionality implemented.
+
+✓ Completion details displayed.
+
+✓ Approval/Rejection process implemented.
+
+✓ Verification history recorded.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10047,TPS-4,Epic 4: Administrator Management,Done
+Story,TPS-82,10189,Monitor Complaint Progress,"h2. User Story
+
+As an administrator,
+
+I want to monitor the progress of assigned complaints,
+
+So that I can ensure repair work is progressing as planned and take timely action if delays occur.
+
+----
+
+h2. Description
+
+Provide administrators with the ability to monitor the progress of all assigned complaints throughout their lifecycle.
+
+The system should display real-time information about complaint progress, including assignment details, repair status, and expected completion dates.
+
+The monitoring dashboard should include:
+
+• Complaint ID
+
+• Complaint Status
+
+• Priority
+
+• Assigned Field Worker
+
+• Assignment Date
+
+• Expected Completion Date
+
+• Last Progress Update
+
+• Current Repair Status
+
+Administrators should be able to quickly identify overdue or delayed complaints and take corrective action.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can monitor all assigned complaints.
+# Current repair status is displayed for each complaint.
+# Assigned field worker information is displayed.
+# Overdue or delayed complaints are clearly identified.
+# Progress updates are refreshed whenever complaint status changes.
+# Monitoring dashboard loads successfully.
+
+----
+
+h2. Definition of Done
+
+✓ Complaint progress dashboard implemented.
+
+✓ Progress information displayed correctly.
+
+✓ Delayed complaints identified.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10047,TPS-4,Epic 4: Administrator Management,Done
+Story,TPS-81,10188,Prioritize Complaints,"h2. User Story
+
+As an administrator,
+
+I want to prioritize reported complaints,
+
+So that urgent pothole issues are addressed first and municipal resources are utilized effectively.
+
+----
+
+h2. Description
+
+Allow administrators to assign a priority level to each complaint based on severity, location, public safety risk, and impact.
+
+The system should support the following priority levels:
+
+• High
+
+• Medium
+
+• Low
+
+The assigned priority should be visible to administrators and field workers and should assist in planning repair work.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can assign a priority to a complaint.
+# Administrator can modify the priority when necessary.
+# Priority is successfully saved.
+# Priority is displayed on complaint dashboards.
+# Field workers can view the assigned priority.
+# Priority changes are recorded in the complaint history.
+
+----
+
+h2. Definition of Done
+
+✓ Priority assignment implemented.
+
+✓ Complaint priority saved successfully.
+
+✓ Priority displayed correctly.
+
+✓ Audit history updated.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10047,TPS-4,Epic 4: Administrator Management,Done
+Story,TPS-80,10187,Assign Complaint to Field Worker,"h2. User Story
+
+As an administrator,
+
+I want to assign a reported complaint to a field worker,
+
+So that the repair work can be initiated and completed within the expected timeframe.
+
+----
+
+h2. Description
+
+Allow administrators to assign reported pothole complaints to available field workers based on workload, location, and availability.
+
+The system should display available field workers and allow the administrator to assign one to the selected complaint.
+
+The assignment information should include:
+
+• Complaint ID
+
+• Field Worker Name
+
+• Assignment Date
+
+• Estimated Completion Date
+
+• Assignment Status
+
+The assigned field worker should be notified immediately after the assignment.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can view available field workers.
+# Administrator can assign a complaint to a field worker.
+# Assignment information is saved successfully.
+# Complaint status changes to ""Assigned"".
+# Assigned field worker receives a notification.
+# Assignment history is recorded.
+
+----
+
+h2. Definition of Done
+
+✓ Assignment functionality implemented.
+
+✓ Assignment stored successfully.
+
+✓ Notification triggered.
+
+✓ Complaint status updated.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10047,TPS-4,Epic 4: Administrator Management,Done
+Story,TPS-79,10186,View Complaint Details,"h2. User Story
+
+As an administrator,
+
+I want to view the complete details of a reported complaint,
+
+So that I can verify the complaint information, assess its severity, and make appropriate decisions for further action.
+
+----
+
+h2. Description
+
+Provide administrators with a detailed view of every reported complaint.
+
+The complaint details should display all information submitted by the citizen along with administrative information required for complaint processing.
+
+The complaint details should include:
+
+• Complaint ID
+
+• Citizen Name
+
+• Complaint Date
+
+• Road/Street Name
+
+• Location
+
+• Complaint Description
+
+• Uploaded Photograph
+
+• Current Status
+
+• Priority
+
+• Assigned Field Worker (if assigned)
+
+• Complaint History
+
+• Last Updated Date
+
+The administrator should be able to access complaint details directly from the complaint dashboard.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can open any complaint from the complaint dashboard.
+# Complete complaint information is displayed.
+# Uploaded photographs are displayed correctly.
+# Complaint history is visible.
+# Current complaint status and priority are displayed.
+# Complaint details load successfully without errors.
+
+----
+
+h2. Definition of Done
+
+✓ Complaint Details page developed.
+
+✓ Complaint information displayed correctly.
+
+✓ Complaint history displayed.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 1,10047,TPS-4,Epic 4: Administrator Management,Done
+Story,TPS-78,10185,View All Reported Complaints,"h2. User Story
+
+As an administrator,
+
+I want to view all reported complaints,
+
+So that I can monitor civic issues and manage complaint resolution efficiently.
+
+----
+
+h2. Description
+
+Provide a centralized complaint management dashboard where administrators can view all reported pothole complaints submitted by citizens.
+
+The dashboard should display complaint information in a structured manner and allow administrators to monitor complaint status and identify pending work.
+
+The complaint list should include:
+
+• Complaint ID
+
+• Reported Date
+
+• Citizen Name
+
+• Location
+
+• Current Status
+
+• Priority
+
+• Assigned Field Worker (if assigned)
+
+The system should support searching, filtering, and sorting complaints based on different criteria.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can view all reported complaints.
+# Complaint list displays all required information.
+# Administrator can search complaints.
+# Administrator can filter complaints by status and priority.
+# Administrator can sort complaints.
+# Complaint data loads successfully.
+
+----
+
+h2. Definition of Done
+
+✓ Complaint dashboard implemented.
+
+✓ Search functionality implemented.
+
+✓ Filtering implemented.
+
+✓ Sorting implemented.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 1,10047,TPS-4,Epic 4: Administrator Management,Done
+Story,TPS-77,10184,Submit Feedback and Rate Repair,"h2. User Story
+
+As a citizen,
+
+I want to provide feedback and rate the completed repair work,
+
+So that I can share my satisfaction with the quality and timeliness of the service provided.
+
+----
+
+h2. Description
+
+Allow citizens to submit feedback and provide a rating after a pothole complaint has been marked as completed.
+
+The feedback helps the municipal authority evaluate the quality of repair work and improve future service delivery.
+
+The feedback form should include:
+
+• Rating (1 to 5 Stars)
+
+• Feedback Comments
+
+• Date of Submission
+
+Only completed complaints should allow feedback submission.
+
+Each complaint should accept feedback only once.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can submit feedback only for completed complaints.
+# Citizen can provide a rating between 1 and 5 stars.
+# Citizen can enter optional feedback comments.
+# Feedback is successfully saved.
+# Citizen cannot submit feedback more than once for the same complaint.
+# Success message is displayed after feedback submission.
+
+----
+
+h2. Definition of Done
+
+✓ Feedback page developed.
+
+✓ Rating functionality implemented.
+
+✓ Feedback stored successfully.
+
+✓ Duplicate feedback prevented.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10046,TPS-3,Epic 3: Citizen Complaint Management,Done
+Story,TPS-76,10183,Receive Complaint Status Notifications,"h2. User Story
+
+As a citizen,
+
+I want to receive notifications whenever the status of my complaint changes,
+
+So that I remain informed about the progress of my complaint without having to check the system frequently.
+
+----
+
+h2. Description
+
+The system shall automatically notify citizens whenever there is a significant update to their complaint.
+
+Notifications should be generated when:
+
+• Complaint is successfully submitted.
+
+• Complaint is under review.
+
+• Complaint is assigned to a field worker.
+
+• Repair work has started.
+
+• Repair work has been completed.
+
+• Complaint has been closed.
+
+Notifications may be delivered through the application and may also support email or SMS if implemented.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen receives a notification after complaint submission.
+# Citizen receives notifications whenever the complaint status changes.
+# Notifications display the Complaint ID and updated status.
+# Notifications are available from the Notification Center.
+# Only the complaint owner receives notifications.
+# Notifications are displayed in chronological order.
+
+----
+
+h2. Definition of Done
+
+✓ Notification functionality implemented.
+
+✓ Notification history available.
+
+✓ Notification triggered for all status changes.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 3,10046,TPS-3,Epic 3: Citizen Complaint Management,Done
+Story,TPS-75,10182,Cancel Complaint,"h2. User Story
+
+As a citizen,
+
+I want to cancel my submitted complaint,
+
+So that I can withdraw complaints that are no longer valid or have been resolved before repair work begins.
+
+----
+
+h2. Description
+
+Allow citizens to cancel a complaint if it has not yet been assigned to a field worker.
+
+The system should verify the complaint status before allowing cancellation. Once cancelled, the complaint should no longer be considered for assignment or repair.
+
+Only the citizen who created the complaint can cancel it.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can cancel only their own complaints.
+# Complaint can be cancelled only before it is assigned to a field worker.
+# System asks for confirmation before cancellation.
+# Complaint status is updated to ""Cancelled"".
+# Cancelled complaints cannot be assigned for repair.
+# Citizen receives a confirmation message after successful cancellation.
+
+----
+
+h2. Definition of Done
+
+✓ Complaint cancellation implemented.
+
+✓ Business rules validated.
+
+✓ Complaint status updated successfully.
+
+✓ Authorization verified.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10046,TPS-3,Epic 3: Citizen Complaint Management,Done
+Story,TPS-74,10181,Edit Complaint (Before Assignment),"h2. User Story
+
+As a citizen,
+
+I want to edit my submitted complaint before it is assigned to a field worker,
+
+So that I can correct any incorrect or incomplete information.
+
+----
+
+h2. Description
+
+Allow citizens to update the details of a submitted complaint as long as it has not been assigned to a field worker.
+
+The citizen should be able to modify:
+
+• Complaint Description
+
+• Road/Street Name
+
+• Pothole Location
+
+• Uploaded Photograph
+
+The system should prevent editing once the complaint has been assigned or work has started.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can edit only their own complaints.
+# Complaint can be edited only before assignment.
+# Updated information is saved successfully.
+# System records the last updated date and time.
+# Editing is disabled once the complaint is assigned.
+# Citizen receives a confirmation message after successful update.
+
+----
+
+h2. Definition of Done
+
+✓ Complaint edit functionality implemented.
+
+✓ Validation completed.
+
+✓ Authorization verified.
+
+✓ Audit information updated.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10046,TPS-3,Epic 3: Citizen Complaint Management,Done
+Story,TPS-73,10180,View Complaint Details,"h2. User Story
+
+As a citizen,
+
+I want to view the complete details of a reported complaint,
+
+So that I can verify the submitted information and monitor the progress of my complaint.
+
+----
+
+h2. Description
+
+Provide a detailed complaint information page that displays all information related to a selected complaint.
+
+The complaint details should include:
+
+• Complaint ID
+
+• Complaint Date
+
+• Road/Street Name
+
+• Location
+
+• Description
+
+• Uploaded Photograph
+
+• Complaint Status
+
+• Assigned Field Worker (if assigned)
+
+• Last Updated Date
+
+• Repair Completion Date (if completed)
+
+The system should ensure that only the owner of the complaint can access its complete details.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can open a complaint from the Complaint History page.
+# Complete complaint information is displayed.
+# Uploaded photographs are displayed correctly.
+# Current complaint status is shown.
+# Latest updates are displayed.
+# Unauthorized users cannot access complaint details.
+
+----
+
+h2. Definition of Done
+
+✓ Complaint Details page developed.
+
+✓ Complaint information retrieved successfully.
+
+✓ Images displayed correctly.
+
+✓ Authorization verified.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10046,TPS-3,Epic 3: Citizen Complaint Management,Done
+Story,TPS-72,10179,View Complaint History,"h2. User Story
+
+As a citizen,
+
+I want to view the history of all my submitted complaints,
+
+So that I can monitor my previous reports and their current status without submitting duplicate complaints.
+
+----
+
+h2. Description
+
+Provide a complaint history page where citizens can view all the complaints they have submitted through the Civic Services Platform.
+
+The complaint history should display important information for each complaint, allowing citizens to quickly identify the complaint and monitor its progress.
+
+The complaint history should display:
+
+• Complaint ID
+
+• Reported Date
+
+• Location
+
+• Complaint Status
+
+• Last Updated Date
+
+The complaint list should support sorting and filtering by complaint status.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can view all submitted complaints.
+# Complaint history displays Complaint ID, Location, Reported Date, Status and Last Updated Date.
+# Complaint list is sorted by the latest reported complaint by default.
+# Citizen can filter complaints based on status.
+# Only complaints belonging to the logged-in citizen are displayed.
+# Complaint history loads successfully without errors.
+
+----
+
+h2. Definition of Done
+
+✓ Complaint history page developed.
+
+✓ Complaint list displayed correctly.
+
+✓ Filtering implemented.
+
+✓ Authorization verified.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10046,TPS-3,Epic 3: Citizen Complaint Management,Done
+Story,TPS-71,10178,Track Complaint Status,"h2. User Story
+
+As a citizen,
+
+I want to track the status of my reported complaint,
+
+So that I know the progress of the repair work and when the issue is expected to be resolved.
+
+----
+
+h2. Description
+
+Provide a complaint tracking facility that allows citizens to monitor the current status of their reported pothole complaints.
+
+The system should display the latest information about each complaint, including the current processing stage and important updates.
+
+The complaint status may include:
+
+• Submitted
+
+• Under Review
+
+• Assigned
+
+• In Progress
+
+• Completed
+
+• Closed
+
+The citizen should also be able to view important information related to the complaint, such as the complaint ID, submission date, assigned field worker (if applicable), and completion date.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can view all submitted complaints.
+# Citizen can select a complaint to view its details.
+# Current complaint status is displayed.
+# Complaint progress is updated whenever the status changes.
+# Complaint history is available until the complaint is closed.
+# Only the complaint owner can view the complaint details.
+
+----
+
+h2. Definition of Done
+
+✓ Complaint tracking page implemented.
+
+✓ Status information displayed correctly.
+
+✓ Complaint details retrieved successfully.
+
+✓ Access control verified.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10046,TPS-3,Epic 3: Citizen Complaint Management,Done
+Story,TPS-70,10177,Report a Pothole,"h2. User Story
+
+As a citizen,
+
+I want to report a pothole by submitting its details,
+
+So that the municipal authority can repair it promptly and improve road safety.
+
+----
+
+h2. Description
+
+Provide a complaint reporting facility that allows citizens to submit pothole complaints through the Civic Services Platform.
+
+The complaint should capture all necessary information required for municipal authorities to verify, prioritize, and assign repair work.
+
+The complaint should include:
+
+• Pothole Location
+
+• Road/Street Name
+
+• Description
+
+• Photograph
+
+• Date and Time
+
+• GPS Coordinates (if available)
+
+After successful submission, the system should generate a unique Complaint ID for future tracking.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can access the Report Pothole page.
+# Citizen can enter all mandatory complaint details.
+# System validates mandatory fields before submission.
+# Complaint is successfully saved.
+# Unique Complaint ID is generated.
+# Citizen receives a confirmation message after successful submission.
+
+----
+
+h2. Definition of Done
+
+✓ Complaint form developed.
+
+✓ Complaint successfully stored.
+
+✓ Complaint ID generated.
+
+✓ Validation completed.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 1,10046,TPS-3,Epic 3: Citizen Complaint Management,Done
+Story,TPS-69,10176,User Logout,"h2. User Story
+
+As a registered user,
+
+I want to securely log out of the Civic Services Platform,
+
+So that my account remains protected and unauthorized users cannot access my session.
+
+----
+
+h2. Description
+
+Implement a secure logout functionality for all authenticated users of the Civic Services Platform.
+
+The logout functionality should terminate the active user session and redirect the user to the login page. After logout, users must not be able to access protected pages using the browser's Back button or previously stored session information.
+
+This functionality should be available to:
+
+• Citizen
+
+• Administrator
+
+• Field Worker
+
+----
+
+h2. Acceptance Criteria
+
+# Authenticated users can log out successfully.
+# User session is terminated after logout.
+# User is redirected to the login page.
+# Protected pages cannot be accessed after logout.
+# Browser back navigation does not restore an authenticated session.
+# Logout functionality works for all user roles.
+
+----
+
+h2. Definition of Done
+
+✓ Logout functionality implemented.
+
+✓ Session termination verified.
+
+✓ Redirect to login page implemented.
+
+✓ Security testing completed.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10063,TPS-20,Epic 2: Authentication,Done
+Story,TPS-68,10175,Implement Role-Based Access Control (RBAC),"h2. User Story
+
+As a system administrator,
+
+I want the system to enforce role-based access control,
+
+So that citizens, administrators, and field workers can access only the features and information that are authorized for their roles.
+
+----
+
+h2. Description
+
+Implement Role-Based Access Control (RBAC) for the Civic Services Platform to ensure secure and controlled access to application features based on user roles.
+
+The system shall support the following roles:
+
+• Citizen
+
+• Administrator
+
+• Field Worker
+
+The system shall verify user roles after successful authentication and allow access only to authorized pages and operations.
+
+Role permissions include:
+
+Citizen
+• Register
+• Login
+• Report potholes
+• Track complaint status
+• View complaint history
+• Submit feedback
+
+Administrator
+• Login
+• View all complaints
+• Assign complaints
+• Update complaint priority
+• Monitor repair progress
+• Manage users
+• Generate reports
+
+Field Worker
+• Login
+• View assigned complaints
+• Update repair progress
+• Upload repair completion details
+• Mark assigned work as completed
+
+Unauthorized users must not be allowed to access restricted pages or perform unauthorized operations.
+
+----
+
+h2. Acceptance Criteria
+
+# System supports Citizen, Administrator, and Field Worker roles.
+# Users are assigned the correct role after successful login.
+# Each role can access only its authorized features.
+# Unauthorized page access is blocked.
+# Role-based navigation menus are displayed correctly.
+# Role permissions are verified for protected operations.
+
+----
+
+h2. Definition of Done
+
+✓ User roles implemented.
+
+✓ Authorization rules configured.
+
+✓ Protected pages secured.
+
+✓ Role-based navigation implemented.
+
+✓ Unit testing completed.
+
+✓ Security testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10063,TPS-20,Epic 2: Authentication,Done
+Story,TPS-67,10174,Field Worker Login,"h2. User Story
+
+As a field worker,
+
+I want to log into the Civic Services Platform,
+
+So that I can view my assigned repair tasks, update repair progress, and mark completed work efficiently.
+
+----
+
+h2. Description
+
+Develop a secure login functionality for field workers. The system should authenticate field workers using their authorized credentials and provide access to the Field Worker Dashboard upon successful authentication.
+
+The login process should ensure that only authorized field workers can access assigned repair tasks and update complaint statuses.
+
+----
+
+h2. Acceptance Criteria
+
+# Field worker can access the login page.
+# Field worker can log in using valid credentials.
+# Invalid login credentials display an appropriate error message.
+# Authenticated field workers are redirected to the Field Worker Dashboard.
+# Unauthorized users cannot access field worker functions.
+# Field worker session is created after successful authentication.
+
+----
+
+h2. Definition of Done
+
+✓ Field worker login functionality implemented.
+
+✓ Authentication validated.
+
+✓ Session management implemented.
+
+✓ Role-based authorization verified.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 2,10063,TPS-20,Epic 2: Authentication,Done
+Story,TPS-66,10173,Administrator Login,"h2. User Story
+
+As an administrator,
+
+I want to log into the Civic Services Platform,
+
+So that I can manage complaints, assign repair tasks, monitor complaint progress, generate reports, and administer the platform securely.
+
+----
+
+h2. Description
+
+Develop a secure login functionality for administrators. The system should authenticate administrators using their authorized credentials and provide access to the Administrator Dashboard upon successful authentication.
+
+The login process should ensure that only authorized administrators can access administrative features and sensitive system information.
+
+----
+
+h2. Acceptance Criteria
+
+# Administrator can access the login page.
+# Administrator can log in using valid credentials.
+# Invalid login credentials display an appropriate error message.
+# Authenticated administrators are redirected to the Administrator Dashboard.
+# Unauthorized users cannot access administrator functions.
+# Administrator session is created after successful authentication.
+
+----
+
+h2. Definition of Done
+
+✓ Administrator login functionality implemented.
+
+✓ Authentication validated.
+
+✓ Session management implemented.
+
+✓ Role-based authorization verified.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 1,10063,TPS-20,Epic 2: Authentication,Done
+Story,TPS-65,10172,Citizen Login,"h2. User Story
+
+As a citizen,
+
+I want to log into the Civic Services Platform,
+
+So that I can securely access my dashboard, submit complaints, track complaint status, and manage my account.
+
+----
+
+h2. Description
+
+Develop a secure login functionality for registered citizens. The system should authenticate users using their registered credentials and provide access to the citizen dashboard upon successful authentication.
+
+The login process should support secure authentication and provide appropriate error messages for invalid login attempts.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can access the login page.
+# Citizen can log in using a valid email address and password.
+# Invalid login credentials display an appropriate error message.
+# Authenticated users are redirected to the Citizen Dashboard.
+# Unauthorized users cannot access protected pages.
+# User session is created after successful authentication.
+
+----
+
+h2. Definition of Done
+
+✓ Login functionality implemented.
+
+✓ Authentication validated.
+
+✓ Error handling completed.
+
+✓ Session management implemented.
+
+✓ Unit testing completed.
+
+✓ Code reviewed.
+
+✓ Approved by the Product Owner (Team).",Sprint 1,10063,TPS-20,Epic 2: Authentication,Done
+Story,TPS-64,10171,Citizen Registration,"h2. User Story
+
+As a citizen,
+
+I want to create an account,
+
+So that I can securely access the platform and manage my complaints.
+
+----
+
+h2. Description
+
+Develop the citizen registration functionality that allows new users to create an account in the Civic Services Platform.
+
+The registration process should collect the necessary user information and validate the entered data before creating the account.
+
+The registration form should include:
+
+• Full Name
+
+• Email Address
+
+• Mobile Number
+
+• Password
+
+• Confirm Password
+
+The system should validate user input and prevent duplicate registrations using the same email address.
+
+----
+
+h2. Acceptance Criteria
+
+# Citizen can access the registration page.
+# Mandatory fields are validated.
+# Email address must be unique.
+# Password and Confirm Password must match.
+# Citizen account is successfully created.
+# Success message is displayed after registration.
+
+----
+
+h2. Definition of Done
+
+✓ Registration page developed.
+
+✓ Backend registration API implemented.
+
+✓ Database table updated.
+
+✓ Input validation completed.
+
+✓ Unit testing completed.
+
+✓ Code committed to Git repository.
+
+✓ Reviewed and approved by the Product Owner (Team).",Sprint 1,10063,TPS-20,Epic 2: Authentication,Done
+Story,TPS-63,10170,Set Up Backend Project,"h2. User Story
+
+As a development team,
+
+I want to set up the backend project for the Civic Services Platform,
+
+So that the team has a standardized, scalable, and maintainable backend foundation for implementing business functionality.
+
+----
+
+h2. Description
+
+Initialize the backend application using the selected technology stack and configure the project structure according to the agreed architecture.
+
+The backend setup should include:
+
+• Project initialization
+
+• Layered project structure
+
+• REST API configuration
+
+• Database connectivity configuration
+
+• Environment configuration
+
+• Logging configuration
+
+• Global exception handling
+
+• API documentation framework
+
+• Source code version control
+
+The project structure should support future development of authentication, complaint management, administration, reporting, and notification modules.
+
+----
+
+h2. Acceptance Criteria
+
+# Backend project is successfully created.
+# Standard project structure is implemented.
+# Database connectivity is configured.
+# REST API framework is configured.
+# API documentation is enabled.
+# Project builds and runs successfully.
+# Source code is committed to the Git repository.
+
+----
+
+h2. Definition of Done
+
+✓ Backend project initialized.
+
+✓ Project structure completed.
+
+✓ Database connectivity configured.
+
+✓ API documentation enabled.
+
+✓ Source code committed.
+
+✓ Reviewed and approved by the Product Owner (Team).",Sprint 1,10097,TPS-22,Epic 1: Project Setup & Architecture,Done
+Story,TPS-62,10169,Set Up Frontend Project,"h2. User Story
+
+As a development team,
+
+I want to set up the frontend project for the Civic Services Platform,
+
+So that the team has a standardized and scalable foundation for developing the user interface.
+
+----
+
+h2. Description
+
+Initialize the frontend application using the selected framework and configure the project structure for future development.
+
+The frontend setup should include:
+
+• React project initialization
+
+• Project folder structure
+
+• Common layout components
+
+• Environment configuration
+
+• Code formatting and linting
+
+• Basic navigation structure
+
+The project should be structured to support Citizens, Administrators, and Field Workers while following modular development practices.
+
+----
+
+h2. Acceptance Criteria
+
+# Frontend project is successfully created.
+# Folder structure follows the agreed architecture.
+# Common layout (Header, Footer, Navigation) is implemented.
+# Project runs successfully without errors.
+# Source code is committed to the Git repository.
+
+----
+
+h2. Definition of Done
+
+✓ Frontend project initialized.
+
+✓ Folder structure completed.
+
+✓ Navigation configured.
+
+✓ Project builds successfully.
+
+✓ Source code committed to Git.
+
+✓ Reviewed and approved by the Product Owner (Team).",Sprint 1,10097,TPS-22,Epic 1: Project Setup & Architecture,Done
+Story,TPS-61,10168,Set Up Git Repository and Branch Strategy,"h2. User Story
+
+As a development team,
+
+I want to establish a Git repository and define a branch management strategy,
+
+So that team members can collaborate efficiently, manage source code consistently, and reduce merge conflicts during development.
+
+----
+
+h2. Description
+
+Set up the Git repository for the Civic Services Platform and establish a branching strategy for collaborative development.
+
+The repository should include:
+
+• Main branch
+
+• Develop branch
+
+• Feature branches
+
+• Bugfix branches
+
+• Project folder structure
+
+• README file
+
+• .gitignore file
+
+The branching strategy should define how developers create, review, merge, and maintain code throughout the project lifecycle.
+
+----
+
+h2. Acceptance Criteria
+
+# Git repository is created.
+# Branching strategy is documented.
+# Initial project folder structure is created.
+# README file is added.
+# .gitignore file is configured.
+# Repository access is provided to all team members.
+
+----
+
+h2. Definition of Done
+
+✓ Git repository created.
+
+✓ Branch strategy documented.
+
+✓ README committed.
+
+✓ Repository shared with all team members.
+
+✓ Reviewed and approved by the Product Owner (Team).",Sprint 1,10097,TPS-22,Epic 1: Project Setup & Architecture,Done
+Story,TPS-60,10167,Design Application Navigation Flow,"h2. User Story
+
+As a development team,
+
+I want to design the navigation flow of the Civic Services Platform,
+
+So that users can navigate between pages efficiently and developers have a clear roadmap for implementing the application's user interface.
+
+----
+
+h2. Description
+
+Design the navigation flow for the Civic Services Platform by defining how users move between different screens based on their roles and permissions.
+
+The navigation design should include separate navigation flows for:
+
+• Citizen
+• Administrator
+• Field Worker
+
+The navigation flow should cover:
+
+• Login
+• Dashboard
+• Report Complaint
+• Complaint History
+• Complaint Details
+• Assigned Complaints
+• Complaint Management
+• Reports
+• Feedback
+• Logout
+
+The navigation should ensure a simple, intuitive, and role-based user experience.
+
+----
+
+h2. Acceptance Criteria
+
+# Navigation flow diagrams are created for all user roles.
+# Navigation between all major pages is clearly defined.
+# Role-based navigation is documented.
+# Navigation design is reviewed by all team members.
+# Navigation flow is approved before frontend development begins.
+
+----
+
+h2. Definition of Done
+
+✓ Navigation flow diagrams completed.
+
+✓ Page transitions documented.
+
+✓ Reviewed by all team members.
+
+✓ Uploaded to the project repository.
+
+✓ Approved by the Product Owner (Team).",Sprint 1,10097,TPS-22,Epic 1: Project Setup & Architecture,Done
+Story,TPS-59,10166,Design User Interface (UI) Wireframes,"h2. User Story
+
+As a development team,
+
+I want to design user interface wireframes for the Civic Services Platform,
+
+So that all stakeholders have a clear understanding of the application's layout, navigation, and user interactions before frontend development begins.
+
+----
+
+h2. Description
+
+Design low-fidelity wireframes for all major screens of the Civic Services Platform.
+
+The wireframes should define the layout, navigation flow, and user interactions for each type of user.
+
+The wireframes should include:
+
+• Login Page
+
+• Citizen Dashboard
+
+• Report Pothole Page
+
+• Complaint History Page
+
+• Complaint Details Page
+
+• Administrator Dashboard
+
+• Complaint Management Page
+
+• Field Worker Dashboard
+
+• Assigned Complaint Page
+
+• Feedback Page
+
+The wireframes should provide a consistent user experience and follow responsive design principles.
+
+----
+
+h2. Acceptance Criteria
+
+# Wireframes are created for all major application pages.
+# Navigation flow between pages is clearly defined.
+# User interface layouts are consistent.
+# Wireframes are reviewed by all team members.
+# Wireframes are approved before frontend development begins.
+
+----
+
+h2. Definition of Done
+
+✓ Wireframes completed.
+
+✓ Navigation flow documented.
+
+✓ Reviewed by all team members.
+
+✓ Uploaded to the project repository.
+
+✓ Approved by the Product Owner (Team).",Sprint 1,10097,TPS-22,Epic 1: Project Setup & Architecture,Done
+Story,TPS-58,10165,Design UML Class Diagram,"h2. User Story
+
+As a development team,
+
+I want to design the UML class diagram for the Civic Services Platform,
+
+So that the structure of the software, including classes, attributes, methods, and relationships, is clearly defined before implementation begins.
+
+----
+
+h2. Description
+
+Design the UML class diagram for the Civic Services Platform based on the functional requirements, user stories, and database design.
+
+The class diagram should represent the major classes of the system, including their attributes, methods, and relationships.
+
+The diagram should include the following major classes:
+
+• Citizen
+• Administrator
+• FieldWorker
+• Complaint
+• ComplaintAssignment
+• ComplaintStatus
+• Feedback
+• Notification
+• UserAuthentication
+
+The class diagram should clearly represent:
+
+• Class attributes
+• Class methods
+• Associations
+• Aggregation/Composition (where applicable)
+• Inheritance (if applicable)
+• Multiplicity
+
+The class diagram should be consistent with the database schema and system architecture.
+
+----
+
+h2. Acceptance Criteria
+
+# Major classes are identified.
+# Attributes and methods are defined for each class.
+# Relationships between classes are represented correctly.
+# Multiplicity is specified wherever applicable.
+# The class diagram is reviewed and approved by all team members.
+
+----
+
+h2. Definition of Done
+
+✓ UML Class Diagram completed.
+
+✓ Class relationships verified.
+
+✓ Reviewed by all team members.
+
+✓ Uploaded to the project repository.
+
+✓ Approved by the Product Owner (Team).",Sprint 1,10097,TPS-22,Epic 1: Project Setup & Architecture,Done
+Story,TPS-57,10164,Create Entity Relationship (ER) Diagram,"h2. User Story
+
+As a development team,
+
+I want to create an Entity Relationship (ER) diagram for the Civic Services Platform,
+
+So that all database entities, relationships, and constraints are clearly visualized before database implementation.
+
+----
+
+h2. Description
+
+Create a comprehensive Entity Relationship (ER) diagram representing the database structure of the Civic Services Platform.
+
+The ER diagram should include:
+
+• User Entity
+• Complaint Entity
+• Field Worker Entity
+• Administrator Entity
+• Complaint Assignment Entity
+• Complaint Status Entity
+• Feedback Entity
+• Notification Entity
+
+The diagram should clearly represent:
+
+• Primary Keys
+• Foreign Keys
+• One-to-One Relationships
+• One-to-Many Relationships
+• Many-to-Many Relationships (if applicable)
+
+The ER diagram should be consistent with the database schema designed in the previous story and support all business requirements identified during Milestone 1.
+
+----
+
+h2. Acceptance Criteria
+
+# All database entities are identified.
+# Relationships between entities are clearly defined.
+# Primary and foreign keys are shown.
+# Relationship cardinalities are correctly represented.
+# ER diagram is reviewed and approved by all team members.
+
+----
+
+h2. Definition of Done
+
+✓ ER Diagram completed.
+
+✓ Entity relationships validated.
+
+✓ Reviewed by all team members.
+
+✓ Uploaded to the project repository.
+
+✓ Approved by the Product Owner (Team).",Sprint 1,10097,TPS-22,Epic 1: Project Setup & Architecture,Done
+Story,TPS-56,10163,Design Database Schema,"h2. User Story
+
+As a development team,
+
+I want to design the database schema for the Civic Services Platform,
+
+So that all application data is stored efficiently, maintains data integrity, and supports future system scalability.
+
+----
+
+h2. Description
+
+Design the logical database schema for the Civic Services Platform based on the identified user requirements and system components.
+
+The database schema should define:
+
+• Tables
+• Primary Keys
+• Foreign Keys
+• Relationships
+• Constraints
+• Indexes
+
+The schema should support all major system modules including:
+
+• User Management
+• Complaint Management
+• Field Worker Management
+• Complaint Assignment
+• Complaint Status Tracking
+• Feedback Management
+• Notifications
+
+The database design should follow normalization principles and ensure data consistency and integrity.
+
+----
+
+h2. Acceptance Criteria
+
+# Database tables are identified.
+# Primary keys are defined.
+# Foreign key relationships are defined.
+# Database normalization is completed.
+# Constraints and indexes are documented.
+# Database schema is reviewed and approved by the project team.
+
+----
+
+h2. Definition of Done
+
+✓ Database schema completed.
+
+✓ Table relationships documented.
+
+✓ Keys and constraints defined.
+
+✓ Reviewed by all team members.
+
+✓ Uploaded to the project repository.
+
+✓ Approved by the Product Owner (Team).",Sprint 1,10097,TPS-22,Epic 1: Project Setup & Architecture,Done
+Story,TPS-55,10162,Design Component Architecture,"h2. User Story
+
+As a development team,
+
+I want to design the major software components of the Civic Services Platform,
+
+So that each module has clearly defined responsibilities and interactions, enabling independent development, testing, and future maintenance.
+
+----
+
+h2. Description
+
+Design the major components of the Civic Services Platform and define their responsibilities, interfaces, and interactions.
+
+The component design should include:
+
+• User Interface Component
+• Authentication Component
+• Complaint Management Component
+• Administrator Component
+• Field Worker Component
+• Notification Component
+• Reporting Component
+• Database Component
+
+The component architecture should clearly define communication between modules and ensure loose coupling and high cohesion.
+
+----
+
+h2. Acceptance Criteria
+
+# Component diagram is created.
+# All major software components are identified.
+# Responsibilities of each component are documented.
+# Interactions between components are clearly defined.
+# Component dependencies are documented.
+# Component design is reviewed and approved by all team members.
+
+----
+
+h2. Definition of Done
+
+✓ Component diagram completed.
+
+✓ Component documentation prepared.
+
+✓ Reviewed by all team members.
+
+✓ Uploaded to the project repository.
+
+✓ Approved by the Product Owner (Team).",Sprint 1,10097,TPS-22,Epic 1: Project Setup & Architecture,Done
+Story,TPS-53,10160,Design Overall System Architecture,"h2. User Story
+
+As a development team,
+
+I want to design the overall system architecture of the Civic Services Platform,
+
+So that all team members have a clear technical blueprint for developing a scalable, maintainable, and well-integrated application.
+
+----
+
+h2. Description
+
+The overall architecture will define the major software components, their responsibilities, communication mechanisms, and deployment structure.
+
+The architecture should include:
+
+• Frontend Application
+• Backend REST API
+• Database
+• Authentication Module
+• Complaint Management Module
+• Administrator Module
+• Field Worker Module
+• Notification Module
+• Reporting Module
+
+----
+
+h2. Acceptance Criteria
+
+# High-level architecture diagram is completed.
+# Major software components are identified.
+# Component interactions are documented.
+# Technology stack is finalized.
+# Deployment architecture is defined.
+# Architecture is reviewed and approved by all team members.
+
+----
+
+h2. Definition of Done
+
+✓ Architecture document completed.
+
+✓ Architecture diagram prepared.
+
+✓ Reviewed by all team members.
+
+✓ Uploaded to the project repository.
+
+✓ Approved by the Product Owner (Team).",Sprint 1,10097,TPS-22,Epic 1: Project Setup & Architecture,Done

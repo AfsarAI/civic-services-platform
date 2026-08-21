@@ -1,0 +1,118 @@
+Project Name
+Civic Services Platform – Pothole Complaint Management System
+
+User Identification
+
+The Civic Services Platform is designed to serve different categories of users involved in reporting, managing, and resolving pothole complaints. Based on the system requirements, the users are classified into Primary, Secondary, and Tertiary users.
+
+Primary User
+
+Citizen
+
+Description
+
+Citizens are the primary users of the application. They use the platform to report potholes, monitor complaint progress, and provide feedback after the issue has been resolved.
+
+Responsibilities
+
+- Register and log in to the system.
+- Report pothole complaints.
+- Upload complaint details and supporting images.
+- Track complaint status.
+- View complaint history.
+- Submit feedback after complaint resolution.
+
+Goals
+
+- Report potholes quickly and easily.
+- Receive timely updates.
+- Ensure complaints are resolved efficiently.
+
+Pain Points
+
+- Difficult and time-consuming complaint process.
+- Lack of transparency.
+- No status tracking.
+- Delayed complaint resolution.
+- Poor communication with authorities.
+
+------------------------------------------------------------
+
+Secondary Users
+
+Field Worker
+
+Description
+
+Field workers receive assigned complaints from administrators and are responsible for repairing potholes and updating work progress.
+
+Responsibilities
+
+- View assigned complaints.
+- Accept complaint assignments.
+- Update repair progress.
+- Mark repairs as completed.
+- View work history.
+
+Goals
+
+- Receive accurate work assignments.
+- Update progress efficiently.
+- Complete repairs within the expected time.
+
+Pain Points
+
+- Manual assignment process.
+- Lack of real-time updates.
+- Difficulty tracking assigned work.
+
+------------------------------------------------------------
+
+Tertiary Users
+
+Administrator
+
+Description
+
+Administrators oversee the complete complaint management process. They monitor reported complaints, assign field workers, prioritize work, verify completed repairs, and generate reports.
+
+Responsibilities
+
+- View all complaints.
+- Assign complaints to field workers.
+- Prioritize complaints.
+- Monitor complaint progress.
+- Verify completed repairs.
+- Close complaints.
+- Generate reports and analytics.
+
+Goals
+
+- Efficient complaint management.
+- Balanced workload distribution.
+- Timely complaint resolution.
+- Improved municipal service performance.
+
+Pain Points
+
+- Large number of complaints.
+- Difficulty prioritizing urgent issues.
+- Manual monitoring of repair progress.
+- Limited reporting and analytics.
+
+------------------------------------------------------------
+
+Summary
+
+The Civic Services Platform supports three major user groups:
+
+1. Citizens
+   - Report and monitor pothole complaints.
+
+2. Field Workers
+   - Repair potholes and update work progress.
+
+3. Administrators
+   - Manage complaints, assign field workers, monitor progress, and generate reports.
+
+This classification ensures that every stakeholder has clearly defined responsibilities and appropriate access to the system based on their role.

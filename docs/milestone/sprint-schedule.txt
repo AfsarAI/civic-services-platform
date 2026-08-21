@@ -1,0 +1,189 @@
+Project Name
+Civic Services Platform – Pothole Complaint Management System
+
+Sprint Schedule
+
+The project follows the Scrum Agile methodology and is divided into four sprints. Each sprint has a duration of two weeks and delivers a functional increment of the system.
+
+==========================================================
+Project Timeline
+==========================================================
+
+Milestone 1
+Date: 28 June 2026
+Objective: Requirements Gathering and User Stories
+
+Milestone 2
+Date: 22 July 2026
+Objective: Scheduling and System Design
+
+Milestone 3
+Date: 02 August 2026
+Objective: Sprint 1 Review
+
+Milestone 4
+Date: 12 August 2026
+Objective: Sprint 2 Review
+
+Milestone 5
+Date: 23 August 2026
+Objective: Final Project Submission
+
+==========================================================
+Sprint 1
+Duration: 29 June – 12 July 2026
+==========================================================
+
+Sprint Goal
+
+Establish the technical foundation of the project and implement the core application setup.
+
+Planned Work
+
+- Design Overall System Architecture
+- Design Component Architecture
+- Design Database Schema
+- Design User Interface Wireframes
+- Configure GitHub Repository
+- Setup Vue.js Frontend
+- Setup Flask Backend
+- Configure SQLite Database
+- Configure JWT Authentication
+- Configure Swagger Documentation
+- Citizen Registration
+- User Login
+- Report a Pothole
+
+Sprint Deliverables
+
+- Repository created
+- Frontend project setup
+- Backend project setup
+- Database configured
+- Authentication implemented
+- Complaint reporting implemented
+
+==========================================================
+Sprint 2
+Duration: 13 July – 26 July 2026
+==========================================================
+
+Sprint Goal
+
+Complete the Citizen Module and implement the Administrator Module.
+
+Planned Work
+
+- Track Complaint Status
+- View Complaint History
+- View Complaint Details
+- Submit Feedback
+- View Reported Complaints
+- View Complaint Details
+- Assign Complaint to Field Worker
+- Prioritize Complaints
+
+Sprint Deliverables
+
+- Complete Citizen Module
+- Administrator Dashboard
+- Complaint Assignment Workflow
+
+==========================================================
+Sprint 3
+Duration: 27 July – 09 August 2026
+==========================================================
+
+Sprint Goal
+
+Implement the Field Worker Module and complete the complaint lifecycle.
+
+Planned Work
+
+- Monitor Complaint Progress
+- Verify Complaint Resolution
+- Close Complaint
+- View Assigned Complaints
+- Accept Assigned Complaints
+- Update Repair Progress
+- Complete Repair Work
+- View Work History
+- Notifications
+
+Sprint Deliverables
+
+- Complete Field Worker Module
+- Notification System
+- Complete Complaint Lifecycle
+
+==========================================================
+Sprint 4
+Duration: 10 August – 23 August 2026
+==========================================================
+
+Sprint Goal
+
+Finalize the application, testing, documentation, and deployment.
+
+Planned Work
+
+- Dashboard
+- Reports
+- Analytics
+- Export Reports
+- Unit Testing
+- Integration Testing
+- User Acceptance Testing
+- Bug Fixing
+- Deployment
+- User Manual
+- Technical Documentation
+- Final Demonstration
+
+Sprint Deliverables
+
+- Reports Module
+- Fully Tested Application
+- User Manual
+- Technical Documentation
+- Final Project Demonstration
+
+==========================================================
+Scrum Meetings
+==========================================================
+
+Sprint Planning
+- First day of every sprint
+- Duration: 2 hours
+
+Daily Scrum
+- Every working day
+- Duration: 15 minutes
+
+Backlog Refinement
+- Every Friday
+- Duration: 1 hour
+
+Sprint Review
+- Last day of every sprint
+- Duration: 1 hour
+
+Sprint Retrospective
+- After Sprint Review
+- Duration: 45 minutes
+
+==========================================================
+Summary
+==========================================================
+
+Total Project Duration: 8 Weeks
+
+Number of Sprints: 4
+
+Sprint Duration: 2 Weeks Each
+
+Development Methodology: Scrum Agile
+
+Project Management Tool: Jira
+
+Version Control: Git and GitHub

@@ -1,0 +1,282 @@
+Project Name
+Civic Services Platform – Pothole Complaint Management System
+
+JIRA STORY REFERENCE
+
+TPS-XXX refers to the corresponding Jira issue/story number in the project Jira board. 
+USXX refers to the user-story identifier used in this document. 
+The mapping is provided to maintain traceability between the Jira backlog and the user stories.
+
+USER STORIES
+
+==========================================================
+EPIC 1 – PROJECT SETUP & ARCHITECTURE
+==========================================================
+
+US01 (TPS-63)
+As a development team,
+I want to set up the backend project for the Civic Services Platform,
+So that the team has a standardized, scalable, and maintainable backend foundation for implementing business functionality.
+
+US02 (TPS-62)
+As a development team,
+I want to set up the frontend project for the Civic Services Platform,
+So that the team has a standardized and scalable foundation for developing the user interface.
+
+US03 (TPS-61)
+As a development team,
+I want to establish a Git repository and define a branch management strategy,
+So that team members can collaborate efficiently, manage source code consistently, and reduce merge conflicts during development.
+
+US04 (TPS-60)
+As a development team,
+I want to design the navigation flow of the Civic Services Platform,
+So that users can navigate between pages efficiently and developers have a clear roadmap for implementing the application's user interface.
+
+US05 (TPS-59)
+As a development team,
+I want to design user interface wireframes for the Civic Services Platform,
+So that all stakeholders have a clear understanding of the application's layout, navigation, and user interactions before frontend development begins.
+
+US06 (TPS-58)
+As a development team,
+I want to design the UML class diagram for the Civic Services Platform,
+So that the structure of the software, including classes, attributes, methods, and relationships, is clearly defined before implementation begins.
+
+US07 (TPS-57)
+As a development team,
+I want to create an Entity Relationship (ER) diagram for the Civic Services Platform,
+So that all database entities, relationships, and constraints are clearly visualized before database implementation.
+
+US08 (TPS-56)
+As a development team,
+I want to design the database schema for the Civic Services Platform,
+So that all application data is stored efficiently, maintains data integrity, and supports future system scalability.
+
+US09 (TPS-55)
+As a development team,
+I want to design the major software components of the Civic Services Platform,
+So that each module has clearly defined responsibilities and interactions, enabling independent development, testing, and future maintenance.
+
+US10 (TPS-53)
+As a development team,
+I want to design the overall system architecture of the Civic Services Platform,
+So that all team members have a clear technical blueprint for developing a scalable, maintainable, and well-integrated application.
+
+==========================================================
+EPIC 2 – AUTHENTICATION
+==========================================================
+
+US11 (TPS-69)
+As a registered user,
+I want to securely log out of the Civic Services Platform,
+So that my account remains protected and unauthorized users cannot access my session.
+
+US12 (TPS-68)
+As a system administrator,
+I want the system to enforce role-based access control,
+So that citizens, administrators, and field workers can access only the features and information that are authorized for their roles.
+
+US13 (TPS-67)
+As a field worker,
+I want to log into the Civic Services Platform,
+So that I can view my assigned repair tasks, update repair progress, and mark completed work efficiently.
+
+US14 (TPS-66)
+As an administrator,
+I want to log into the Civic Services Platform,
+So that I can manage complaints, assign repair tasks, monitor complaint progress, generate reports, and administer the platform securely.
+
+US15 (TPS-65)
+As a citizen,
+I want to log into the Civic Services Platform,
+So that I can securely access my dashboard, submit complaints, track complaint status, and manage my account.
+
+US16 (TPS-64)
+As a citizen,
+I want to create an account,
+So that I can securely access the platform and manage my complaints.
+
+==========================================================
+EPIC 3 – CITIZEN COMPLAINT MANAGEMENT
+==========================================================
+
+US17 (TPS-77)
+As a citizen,
+I want to provide feedback and rate the completed repair work,
+So that I can share my satisfaction with the quality and timeliness of the service provided.
+
+US18 (TPS-76)
+As a citizen,
+I want to receive notifications whenever the status of my complaint changes,
+So that I remain informed about the progress of my complaint without having to check the system frequently.
+
+US19 (TPS-75)
+As a citizen,
+I want to cancel my submitted complaint,
+So that I can withdraw complaints that are no longer valid or have been resolved before repair work begins.
+
+US20 (TPS-74)
+As a citizen,
+I want to edit my submitted complaint before it is assigned to a field worker,
+So that I can correct any incorrect or incomplete information.
+
+US21 (TPS-73)
+As a citizen,
+I want to view the complete details of a reported complaint,
+So that I can verify the submitted information and monitor the progress of my complaint.
+
+US22 (TPS-72)
+As a citizen,
+I want to view the history of all my submitted complaints,
+So that I can monitor my previous reports and their current status without submitting duplicate complaints.
+
+US23 (TPS-71)
+As a citizen,
+I want to track the status of my reported complaint,
+So that I know the progress of the repair work and when the issue is expected to be resolved.
+
+US24 (TPS-70)
+As a citizen,
+I want to report a pothole by submitting its details,
+So that the municipal authority can repair it promptly and improve road safety.
+
+==========================================================
+EPIC 4 – ADMINISTRATOR MANAGEMENT
+==========================================================
+
+US25 (TPS-111)
+As a Municipal Administrator,
+I want to register Field Workers area-wise,
+So that complaints can be assigned to the responsible worker based on city and area.
+
+US26 (TPS-110)
+As a system administrator,
+I want to register municipal administrators,
+So that municipal administrators can be managed for the platform.
+
+US27 (TPS-85)
+As an administrator,
+I want to generate administrative reports,
+So that I can monitor complaint statistics, evaluate operational performance, and support informed decision-making.
+
+US28 (TPS-84)
+As an administrator,
+I want to close a verified complaint,
+So that completed complaints are officially resolved and removed from the active work queue.
+
+US29 (TPS-83)
+As an administrator,
+I want to verify that the reported pothole has been repaired successfully,
+So that I can ensure the complaint has been resolved according to municipal standards before closing it.
+
+US30 (TPS-82)
+As an administrator,
+I want to monitor the progress of assigned complaints,
+So that I can ensure repair work is progressing as planned and take timely action if delays occur.
+
+US31 (TPS-81)
+As an administrator,
+I want to prioritize reported complaints,
+So that urgent pothole issues are addressed first and municipal resources are utilized effectively.
+
+US32 (TPS-80)
+As an administrator,
+I want to assign a reported complaint to a field worker,
+So that the repair work can be initiated and completed within the expected timeframe.
+
+US33 (TPS-79)
+As an administrator,
+I want to view the complete details of a reported complaint,
+So that I can verify the complaint information, assess its severity, and make appropriate decisions for further action.
+
+US34 (TPS-78)
+As an administrator,
+I want to view all reported complaints,
+So that I can monitor civic issues and manage complaint resolution efficiently.
+
+==========================================================
+EPIC 5 – FIELD WORKER MANAGEMENT
+==========================================================
+
+US35 (TPS-90)
+As a field worker,
+I want to view my work history,
+So that I can review my assigned, completed, and pending repair tasks and monitor my work performance.
+
+US36 (TPS-89)
+As a field worker,
+I want to complete the assigned repair work and submit completion details,
+So that the administrator can verify the repair and close the complaint.
+
+US37 (TPS-88)
+As a field worker,
+I want to update the progress of repair work,
+So that administrators and citizens can monitor the current status of the assigned complaint.
+
+US38 (TPS-87)
+As a field worker,
+I want to accept an assigned complaint,
+So that I can acknowledge responsibility for the repair work and begin resolving the reported pothole.
+
+US39 (TPS-86)
+As a field worker,
+I want to view all complaints assigned to me,
+So that I can plan my work efficiently and begin repair activities on assigned potholes.
+
+==========================================================
+EPIC 6 – NOTIFICATIONS
+==========================================================
+
+US40 (TPS-94)
+As a citizen,
+I want to receive a notification when my complaint is officially closed,
+So that I know the repair has been verified, completed successfully, and no further action is required.
+
+US41 (TPS-93)
+As a field worker,
+I want to receive notifications when a complaint is assigned to me,
+So that I can promptly review the assignment and begin the repair work.
+
+US42 (TPS-92)
+As a citizen,
+I want to receive notifications whenever the status of my complaint changes,
+So that I am informed about the progress of my complaint without having to check the application frequently.
+
+US43 (TPS-91)
+As a registered user,
+I want to view all my notifications,
+So that I can stay informed about important updates related to my account and complaint activities.
+
+==========================================================
+EPIC 7 – REPORTS & ANALYTICS
+==========================================================
+
+US44 (TPS-98)
+As an administrator,
+I want to export generated reports,
+So that I can share, archive, and analyze complaint data outside the Civic Services Platform.
+
+US45 (TPS-97)
+As an administrator,
+I want to view key performance metrics,
+So that I can evaluate the efficiency of complaint handling, monitor service quality, and identify opportunities for improvement.
+
+US46 (TPS-96)
+As an administrator,
+I want to generate analytical reports,
+So that I can analyze complaint trends, evaluate system performance, and support informed decision-making.
+
+US47 (TPS-95)
+As an administrator,
+I want to view a dashboard showing key complaint statistics,
+So that I can quickly monitor the overall performance of the Civic Services Platform and identify areas requiring attention.
+
+==========================================================
+EPIC 8 – TESTING & DEPLOYMENT
+==========================================================
+
+US48 (TPS-99)
+As an administrator,
+I want to configure system settings,
+So that the Civic Services Platform operates according to organizational requirements.
