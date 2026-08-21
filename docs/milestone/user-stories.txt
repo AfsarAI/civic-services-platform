@@ -1,0 +1,257 @@
+Project Name
+Civic Services Platform – Pothole Complaint Management System
+
+USER STORIES
+
+==========================================================
+EPIC 1 – Project Setup & Architecture
+==========================================================
+
+US01
+As a development team,
+I want to design the overall system architecture,
+So that the application has a clear and scalable technical foundation.
+
+US02
+As a development team,
+I want to design the component architecture,
+So that each software module has clearly defined responsibilities.
+
+US03
+As a development team,
+I want to design the database schema,
+So that application data can be stored efficiently and consistently.
+
+US04
+As a development team,
+I want to design user interface wireframes,
+So that stakeholders can visualize the application before implementation.
+
+US05
+As a development team,
+I want to configure the project repository,
+So that all team members can collaborate using version control.
+
+US06
+As a backend developer,
+I want to set up the Flask backend project,
+So that REST APIs can be developed efficiently.
+
+US07
+As a frontend developer,
+I want to set up the Vue.js frontend project,
+So that user interfaces can be developed consistently.
+
+US08
+As a development team,
+I want to configure the SQLite database,
+So that application data can be managed effectively.
+
+US09
+As a backend developer,
+I want to configure JWT authentication,
+So that users can securely access the system.
+
+US10
+As a backend developer,
+I want to configure Swagger API documentation,
+So that REST APIs are properly documented and testable.
+
+==========================================================
+EPIC 2 – Authentication
+==========================================================
+
+US11
+As a citizen,
+I want to register an account,
+So that I can access the Civic Services Platform.
+
+US12
+As a registered user,
+I want to log in securely,
+So that I can access my dashboard.
+
+US13
+As a user,
+I want to log out,
+So that my account remains secure.
+
+US14
+As a user,
+I want to reset my password,
+So that I can regain access if I forget it.
+
+US15
+As an administrator,
+I want role-based access control,
+So that users can access only authorized features.
+
+US16
+As a user,
+I want my profile information to be editable,
+So that I can keep my account information up to date.
+
+==========================================================
+EPIC 3 – Citizen Complaint Management
+==========================================================
+
+US17
+As a citizen,
+I want to report a pothole,
+So that the municipality can repair it.
+
+US18
+As a citizen,
+I want to upload images of the pothole,
+So that authorities can assess the issue accurately.
+
+US19
+As a citizen,
+I want to specify the complaint location,
+So that field workers can easily locate the pothole.
+
+US20
+As a citizen,
+I want to track the status of my complaint,
+So that I know the progress of the repair.
+
+US21
+As a citizen,
+I want to view my complaint history,
+So that I can review previous complaints.
+
+US22
+As a citizen,
+I want to view complaint details,
+So that I can see complete information about my complaint.
+
+US23
+As a citizen,
+I want to receive notifications,
+So that I am informed about complaint updates.
+
+US24
+As a citizen,
+I want to submit feedback,
+So that I can evaluate the quality of the repair work.
+
+==========================================================
+EPIC 4 – Administrator Management
+==========================================================
+
+US25
+As an administrator,
+I want to view all reported complaints,
+So that I can manage civic issues efficiently.
+
+US26
+As an administrator,
+I want to view complaint details,
+So that I can review complete complaint information.
+
+US27
+As an administrator,
+I want to assign complaints to field workers,
+So that repair work can begin promptly.
+
+US28
+As an administrator,
+I want to prioritize complaints,
+So that urgent issues are resolved first.
+
+US29
+As an administrator,
+I want to monitor complaint progress,
+So that I can track repair activities.
+
+US30
+As an administrator,
+I want to verify completed repairs,
+So that I can ensure work quality.
+
+US31
+As an administrator,
+I want to close resolved complaints,
+So that completed work is properly recorded.
+
+US32
+As an administrator,
+I want to generate reports,
+So that I can monitor system performance.
+
+==========================================================
+EPIC 5 – Field Worker Management
+==========================================================
+
+US33
+As a field worker,
+I want to view assigned complaints,
+So that I know my work assignments.
+
+US34
+As a field worker,
+I want to accept assigned complaints,
+So that I can begin repair work.
+
+US35
+As a field worker,
+I want to update repair progress,
+So that administrators and citizens receive current information.
+
+US36
+As a field worker,
+I want to mark repairs as completed,
+So that completed work is recorded.
+
+US37
+As a field worker,
+I want to view my work history,
+So that I can review completed assignments.
+
+==========================================================
+EPIC 6 – Notifications
+==========================================================
+
+US38
+As a citizen,
+I want to receive complaint submission notifications,
+So that I know my complaint has been successfully registered.
+
+US39
+As an administrator,
+I want to receive assignment notifications,
+So that I know when complaints require action.
+
+US40
+As a field worker,
+I want to receive assignment notifications,
+So that I know when new work has been assigned.
+
+US41
+As a user,
+I want to receive complaint status notifications,
+So that I remain informed about progress.
+
+==========================================================
+EPIC 7 – Reports & Analytics
+==========================================================
+
+US42
+As an administrator,
+I want to view a dashboard,
+So that I can monitor complaint statistics.
+
+US43
+As an administrator,
+I want to view analytics reports,
+So that I can evaluate system performance.
+
+US44
+As an administrator,
+I want to view field worker performance,
+So that I can monitor productivity.
+
+US45
+As an administrator,
+I want to export reports,
+So that data can be shared for further analysis.

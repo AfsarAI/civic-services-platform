@@ -1,0 +1,199 @@
+Project Name
+Civic Services Platform – Pothole Complaint Management System
+
+Design of Components
+
+The Civic Services Platform follows a modular three-tier architecture consisting of the Presentation Layer, Business Logic Layer, and Data Layer. Each major component is responsible for a specific set of functionalities and interacts with other components through well-defined interfaces.
+
+==========================================================
+1. Presentation Layer (Vue.js Frontend)
+==========================================================
+
+Purpose
+
+Provides an interactive and responsive user interface for Citizens, Administrators, and Field Workers.
+
+Responsibilities
+
+- Display application pages
+- Handle user navigation
+- Perform client-side validation
+- Send API requests to the backend
+- Display complaint information and dashboards
+
+Technology
+
+- Vue.js
+- Vue Router
+- Pinia
+- Tailwind CSS
+- Axios
+
+==========================================================
+2. Authentication Module
+==========================================================
+
+Purpose
+
+Manages user authentication and authorization.
+
+Responsibilities
+
+- User Registration
+- User Login
+- User Logout
+- JWT Token Generation
+- JWT Validation
+- Role-Based Access Control
+
+==========================================================
+3. Citizen Module
+==========================================================
+
+Purpose
+
+Allows citizens to report and monitor pothole complaints.
+
+Responsibilities
+
+- Report a pothole
+- Upload complaint details
+- Upload complaint images
+- Track complaint status
+- View complaint history
+- Submit feedback
+
+==========================================================
+4. Complaint Management Module
+==========================================================
+
+Purpose
+
+Manages the complete lifecycle of a complaint.
+
+Responsibilities
+
+- Create complaints
+- Update complaint details
+- Assign complaints
+- Update complaint status
+- Close complaints
+- Maintain complaint history
+
+==========================================================
+5. Administrator Module
+==========================================================
+
+Purpose
+
+Provides administrative functions for managing complaints.
+
+Responsibilities
+
+- View all complaints
+- View complaint details
+- Assign complaints to field workers
+- Prioritize complaints
+- Verify completed repairs
+- Close complaints
+- Generate reports
+
+==========================================================
+6. Field Worker Module
+==========================================================
+
+Purpose
+
+Allows field workers to manage assigned repair work.
+
+Responsibilities
+
+- View assigned complaints
+- Accept assignments
+- Update repair progress
+- Complete repairs
+- View work history
+
+==========================================================
+7. Notification Module
+==========================================================
+
+Purpose
+
+Keeps users informed about important system events.
+
+Responsibilities
+
+- Complaint submission notifications
+- Assignment notifications
+- Complaint status notifications
+- Complaint completion notifications
+
+==========================================================
+8. Reports and Analytics Module
+==========================================================
+
+Purpose
+
+Provides dashboards and analytical reports for administrators.
+
+Responsibilities
+
+- Dashboard
+- Complaint statistics
+- Performance reports
+- Export reports
+
+==========================================================
+9. Database Layer
+==========================================================
+
+Purpose
+
+Stores and manages application data.
+
+Responsibilities
+
+- Store user information
+- Store complaint details
+- Store assignments
+- Store notifications
+- Store feedback
+- Maintain data integrity
+
+Technology
+
+- SQLite
+- SQLAlchemy ORM
+- Flask-Migrate
+
+==========================================================
+Component Interaction
+
+The Vue.js frontend communicates with the Flask REST API through RESTful services. The backend processes business logic, validates requests using Marshmallow, authenticates users using JWT, and interacts with the SQLite database through SQLAlchemy ORM. The Notification and Reports modules support the core complaint management workflow, while all persistent data is maintained in the database layer.
+
+==========================================================
+Architecture Summary
+
+Presentation Layer
+    ↓
+Business Logic Layer
+    ↓
+Data Layer
+
+Presentation Layer
+- Vue.js Frontend
+
+Business Logic Layer
+- Authentication Module
+- Citizen Module
+- Complaint Management Module
+- Administrator Module
+- Field Worker Module
+- Notification Module
+- Reports & Analytics Module
+
+Data Layer
+- SQLite Database
+- SQLAlchemy ORM
+- Flask-Migrate
