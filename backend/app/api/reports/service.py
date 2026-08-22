@@ -20,6 +20,7 @@ from app.models.complaint_assignment import ComplaintAssignment
 from app.models.feedback import Feedback
 from app.models.role import Role
 from app.models.user import User
+from app.utils.database_helpers import duration_hours
 
 
 class ReportsService:
@@ -149,8 +150,10 @@ class ReportsService:
         if valid_resolution.count():
             result = valid_resolution.with_entities(
                 func.avg(
-                    (func.julianday(Complaint.resolved_at) -
-                     func.julianday(Complaint.created_at)) * 24
+                    duration_hours(
+                        Complaint.created_at,
+                        Complaint.resolved_at,
+                    )
                 )
             ).scalar()
             if result is not None:
