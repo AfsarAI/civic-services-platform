@@ -1201,9 +1201,9 @@ class AdminService:
                 result = resolved_with_times.with_entities(
                     func.avg(
                         duration_hours(
-                        Complaint.created_at,
-                        Complaint.resolved_at,
-                    )
+                            Complaint.created_at,
+                            Complaint.resolved_at,
+                        )
                     )
                 ).scalar()
                 if result is not None:
