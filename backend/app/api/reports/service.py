@@ -419,18 +419,23 @@ class ReportsService:
                     ),
                     else_=0,
                 )).label("completed"),
-                func.avg(case((
-                    (
-                        ComplaintAssignment.status
-                        == ComplaintAssignment.STATUS_COMPLETED
+                func.avg(
+                    case(
+                        (
+                            (
+                                ComplaintAssignment.status
+                                == ComplaintAssignment.STATUS_COMPLETED
+                            )
+                            & ComplaintAssignment.accepted_at.isnot(None)
+                            & ComplaintAssignment.completed_at.isnot(None),
+                            duration_hours(
+                                ComplaintAssignment.accepted_at,
+                                ComplaintAssignment.completed_at,
+                            ),
+                        ),
+                        else_=None,
                     )
-                    & ComplaintAssignment.accepted_at.isnot(None)
-                    & ComplaintAssignment.completed_at.isnot(None),
-                    (
-                        func.julianday(ComplaintAssignment.completed_at)
-                        - func.julianday(ComplaintAssignment.accepted_at)
-                    ) * 24,
-                ), else_=None)).label("avg_hours"),
+                ).label("avg_hours"),
             )
             .group_by(ComplaintAssignment.worker_id)
             .all()
