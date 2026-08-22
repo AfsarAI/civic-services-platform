@@ -13,6 +13,8 @@ from app.utils.decorators import (
 )
 from app.utils.responses import success_response, error_response, paginated_response
 
+from app.utils.database_helpers import duration_hours
+
 __all__ = [
     "require_role",
     "require_citizen",
@@ -24,4 +26,5 @@ __all__ = [
     "success_response",
     "error_response",
     "paginated_response",
+    "duration_hours",
 ]

@@ -21,6 +21,7 @@ from app.repositories import AdministratorRepository
 from app.services.audit_log_service import AuditLogService
 from app.services.duplicate_detection_service import DuplicateDetectionService
 from app.services.system_settings_service import SystemSettingsService
+from app.utils.database_helpers import duration_hours
 
 
 class VerificationConflictError(ValueError):
@@ -1199,8 +1200,10 @@ class AdminService:
             if resolved_with_times.count():
                 result = resolved_with_times.with_entities(
                     func.avg(
-                        (func.julianday(Complaint.resolved_at) -
-                         func.julianday(Complaint.created_at)) * 24
+                        duration_hours(
+                        Complaint.created_at,
+                        Complaint.resolved_at,
+                    )
                     )
                 ).scalar()
                 if result is not None:
@@ -1303,8 +1306,10 @@ class AdminService:
         if resolved_with_times.count():
             result = resolved_with_times.with_entities(
                 func.avg(
-                    (func.julianday(Complaint.resolved_at) -
-                     func.julianday(Complaint.created_at)) * 24
+                    duration_hours(
+                        Complaint.created_at,
+                        Complaint.resolved_at,
+                    )
                 )
             ).scalar()
             if result is not None:
