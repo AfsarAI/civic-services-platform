@@ -1,422 +1,305 @@
 # Civic Services Platform
 
-> Last reviewed: 2026-08-08
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python: 3.13+](https://img.shields.io/badge/Python-3.13%2B-blue.svg)](https://www.python.org/)
+[![Flask: 3.x](https://img.shields.io/badge/Flask-3.x-green.svg)](https://flask.palletsprojects.com/)
+[![Vue: 3.4+](https://img.shields.io/badge/Vue-3.4%2B-emerald.svg)](https://vuejs.org/)
+[![Vite: 5.x](https://img.shields.io/badge/Vite-5.x-purple.svg)](https://vitejs.dev/)
+[![TailwindCSS: 3.4](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8.svg)](https://tailwindcss.com/)
 
-A university Scrum project — an enterprise-grade web platform that lets **citizens** report potholes with a photo and map location, **administrators** manage and assign complaints, and **field workers** update repair progress in real time.
-
----
-
-## Table of Contents
-
-- [Project Overview](#project-overview)
-- [Technology Stack](#technology-stack)
-- [Folder Structure](#folder-structure)
-- [Installation](#installation)
-- [Running the Frontend](#running-the-frontend)
-- [Running the Backend](#running-the-backend)
-- [Database Migration](#database-migration)
-- [API Documentation (Swagger)](#api-documentation-swagger)
-- [Git Workflow](#git-workflow)
-- [Sprint Structure](#sprint-structure)
-- [Contributors](#contributors)
+An enterprise-grade civic issue reporting and municipal management platform. The application enables **citizens** to report road hazards (potholes) with geotagged map coordinates and photo verification, empowers **administrators** with hierarchical municipal oversight and intelligent dispatch, and provides **field workers** with real-time assignment tracking and repair evidence logging.
 
 ---
 
-## Project Overview
+## 📌 Context & Portfolio Notice
 
-The **Civic Services Platform** enables:
+This project originated as an academic Software Engineering capstone / Scrum team project under the university organization **IITMPivotLabs** (`MAY2026-Team-005`). 
 
-| Role | Capabilities |
-|---|---|
-| **Citizen** | Register, submit pothole complaints with photo and location, track status, provide feedback |
-| **Administrator** | System Administrator and Municipal Administrator accounts share the same `administrator` role, with subtype-based permissions |
-| **Field Worker** | View assigned tasks, update repair progress, upload evidence |
+This repository is maintained independently by **Mohd. Afsar ([@AfsarAI](https://github.com/AfsarAI))** as a personal portfolio showcase, reference implementation, and ongoing engineering sandbox.
 
-**Development Methodology:** Scrum
-**Version Control:** Git + GitHub
-**Issue Tracking:** Jira
+- **Original Academic Organization:** [IITMPivotLabs](https://github.com/IITMPivotLabs)
+- **Original Team Repository:** `IITMPivotLabs/MAY2026-Team-005`
+- **Maintained By:** [Mohd. Afsar (@AfsarAI)](https://github.com/AfsarAI)
+- **Licensing:** Licensed under the [MIT License](LICENSE). All historical contributions, commit authors, timestamps, and collaborative work are fully preserved in the Git history.
 
 ---
 
-## Technology Stack
+## 🎯 Individual Contributions & Engineering Scope
+
+To maintain complete academic and professional transparency, below is an accurate breakdown of **Mohd. Afsar's** specific engineering contributions and responsibilities within the project:
+
+### Primary Responsibilities & Jira Stories Handled by Mohd. Afsar (`23f2002023` / `@AfsarAI`):
+
+| Jira ID | Module | Key Contributions |
+|---|---|---|
+| **TPS-66** | **Administrator Authentication & Security** | Implemented the administrator authentication subsystem, JWT credential validation, secure role-based session issuance, and sample environment configuration (`.env.example`). |
+| **TPS-109** | **Multi-Tier Admin Hierarchy Schema** | Designed and migrated the database architecture supporting hierarchical administrator roles. Introduced the `cities` master table, `administrator_profiles`, and foreign key relations to isolate System Admin permissions from Municipal Admins. |
+| **TPS-110** | **System Admin Municipal Management** | Engineered REST APIs and backend service logic allowing System Administrators to provision, inspect, modify, and deactivate Municipal Administrators scoped by municipal territory. |
+| **TPS-111** | **Municipal Admin Field Worker Onboarding** | Implemented municipal administrative controls enabling city-level administrators to recruit, register, and manage field workers assigned to their specific city. |
+| **TPS-77** | **Citizen Feedback & Repair Rating Subsystem** | Built citizen feedback APIs and service handlers allowing citizens to rate completed road repairs, submit qualitative feedback, and calculate satisfaction indices. |
+| **TPS-80** | **Field Worker Complaint Assignment Engine** | Developed backend assignment workflows and validation logic for dispatching open complaints to designated field personnel based on municipal boundaries. |
+| **TPS-81** | **Complaint Prioritization & Triage Logic** | Implemented administrative triage controls for evaluating complaint severity, setting urgency flags, and re-prioritizing open issues. |
+| **TPS-93** | **Real-Time Assignment Notifications** | Designed the field worker notification pipeline delivering assignment payloads (complaint ID, GPS coordinates, priority level, administrative remarks, target completion window). |
+| **Scrum & Reviews** | **Agile Collaboration & Code Quality** | Authored sprint pull requests, participated in daily scrum ceremonies, performed code reviews, resolved migration discrepancies, and maintained schema consistency across sprints. |
+
+### Collaborative Team Modules:
+Other critical platform modules were developed collaboratively across the Scrum team:
+- **Frontend Architecture & UI Layout:** Client-side routing, base components, and state architecture.
+- **Citizen Complaint Workflow:** Mobile-first report forms, photo uploads, Leaflet map integration, and citizen dashboard.
+- **Reporting & Analytics:** PDF/CSV administrative exports, KPI aggregations, and performance metrics.
+- **CI/CD & DevOps:** GitHub Actions pipeline configuration and deployment automation.
+- **Scrum Documentation:** UML class diagrams, database ER diagrams, sprint plans, and meeting minutes.
+
+---
+
+## 🏗️ System Architecture & Key Features
+
+### 1. Role-Based Access Control (RBAC) & Administrative Hierarchy
+
+The platform implements a unified 3-role permission model with internal sub-profile scoping:
+
+```mermaid
+graph TD
+    User([Platform User]) --> Role{Role Assigned}
+    Role -->|citizen| Citizen[Citizen Portal]
+    Role -->|field_worker| FieldWorker[Field Worker Portal]
+    Role -->|administrator| AdminProfile{Administrator Profile}
+    AdminProfile -->|System Admin| SysAdmin[System Administrator<br/>- Platform-wide Oversight<br/>- Manage Municipal Admins<br/>- Global Settings & Audits]
+    AdminProfile -->|Municipal Admin| MuniAdmin[Municipal Administrator<br/>- City-Scoped Jurisdiction<br/>- Manage Field Workers<br/>- Triage & Assign Complaints<br/>- City-Specific Analytics]
+```
+
+- **Citizens:** Submit complaints with mandatory photos, address, pincode, and GPS coordinates; track complaint life-cycle in real time; rate resolved repairs.
+- **System Administrators:** Top-level authority with global visibility across all cities; onboard and manage Municipal Administrators; configure platform-wide duplicate detection radius.
+- **Municipal Administrators:** Scoped strictly to their designated city; manage local field workers; triage, prioritize, and assign complaints; conduct local audits.
+- **Field Workers:** View assigned repairs; inspect location and complaint details; update work status in real time; submit completion proof with before/after evidence.
+
+### 2. Intelligent Complaint Processing
+- **Duplicate Detection:** Automatic geographical clustering based on configurable radial distance thresholds, preventing redundant municipal dispatch.
+- **Geographic Scoping & Pincode Mapping:** Seeded city and pincode registry ensuring accurate municipal jurisdiction mapping.
+- **Photo Verification & Media Storage:** Validated image upload pipeline serving evidence URLs for citizen reports and field repair completion.
+- **Timezone-Aware UTC Serialization:** Custom `UTCDateTime` database abstraction guaranteeing reliable ISO-8601 UTC timestamp serialization across all timezones.
+
+---
+
+## 🛠️ Technology Stack
 
 ### Frontend
-
-| Technology | Version | Purpose |
-|---|---|---|
-| Vue 3 | ^3.4 | UI Framework |
-| Vue Router | ^4.3 | Client-side Routing |
-| Pinia | ^2.1 | State Management |
-| Tailwind CSS | ^3.4 | Utility-first CSS |
-| Axios | ^1.7 | HTTP Client |
-| Vite | ^5.x | Build Tool |
+- **Framework:** Vue 3 (Composition API)
+- **Build Tool:** Vite 5
+- **Routing:** Vue Router 4 (Role-guarded routes)
+- **State Management:** Pinia
+- **Styling:** Tailwind CSS 3.4
+- **Maps & Geospatial:** Leaflet & Leaflet MarkerCluster
+- **HTTP Client:** Axios (with Bearer token interceptors)
 
 ### Backend
+- **Language / Runtime:** Python 3.13+
+- **Framework:** Flask 3.x
+- **API Engine & Documentation:** Flask-RESTX (Swagger / OpenAPI UI)
+- **ORM & Data Layer:** Flask-SQLAlchemy 3.x & Marshmallow schemas
+- **Database Migrations:** Flask-Migrate & Alembic
+- **Authentication:** Flask-JWT-Extended (Access + Refresh token flow)
+- **Security & CORS:** Flask-CORS, Werkzeug password hashing
+- **Testing & Quality:** Pytest, Flake8
 
-| Technology | Version | Purpose |
-|---|---|---|
-| Python | 3.13+ | Runtime |
-| Flask | ^3.x | Web Framework |
-| Flask-RESTX | ^1.3 | REST API + Swagger UI |
-| Flask-SQLAlchemy | ^3.x | ORM |
-| Flask-Migrate | ^4.x | Database Migrations |
-| Marshmallow | ^3.x | Serialization / Validation |
-| Flask-JWT-Extended | ^4.x | JWT Authentication |
-| Flask-CORS | ^4.x | Cross-Origin Resource Sharing |
-| python-dotenv | ^1.x | Environment Variables |
-
-### Database
-
-| Technology | Purpose |
-|---|---|
-| SQLite | Development Database |
-| SQLAlchemy | ORM |
-| Alembic (via Flask-Migrate) | Schema Migrations |
+### Database & Storage
+- **Development Database:** SQLite (`instance/civic.db`)
+- **Production Database Target:** PostgreSQL compatible
+- **File Uploads:** Local persistent volume storage with URL serving
 
 ---
 
-## Folder Structure
+## 📁 Repository Structure
 
 ```
-/
-├── .github/
-│   ├── workflows/
-│   │   ├── frontend-ci.yml
-│   │   └── backend-ci.yml
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── bug_report.md
-│   │   └── feature_request.md
-│   └── pull_request_template.md
-├── docs/
-│   ├── architecture/
-│   ├── database/
-│   ├── api/
-│   ├── ui/
-│   ├── sprint/
-│   ├── meetings/
-│   │   ├── SprintPlanning/
-│   │   ├── DailyScrum/
-│   │   ├── SprintReview/
-│   │   └── SprintRetrospective/
-│   ├── testing/
-│   ├── user-manual/
-│   └── technical-documentation/
-├── frontend/                    # Vue 3 + Vite application
-├── backend/                     # Flask REST API
-├── database/                    # DB scripts and ERD
-├── postman/                     # Postman collections
-├── deployment/                  # Deployment configurations
-├── README.md
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-├── LICENSE
-└── .gitignore
+.
+├── backend/                         # Flask RESTful API application
+│   ├── app/
+│   │   ├── api/                     # Domain-driven API controllers & services
+│   │   │   ├── administrator/       # Admin triage, user management, city scoping
+│   │   │   ├── auth/                # JWT login, registration, token refresh
+│   │   │   ├── citizen/             # Complaint submission, tracking, feedback
+│   │   │   ├── fieldworker/         # Task acceptance, repair progress, completion
+│   │   │   ├── locations/           # City & pincode lookups
+│   │   │   ├── notifications/       # User & field worker notifications
+│   │   │   └── reports/             # Analytics and export endpoints
+│   │   ├── models/                  # SQLAlchemy ORM models
+│   │   ├── schemas/                 # Marshmallow validation & serialization
+│   │   ├── services/                # Business logic & domain services
+│   │   └── utils/                   # Database helpers, geo-calculations, UTC types
+│   ├── migrations/                  # Alembic database migration scripts
+│   ├── tests/                       # Unit and integration test suites
+│   ├── config.py                    # Environment configurations
+│   ├── requirements.txt             # Python dependencies
+│   └── app.py                       # Application entrypoint & CLI commands
+├── frontend/                        # Vue 3 Single Page Application
+│   ├── src/
+│   │   ├── components/              # Reusable UI widgets, cards, inputs, map view
+│   │   ├── pages/                   # Views organized by role (admin, citizen, worker)
+│   │   ├── router/                  # Route configuration & navigation guards
+│   │   ├── services/                # Axios API service clients
+│   │   └── stores/                  # Pinia state stores (auth, complaints, alerts)
+│   ├── package.json                 # Frontend dependencies and scripts
+│   └── vite.config.js               # Vite build configuration
+├── database/                        # Database schemas, ERD, and pincode dataset
+│   ├── pincode.csv                  # City-pincode seed dataset
+│   └── README.md
+├── docs/                            # Comprehensive engineering documentation
+│   ├── architecture/                # UML class diagrams & architecture notes
+│   ├── database/                    # ER diagrams & schema specifications
+│   ├── meetings/                    # Scrum ceremony logs (Daily Scrum, Planning)
+│   ├── milestone3/                  # Sprint 1-2 deliverables & test reports
+│   ├── milestone4/                  # Sprint 3 deliverables & test reports
+│   └── milestone5/                  # Final sprint documentation & Swagger specs
+├── .github/workflows/               # GitHub Actions CI/CD workflows
+├── LICENSE                          # MIT Open Source License
+└── README.md
 ```
 
 ---
 
-## Installation
+## 🚀 Installation & Setup Guide
 
 ### Prerequisites
-
-- **Node.js** >= 22.x
-- **Python** >= 3.13
-- **pip** >= 23.x
+- **Node.js** >= 20.x (Recommended: 22.x LTS)
+- **Python** >= 3.12 (Recommended: 3.13)
 - **Git**
 
 ---
 
-## Running the Frontend
+### Backend Setup
 
-```bash
-cd frontend
-npm install
-cp .env.example .env
-npm run dev
+1. **Navigate to the backend directory:**
+   ```bash
+   cd backend
+   ```
 
-npm run build
-```
+2. **Create and activate a virtual environment:**
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate       # macOS / Linux
+   # .venv\Scripts\activate        # Windows PowerShell
+   ```
 
-The frontend will be available at `http://localhost:5173`.
+3. **Install dependencies:**
+   ```bash
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
 
+4. **Configure environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
+   *Edit `.env` to specify your `SECRET_KEY` and `JWT_SECRET_KEY` if desired. Default seed credentials are provided for development.*
+
+5. **Initialize and migrate the database:**
+   ```bash
+   FLASK_APP=app.py flask db upgrade
+   ```
+
+6. **Seed default roles and System Administrator:**
+   ```bash
+   FLASK_APP=app.py flask seed
+   ```
+
+7. **Import city and pincode mapping dataset:**
+   ```bash
+   FLASK_APP=app.py flask import-pincodes
+   ```
+
+8. **Start the backend development server:**
+   ```bash
+   FLASK_APP=app.py FLASK_ENV=development flask run --host=0.0.0.0 --port=5000
+   ```
+   The backend API will run at `http://localhost:5000`.
 
 ---
 
-## Running the Backend
+### Frontend Setup
+
+1. **Navigate to the frontend directory:**
+   ```bash
+   cd frontend
+   ```
+
+2. **Install Node dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
+   *Ensure `VITE_API_BASE_URL` points to `http://localhost:5000/api/v1`.*
+
+4. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+   The frontend will be accessible at `http://localhost:5173`.
+
+---
+
+## 📖 Interactive API Documentation (Swagger UI)
+
+With the backend running, explore all REST endpoints interactively via the built-in Flask-RESTX Swagger interface:
+
+🔗 **URL:** `http://localhost:5000/api/v1/docs`
+
+### Authenticating in Swagger UI:
+1. Call `POST /api/v1/auth/login` with your credentials:
+   ```json
+   {
+     "email": "admin@civicservices.local",
+     "password": "Admin@123456"
+   }
+   ```
+2. Copy the returned `access_token`.
+3. Click the **Authorize 🔒** button at the top-right of the Swagger UI.
+4. Input: `Bearer <your_copied_token>` and click **Authorize**.
+5. All protected endpoints can now be executed directly from the browser.
+
+---
+
+## 🧪 Testing & Code Quality
+
+### Running Backend Tests
+Execute the unit and integration test suite with `pytest`:
 
 ```bash
 cd backend
-
-# 1. Create your own local virtual environment (never committed to git)
-python -m venv .venv
-
-# 2. Activate the virtual environment
-source .venv/bin/activate        # WSL / Mac / Linux
-# .venv\Scripts\activate         # Windows PowerShell
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Create your local .env from the example
-cp .env.example .env
-# Edit .env and set SECRET_KEY and JWT_SECRET_KEY to random strings
-
-# 5. Apply database migrations (creates all tables)
-FLASK_APP=app.py flask db upgrade
-
-# 6. Seed roles and default admin user (safe to re-run)
-FLASK_APP=app.py flask seed
-
-# 6b. Import city/pincode mappings from database/pincode.csv
-FLASK_APP=app.py flask import-pincodes
-
-# 7. Start the development server
-FLASK_APP=app.py FLASK_ENV=development flask run
+source .venv/bin/activate
+pytest -v
 ```
 
-### Code Quality — Flake8 Analysis
+### Code Style & Linting
+Verify code compliance using `flake8`:
 
 ```bash
 cd backend
-
-# Run Flake8 with project's standard (120 char line limit)
+# Project standard (120-character line length limit)
 python3 -m flake8 app/ --max-line-length=120
-
-# Run with PEP 8 strict mode (79 char limit)
-python3 -m flake8 app/
-
-# Generate detailed report
-python3 -m flake8 app/ --max-line-length=120 --count --statistics
-```
-
-**Status:** ✅ 0 violations with `--max-line-length=120` | ⚠️ 149 E501 violations with PEP 8 default (79 chars)
-
-### Database setup order
-
-Run these backend commands in order after creating `.env`:
-
-1. `FLASK_APP=app.py flask db upgrade`
-2. `FLASK_APP=app.py flask seed`
-3. `FLASK_APP=app.py flask import-pincodes`
-
-Use `FLASK_APP=app.py flask import-pincodes --replace` if you want to clear and reload the `city_pincodes` table from `database/pincode.csv`.
-
-The API will be available at `http://localhost:5000`.
-
-> **Swagger UI** (interactive API docs): `http://localhost:5000/api/v1/docs`
-
-> **Default system administrator credentials** (set in `.env` before running `flask seed`):
-> Email: `admin@civicservices.local` | Password: `Admin@123456`
-
-## Administrator Hierarchy
-
-The platform still uses exactly **3 application roles** in the `roles` table:
-- `citizen`
-- `administrator`
-- `field_worker`
-
-The administrator role is now split internally using an administrator profile:
-- **System Administrator**
-  - created by default through `flask seed`
-  - can create, manage, and disable Municipal Administrators
-  - can view all cities
-  - can access global reports and platform-wide user management
-  - can reset the password or update the email of any user (Municipal Administrator, Field Worker, or Citizen) via `/admin/users`, `/admin/field-workers`, or `/admin/municipal-administrators`
-- **Municipal Administrator**
-  - belongs to exactly one city
-  - cannot self-register
-  - is created only by the System Administrator
-  - logs in through the same `/auth/login` endpoint and is still returned as role `administrator`
-  - can be managed from the System Administrator UI at `/admin/municipal-administrators`
-  - can view, edit, and reset the password of Citizens registered in their own city via `/admin/citizens` (`GET`/`PUT /admin/users`, scoped server-side)
-
-Implementation summary:
-- `users.role_id` remains unchanged
-- new `cities` table stores administrative cities
-- new `administrator_profiles` table stores `admin_level` and `city_id`
-- JWT and `/auth/me` now include `admin_level`, `city_id`, and `city_name`
-- frontend routing remains role-based, with subtype-aware restrictions for system-only pages
-- municipal-admin registration now uses the existing admin API with audit logging and validation parity for password and phone fields
-
-## Recent Changes
-
-- Narrowed the product scope to pothole-only reporting.
-- Made complaint photo upload mandatory in the citizen flow.
-- Reworked the mobile report screen around photo, map pin, pincode, and city selection.
-- Added backend support for uploading complaint photos and serving them back by URL.
-- Added the `flask import-pincodes` command for loading `city_pincodes` from `database/pincode.csv`.
-- Expanded assignment notifications so field workers immediately receive complaint ID, assignment date/time, location, priority, expected completion, and optional administrator remarks; notification links now route role-wise (citizen/admin/field-worker views).
-- Updated the documentation set to match the current setup order and database seeding flow.
-- Fixed a timezone display bug where every date/time in the app showed 5:30 hours behind (IST) due to naive (offset-less) datetime serialization; all `DateTime` columns now use a `UTCDateTime` type that guarantees a proper UTC offset on every response, with no database migration required.
-- Added administrator-driven password reset and email update (no SMTP required): System Administrators can reset/update any user; Municipal Administrators can reset/update their own Field Workers and the Citizens registered in their city. New `/admin/citizens` page and separate "Edit Details"/"Reset Password" actions across all admin management screens.
-- Fixed `AdminComplaintDetails.vue` allowing priority changes on already-rejected/closed complaints, and fixed `Reports.vue` showing "No complaints match filters" even when report data existed.
-- Restored duplicate pothole detection (System Settings radius, citizen "possible duplicate" warning, admin duplicate-review panel) after tracing it via `git log` to an abandoned branch that was never merged; also fixed a `SystemSettings.vue` bug where the saved detection radius wasn't loaded into the form.
-
----
-
-## Database Migration
-
-```bash
-cd backend
-
-# Initialise migrations (first time only)
-flask db init
-
-# Generate a migration
-flask db migrate -m "initial schema"
-
-# Apply migrations
-flask db upgrade
 ```
 
 ---
 
-## API Documentation (Swagger)
+## 👥 Contributors & Acknowledgements
 
-Once the backend is running, open:
+This platform was developed as part of a collaborative Scrum team. Acknowledgements to all team members:
 
-```
-http://localhost:5000/api/v1/docs
-```
-
-All namespaces and endpoints are documented via **Flask-RESTX** Swagger UI.
-
-### Using Swagger with JWT
-
-Most endpoints require authentication. Follow these steps to authorise in Swagger UI:
-
-**Step 1 — Get a token**
-
-Call `POST /auth/login` with your credentials:
-```json
-{
-  "email": "admin@civicservices.local",
-  "password": "Admin@123456"
-}
-```
-Copy the `access_token` value from the response.
-
-**Step 2 — Authorise in Swagger**
-
-1. Click the **Authorize 🔒** button at the top right of the Swagger UI page
-2. In the **Bearer** field enter: `Bearer <paste_your_token_here>`
-3. Click **Authorize** → **Close**
-
-**Step 3 — Use protected endpoints**
-
-All endpoints marked with a 🔒 padlock icon are now accessible. The token is sent automatically in the `Authorization` header with every request.
-
-> Tokens expire after **1 hour**. Repeat Step 1–2 when you see a `401 Unauthorised` response.
-> Use `POST /auth/refresh` with your `refresh_token` to get a new access token without logging in again.
-
----
-
-## Git Workflow
-
-We follow **GitHub Flow** adapted for Scrum sprints.
-
-### Branch Naming Convention
-
-| Branch | Purpose |
-|---|---|
-| `main` | Production-ready code — never develop directly here |
-| `dev` | Integration branch — all features merge here first |
-| `feature/<rollno>-<jiraid>-story-title` | One branch per Jira story |
-
-**Branch protection rules apply to both `main` and `dev`:**
-- Require Pull Request before merging
-- No direct push
-- Minimum 1 approval (Scrum Master or Project Manager)
-
-### Commit Message Format
-
-```
-<type>(<scope>): <subject>
-
-Types: feat | fix | docs | style | refactor | test | chore
-```
-
-**Examples:**
-
-```
-feat(auth): add JWT login endpoint
-fix(citizen): resolve complaint submission validation
-docs(readme): update installation instructions
-```
-
-### Development Flow
-
-```
-Step 1  Create feature branch from dev
-        feature/<rollno>-<jiraid>-story-title
-
-Step 2  Develop → Commit → Push
-
-Step 3  Open Pull Request:  feature → dev
-        Scrum Master or Project Manager reviews → Approve → Merge
-
-Step 4  After Sprint:
-        Open Pull Request:  dev → main
-```
-
-### Pull Request Process
-
-1. Create a branch from `dev`
-2. Implement changes with tests
-3. Open a Pull Request using the PR template
-4. Get at least **1 code review approval** (Scrum Master or Project Manager)
-5. All CI checks must pass
-6. Merge via **Squash and Merge**
-7. After sprint completion — merge `dev` → `main`
-
----
-
-## Milestones
-
-| # | Milestone | Due Date | Focus | Status |
-|---|---|---|---|---|
-| 1 | User Identification & User Stories | 28 June 2026 | Requirements | ✅ Complete |
-| 2 | Scheduling & Design | 22 July 2026 | Design + UI | ✅ Complete |
-| 3 | Sprint 1 — API Development | 2 August 2026 | Backend APIs | ✅ Complete (`docs/milestone3/`) |
-| 4 | Sprint 2 — Testing & Integration | 12 August 2026 | Tests + Integration | ✅ Complete (`docs/milestone4/`) |
-| 5 | Final Submission | 23 August 2026 | Complete project | ⏳ Upcoming |
-
----
-
-## Sprint Structure
-
-This project follows a **2-week Scrum sprint** cycle with **4 sprints**.
-
-| Sprint | Dates | Focus | Status |
+| Contributor | University Identifier | GitHub Profile | Role |
 |---|---|---|---|
-| Sprint 1 | 29 June – 12 July 2026 | Project setup, authentication, core models | ✅ Complete |
-| Sprint 2 | 13 July – 26 July 2026 | Citizen complaint submission & tracking | ✅ Complete |
-| Sprint 3 | 27 July – 9 August 2026 | Admin management, field worker progress | ✅ Complete |
-| Sprint 4 | 10 August – 23 August 2026 | Reports, notifications, testing & polish | 🔄 In Progress |
-
-| Scrum Ceremony | Frequency | Duration |
-|---|---|---|
-| Sprint Planning | Start of sprint | 2 hours |
-| Daily Scrum | Daily | 15 minutes |
-| Sprint Review | End of sprint | 1 hour |
-| Sprint Retrospective | End of sprint | 45 minutes |
-
-Sprint documentation is stored under `docs/meetings/`.
+| **MOHD AFSAR** | `23f2002023` | [@AfsarAI](https://github.com/AfsarAI) | Developer & Maintainer |
+| **Gautham** | `21f3002294` | [@21f3002294](https://github.com/21f3002294) | Team Member |
+| **Rahul Verma** | `21f1001325` | [@21f1001325](https://github.com/21f1001325) | Team Member |
+| **Hafiza Noor** | `23f2004875` | [@23f2004875](https://github.com/23f2004875) | Team Member |
+| **Jitendra Kumar** | `23f1000704` | [@23f1000704](https://github.com/23f1000704) | Team Member |
 
 ---
 
-## Contributors
+## 📄 License
 
-| Name | Role | GitHub |
-|---|---|---|
-| Gautham (21f3002294) | Team Member | @21f3002294 |
-| MOHD AFSAR (23f2002023) | Team Member | @23f2002023 |
-| RAHUL VERMA (21f1001325) | Team Member | @21f1001325 |
-| HAFIZA NOOR (23f2004875) | Team Member | @23f2004875 |
-| Jitendra Kumar (23f1000704) | Team Member | @23f1000704 |
-
----
-
-## License
-
-This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+This project is licensed under the [MIT License](LICENSE).  
+Copyright &copy; 2026 MAY2026-Team-005 / Mohd. Afsar.
